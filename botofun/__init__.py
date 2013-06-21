@@ -1,0 +1,2 @@
+from config import BOTO_DEFAULT_REGION, BOTO_ACCESS_KEY, BOTO_SECRET
+

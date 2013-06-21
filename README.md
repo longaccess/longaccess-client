@@ -1,4 +1,4 @@
-longaccess-cli
-==============
+Boto Fun
+========
 
-Long Access: the client
+Just some code to test boto
