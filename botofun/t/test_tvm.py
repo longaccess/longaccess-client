@@ -12,4 +12,4 @@ class TVMTest(TestCase):
     def test_upload_token(self):
         tvm = self._makeit()
         token = tvm.get_upload_token('testuser1',3600)
-        self.assertThat(token, Equals([]))
+        self.assertThat(len(token), Equals(5))
