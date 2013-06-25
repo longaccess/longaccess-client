@@ -4,7 +4,7 @@ from testtools.matchers import Equals
 class TVMTest(TestCase):
     def _makeit(self, *args ,**kw):
         import botofun.tvm
-        return botofun.tvm.mytvm(*args, **kw)
+        return botofun.tvm.MyTvm(*args, **kw)
 
     def test_tvm(self):
         foo = self._makeit()
