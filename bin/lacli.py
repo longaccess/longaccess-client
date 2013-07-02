@@ -4,8 +4,8 @@ import sys
 import argparse 
 from itertools import repeat
 import multiprocessing as mp
-import botofun.tvm
-import botofun.pool
+import lacli.tvm
+import lacli.pool
 from boto import config as boto_config
 import os
 
@@ -14,11 +14,11 @@ def results(it, timeout):
         yield it.next(timeout)
 
 def upload_temp_key(poolmap, source, conn, name='archive'):
-    with botofun.pool.MPUpload(conn,source,name=name) as upload:
+    with lacli.pool.MPUpload(conn,source,name=name) as upload:
         print "starting to upload {0} parts (timeout={1})".format(
                 source.chunks, conn.timeout())
         args=enumerate(repeat(upload, source.chunks))
-        rs=poolmap(botofun.pool.upload_part, args)
+        rs=poolmap(lacli.pool.upload_part, args)
         successfull=[]
         try:
             for r in results(rs,conn.timeout()):
@@ -31,13 +31,13 @@ def upload_temp_key(poolmap, source, conn, name='archive'):
 
 def pool_upload(user, duration, path):
     mp.util.log_to_stderr(mp.util.SUBDEBUG)
-    tvm = botofun.tvm.MyTvm()
+    tvm = lacli.tvm.MyTvm()
     token = tvm.get_upload_token(user, duration)
-    conn = botofun.pool.MPConnection(token)
+    conn = lacli.pool.MPConnection(token)
     try:
         poolsize=max(mp.cpu_count()-1,3)
         pool=mp.Pool(poolsize)
-        source=botofun.pool.File(path)
+        source=lacli.pool.File(path)
         keys=[]
         seq=1
         while True:

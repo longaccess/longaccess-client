@@ -3,8 +3,8 @@ from testtools.matchers import Equals
 
 class UploaTest(TestCase):
     def _makeit(self, *args ,**kw):
-        import botofun.provision
-        return botofun.provision.Upload(*args, **kw)
+        import lacli.provision
+        return lacli.provision.Upload(*args, **kw)
 
     def test_upload(self):
         foo = self._makeit()

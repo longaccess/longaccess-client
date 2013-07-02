@@ -1,7 +1,7 @@
 import boto.sts
 import json
-from botofun import BOTO_DEFAULT_REGION, BOTO_ACCESS_KEY, BOTO_SECRET, BOTO_UPLOAD_POLICY, BOTO_UPLOAD_PREFIX
-import botofun.policy
+from lacli import BOTO_DEFAULT_REGION, BOTO_ACCESS_KEY, BOTO_SECRET, BOTO_UPLOAD_POLICY, BOTO_UPLOAD_PREFIX
+import lacli.policy
 
 class MyTvm(object):
 
