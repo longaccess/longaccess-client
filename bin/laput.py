@@ -6,7 +6,7 @@ Usage: laput.py [-d <sec>] [-D <level>] [-u <user>]
        laput.py -h, --help
 
 Options:
-    -u <user>, --user <user>     username to request token for [default: testuser]
+    -u <user>, --user <user>     use a federated user token
     -d <sec>, --duration <sec>   duration of token in seconds [default: 3600]
     -D <level>, --debug <level>  debugging level, from 0 to 2 [default: 0]
 
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     def tokens():
         tvm = MyTvm()
         while True:
-            yield tvm.get_upload_token(options['--user'],options['--duration'])
+            yield tvm.get_upload_token(uid=options['--user'],secs=options['--duration'])
     cli=LaCommand(tokens)
     if len(options['<filename>'])>0:
         for fname in options['<filename>']:
