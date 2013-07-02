@@ -30,7 +30,6 @@ def upload_temp_key(poolmap, source, conn, name='archive'):
         return upload.combineparts(successfull)
 
 def pool_upload(user, duration, path):
-    mp.util.log_to_stderr(mp.util.SUBDEBUG)
     tvm = latvm.tvm.MyTvm()
     token = tvm.get_upload_token(user, duration)
     conn = lacli.pool.MPConnection(token)
@@ -77,7 +76,9 @@ if __name__ == "__main__":
     if not boto_config.has_section('Boto'):
         boto_config.add_section('Boto')
     boto_config.set('Boto','num_retries', '0')
-    boto_config.set('Boto','debug',options.debug)
+    if options.debug != '0':
+        mp.util.log_to_stderr(mp.util.SUBDEBUG)
+        boto_config.set('Boto','debug',options.debug)
     for fname in options.filename:
         if not os.path.isfile(fname):
             sys.exit('File {} not found.'.format(fname))
