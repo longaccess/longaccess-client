@@ -72,15 +72,14 @@ if __name__ == "__main__":
         default=3600, help='duration of federated token in seconds')
     argparser.add_argument('-D', '--debug', dest='debug', 
         default='0', help='Enable Boto debugging (0,1 or 2)')
-    argparser.add_argument('filename', help='The filename to upload')
+    argparser.add_argument('filename', nargs='*', help='filenames to upload')
     options = argparser.parse_args()
-    if options.filename:
-        if not os.path.isfile(options.filename):
-            sys.exit('File {} not found.'.format(options.filename))
-        if not boto_config.has_section('Boto'):
-            boto_config.add_section('Boto')
-        boto_config.set('Boto','num_retries', '0')
-        boto_config.set('Boto','debug',options.debug)
-        pool_upload(options.user, options.duration, options.filename)
-    else:
-        argparser.print_help()
+    if not boto_config.has_section('Boto'):
+        boto_config.add_section('Boto')
+    boto_config.set('Boto','num_retries', '0')
+    boto_config.set('Boto','debug',options.debug)
+    for fname in options.filename:
+        if not os.path.isfile(fname):
+            sys.exit('File {} not found.'.format(fname))
+        print "putting {}".format(fname)
+        pool_upload(options.user, options.duration, fname)
