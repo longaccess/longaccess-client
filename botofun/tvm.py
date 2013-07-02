@@ -1,5 +1,7 @@
 import boto.sts
-from botofun import BOTO_DEFAULT_REGION, BOTO_ACCESS_KEY, BOTO_SECRET
+import json
+from botofun import BOTO_DEFAULT_REGION, BOTO_ACCESS_KEY, BOTO_SECRET, BOTO_UPLOAD_POLICY, BOTO_UPLOAD_PREFIX
+import botofun.policy
 
 class MyTvm(object):
 
@@ -10,7 +12,7 @@ class MyTvm(object):
         if not self.connection:
             raise Exception("No STS connection.")
 
-        token = self.connection.get_federation_token(uid, secs)
+        token = self.connection.get_federation_token(uid, secs, policy=json.dumps(BOTO_UPLOAD_POLICY))
         if not token:
             raise Exception("Error getting token.")
 
