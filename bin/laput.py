@@ -1,30 +1,41 @@
 #!/home/kouk/code/bototest/bin/python
+"""Upload a file to S3
+
+Usage: laput.py [-d <sec>] [-D <level>] [-u <user>]
+            [<filename>...]
+       laput.py -h, --help
+
+Options:
+    -u <user>, --user <user>     username to request token for [default: testuser]
+    -d <sec>, --duration <sec>   duration of token in seconds [default: 3600]
+    -D <level>, --debug <level>  debugging level, from 0 to 2 [default: 0]
+
+"""
+     
 
 import sys
-import argparse 
+from docopt import docopt
 from lacli.upload import *
 from lacli.command import LaCommand
+from lacli import __version__
+from latvm.tvm import MyTvm
 from boto import config as boto_config
 
 if __name__ == "__main__":
-    argparser = argparse.ArgumentParser(description='parallel upload to S3')
-    argparser.add_argument('-u','--federated-user', dest='user', 
-        default='testuser', help='user id of uploading user' )
-    argparser.add_argument('-d','--duration',  dest='duration', 
-        default=3600, help='duration of federated token in seconds')
-    argparser.add_argument('-D', '--debug', dest='debug', 
-        default='0', help='Enable Boto debugging (0,1 or 2)')
-    argparser.add_argument('filename', nargs='*', help='filenames to upload')
-    options = argparser.parse_args()
+    options=docopt(__doc__, version='laput {}'.format(__version__))
     if not boto_config.has_section('Boto'):
         boto_config.add_section('Boto')
     boto_config.set('Boto','num_retries', '0')
-    if options.debug != '0':
+    if options['--debug'] != '0':
         mp.util.log_to_stderr(mp.util.SUBDEBUG)
-        boto_config.set('Boto','debug',options.debug)
-    cli=LaCommand(options)
-    if len(options.filename)>0:
-        for fname in options.filename:
+        boto_config.set('Boto','debug',options['--debug'])
+    def tokens():
+        tvm = MyTvm()
+        while True:
+            yield tvm.get_upload_token(options['--user'],options['--duration'])
+    cli=LaCommand(tokens)
+    if len(options['<filename>'])>0:
+        for fname in options['<filename>']:
             cli.onecmd('put {}'.format(fname))
     else:
         cli.cmdloop()

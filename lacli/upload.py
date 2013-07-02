@@ -1,4 +1,3 @@
-import latvm.tvm
 import lacli.pool
 import multiprocessing as mp
 from itertools import repeat
@@ -23,18 +22,16 @@ def upload_temp_key(poolmap, source, conn, name='archive'):
             print "timed out!"
         return upload.combineparts(successfull)
 
-def pool_upload(user, duration, path):
-    tvm = latvm.tvm.MyTvm()
-    token = tvm.get_upload_token(user, duration)
-    conn = lacli.pool.MPConnection(token)
+def pool_upload(path, tvm):
     try:
         poolsize=max(mp.cpu_count()-1,3)
         pool=mp.Pool(poolsize)
         source=lacli.pool.File(path)
         keys=[]
         seq=1
-        while True:
+        for token in tvm():
             name="archive-{}".format(seq)
+            conn = lacli.pool.MPConnection(token)
             try:
                 res=upload_temp_key(pool.imap, source, conn, name=name)
                 keys.append((res[0],res[1]))

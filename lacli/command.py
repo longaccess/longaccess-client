@@ -7,9 +7,9 @@ class LaCommand(cmd.Cmd):
     """ Our LA command line interface"""
     prompt='lacli> '  
 
-    def __init__(self, options, *args, **kwargs):
+    def __init__(self, tokens, *args, **kwargs):
         cmd.Cmd.__init__(self, *args, **kwargs)
-        self.options=options
+        self.tokens=tokens
 
     def do_tvmconf(self, line):
         """tvmconf
@@ -27,7 +27,7 @@ class LaCommand(cmd.Cmd):
         if not os.path.isfile(fname):
             print 'File {} not found or is not a directory.'.format(fname)
         else:
-            pool_upload(self.options.user, self.options.duration, fname)
+            pool_upload(fname, self.tokens)
     def complete_put(self, text, line, begidx, endidx):
         return [os.path.basename(x) for x in glob.glob('{}*'.format(line[4:]))]
 
