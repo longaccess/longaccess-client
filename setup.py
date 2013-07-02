@@ -7,8 +7,8 @@ setup(version=unicode(__version__),
       description="The Long Access client",
       long_description=open('README').read(),
       packages=['lacli', 'lacli.t'],
-      install_requires=['boto'],
+      install_requires=['boto', 'python-dateutil', 'filechunkio', 'argparse'],
       tests_require=['testtools'],
       test_suite="lacli.t",
-      scripts=['bin/lacli.py']
+      scripts=['bin/laput.py']
 )
