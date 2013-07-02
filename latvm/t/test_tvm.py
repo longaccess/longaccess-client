@@ -3,8 +3,8 @@ from testtools.matchers import Equals
 
 class TVMTest(TestCase):
     def _makeit(self, *args ,**kw):
-        import lacli.tvm
-        return lacli.tvm.MyTvm(*args, **kw)
+        import latvm.tvm
+        return latvm.tvm.MyTvm(*args, **kw)
 
     def test_tvm(self):
         foo = self._makeit()

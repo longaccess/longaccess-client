@@ -4,7 +4,7 @@ import sys
 import argparse 
 from itertools import repeat
 import multiprocessing as mp
-import lacli.tvm
+import latvm.tvm
 import lacli.pool
 from boto import config as boto_config
 import os
@@ -31,7 +31,7 @@ def upload_temp_key(poolmap, source, conn, name='archive'):
 
 def pool_upload(user, duration, path):
     mp.util.log_to_stderr(mp.util.SUBDEBUG)
-    tvm = lacli.tvm.MyTvm()
+    tvm = latvm.tvm.MyTvm()
     token = tvm.get_upload_token(user, duration)
     conn = lacli.pool.MPConnection(token)
     try:

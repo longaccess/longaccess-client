@@ -1,4 +1,4 @@
-from lacli.policy import BOTO_DEFAULT_REGION, BOTO_ACCESS_KEY, BOTO_SECRET, BOTO_UPLOAD_POLICY
+from latvm.policy import BOTO_DEFAULT_REGION, BOTO_ACCESS_KEY, BOTO_SECRET, BOTO_UPLOAD_POLICY
 import boto.sts
 import json
 
