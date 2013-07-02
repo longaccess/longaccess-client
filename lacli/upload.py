@@ -1,13 +1,6 @@
-#!/home/kouk/code/bototest/bin/python
-
-import sys
-import argparse 
-from itertools import repeat
-import multiprocessing as mp
-import lacli.tvm
 import lacli.pool
-from boto import config as boto_config
-import os
+import multiprocessing as mp
+from itertools import repeat
 
 def results(it, timeout):
     while True:
@@ -29,19 +22,16 @@ def upload_temp_key(poolmap, source, conn, name='archive'):
             print "timed out!"
         return upload.combineparts(successfull)
 
-def pool_upload(user, duration, path):
-    mp.util.log_to_stderr(mp.util.SUBDEBUG)
-    tvm = lacli.tvm.MyTvm()
-    token = tvm.get_upload_token(user, duration)
-    conn = lacli.pool.MPConnection(token)
+def pool_upload(path, tvm):
     try:
         poolsize=max(mp.cpu_count()-1,3)
         pool=mp.Pool(poolsize)
         source=lacli.pool.File(path)
         keys=[]
         seq=1
-        while True:
+        for token in tvm():
             name="archive-{}".format(seq)
+            conn = lacli.pool.MPConnection(token)
             try:
                 res=upload_temp_key(pool.imap, source, conn, name=name)
                 keys.append((res[0],res[1]))
@@ -64,23 +54,3 @@ def pool_upload(user, duration, path):
         # complete upload
         pool.terminate()
 
-if __name__ == "__main__":
-    argparser = argparse.ArgumentParser(description='parallel upload to S3')
-    argparser.add_argument('-u','--federated-user', dest='user', 
-        default='testuser', help='user id of uploading user' )
-    argparser.add_argument('-d','--duration',  dest='duration', 
-        default=3600, help='duration of federated token in seconds')
-    argparser.add_argument('-D', '--debug', dest='debug', 
-        default=0, help='Enable Boto debugging (0,1 or 2)')
-    argparser.add_argument('filename', help='The filename to upload')
-    options = argparser.parse_args()
-    if options.debug and options.duration and options.user and options.filename:
-        if not os.path.isfile(options.filename):
-            sys.exit('File {} not found.'.format(options.filename))
-        if not boto_config.has_section('Boto'):
-            boto_config.add_section('Boto')
-        boto_config.set('Boto','num_retries', '0')
-        boto_config.set('Boto','debug',options.debug)
-        pool_upload(options.user, options.duration, options.filename)
-    else:
-        argparser.print_help()

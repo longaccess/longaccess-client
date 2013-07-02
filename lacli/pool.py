@@ -20,6 +20,8 @@ class MPConnection(object):
         self.bucket=bucket
         self.grace=grace
         self.conn=None
+        if self.uid is None:
+            self.uid = self.getconnection().get_canonical_user_id()
     def getconnection(self):
         if self.conn is None:
             self.conn = S3Connection(self.accesskey, self.secret, security_token=self.sectoken)
