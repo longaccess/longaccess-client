@@ -1,11 +1,9 @@
 from __future__ import division
 import os
 import sys
-import time
 import dateutil.parser
 import dateutil.tz
 import datetime
-import random
 import math
 from boto.s3.connection import S3Connection
 from boto.utils import compute_md5
