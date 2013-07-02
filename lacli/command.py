@@ -21,11 +21,15 @@ class LaCommand(cmd.Cmd):
         return True
 
     def do_put(self, f):
+        """Upload a file to LA [filename]
+        """
         fname=f.strip()
         if not fname:
             fname=raw_input('Filename: ').strip()
-        if not os.path.isfile(fname):
-            print 'File {} not found or is not a directory.'.format(fname)
+        if not fname:
+            print "Argument required."
+        elif not os.path.isfile(fname):
+            print 'File {} not found or is not a regular file.'.format(fname)
         else:
             pool_upload(fname, self.tokens)
     def complete_put(self, text, line, begidx, endidx):
