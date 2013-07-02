@@ -6,6 +6,7 @@ from itertools import repeat
 import multiprocessing as mp
 import latvm.tvm
 import lacli.pool
+from lacli.command import LaCommand
 from boto import config as boto_config
 import os
 
@@ -79,8 +80,11 @@ if __name__ == "__main__":
     if options.debug != '0':
         mp.util.log_to_stderr(mp.util.SUBDEBUG)
         boto_config.set('Boto','debug',options.debug)
-    for fname in options.filename:
-        if not os.path.isfile(fname):
-            sys.exit('File {} not found.'.format(fname))
-        print "putting {}".format(fname)
-        pool_upload(options.user, options.duration, fname)
+    if len(options.filename)>0:
+        for fname in options.filename:
+            if not os.path.isfile(fname):
+                sys.exit('File {} not found.'.format(fname))
+            print "putting {}".format(fname)
+            pool_upload(options.user, options.duration, fname)
+    else:
+        LaCommand().cmdloop()
