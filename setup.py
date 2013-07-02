@@ -10,5 +10,5 @@ setup(version=unicode(__version__),
       install_requires=['boto', 'python-dateutil', 'filechunkio', 'docopt'],
       tests_require=['testtools'],
       test_suite="lacli.t",
-      scripts=['bin/laput.py']
+      scripts=['bin/laput.py', 'bin/lacreds.py']
 )

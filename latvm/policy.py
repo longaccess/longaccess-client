@@ -1,6 +1,5 @@
-from latvm.config import BOTO_DEFAULT_REGION, BOTO_ACCESS_KEY, BOTO_SECRET, BOTO_BUCKET, BOTO_UPLOAD_PREFIX
-
 import random
+import json
 
 def random_statement_id():
     return "statement{}".format(random.randrange(1000,2000))
@@ -18,15 +17,15 @@ def allow_statement(actions, arn, prefix=None):
 def prefix_condition(prefix):
     return {'StringLike': {"s3:prefix": prefix+"/*"}}
 
-def make(statements):
-    return {'Statement': statements, 'Version':"2012-10-17"}
+def upload_policy(bucket='lastage',prefix='upload'):
+    _defaultallow=['s3:ListAllMyBuckets',
+                   's3:ListBucket',
+                   's3:ListBucketMultipartUploads',
+                   's3:ListMultipartUploadParts']
+    _bucketarn='arn:aws:s3:::{}'.format(bucket)
+    _uploadfolder=prefix #+"/${aws:userid}"
+    return json.dumps({'Statement': [
+                allow_statement(_defaultallow, _bucketarn),
+                allow_statement(['s3:PutObject'], _bucketarn+"/*") #, _uploadfolder)
+            ], 'Version':"2012-10-17"})
 
-
-_defaultallow=['s3:ListAllMyBuckets','s3:ListBucket','s3:ListBucketMultipartUploads', 's3:ListMultipartUploadParts']
-_bucketarn='arn:aws:s3:::'+BOTO_BUCKET
-_uploadfolder=BOTO_UPLOAD_PREFIX #+"/${aws:userid}"
-
-BOTO_UPLOAD_POLICY=make([
-    allow_statement(_defaultallow, _bucketarn),
-    allow_statement(['s3:PutObject'], _bucketarn+"/*") #, _uploadfolder)
-])

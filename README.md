@@ -3,14 +3,19 @@ longaccess-cli
 
 Long Access: the client
 
-Install using `python setup.py test`.
+Install using `python setup.py install`.
 
-Don't forget to copy `lacli/config.py.sample` to `lacli/config.py` and edit accordingly:
+
+Credentials
+-----------
+
+Credentials may be configured via standard boto mechanisms (e.g. `~/.boto.cfg`)
+or using the `lacreds.py` script.
 
 Permissions
 -----------
 
-The IAM entity whose tokens are specified in `config.py` must have the following permissions
+The IAM entity whose tokens are configured must have the following permissions
     
     {
         "Version":"2012-10-17",
