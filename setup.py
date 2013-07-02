@@ -1,6 +1,7 @@
 from setuptools import setup, find_packages
+from lacli import __version__
 
-setup(version='0.1',
+setup(version=unicode(__version__),
       name="lacli",
       author="Konstantinos Koukopoulos",
       description="The Long Access client",
