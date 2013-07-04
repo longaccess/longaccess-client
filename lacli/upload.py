@@ -22,10 +22,10 @@ def upload_temp_key(poolmap, source, conn, name='archive'):
             print "timed out!"
         return upload.combineparts(successfull)
 
-def pool_upload(path, tvm):
+def pool_upload(path, tvm, init):
     try:
         poolsize=max(mp.cpu_count()-1,3)
-        pool=mp.Pool(poolsize)
+        pool=mp.Pool(poolsize, init)
         source=lacli.pool.File(path)
         keys=[]
         seq=1

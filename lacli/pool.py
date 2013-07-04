@@ -5,6 +5,7 @@ import dateutil.parser
 import dateutil.tz
 import datetime
 import math
+import logging
 from boto.s3.connection import S3Connection
 from boto.utils import compute_md5
 from filechunkio import FileChunkIO
@@ -186,11 +187,11 @@ class MPUpload(object):
 
 def upload_part(args):
     try:
-        print "worker uploading chunk {}".format(args[0])
+        chunk=args[0]
         upload=args[1]
-        upload.do_part(args[0])
+        logging.getLogger().debug("uploading chunk {}".format(chunk))
+        upload.do_part(chunk)
     except Exception as e:
         import traceback
         traceback.print_exc()
         pass
-
