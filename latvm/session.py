@@ -13,8 +13,8 @@ class UploadSession(object):
             boto_config.add_section('Boto')
         boto_config.set('Boto','num_retries', str(retries))
         if debug != 0:
-            import multiprocessing
-            multiprocessing.util.log_to_stderr(mp.util.SUBDEBUG)
+            import multiprocessing as mp
+            mp.util.log_to_stderr(mp.util.SUBDEBUG)
             boto_config.set('Boto','debug',str(debug))
 
         try:
