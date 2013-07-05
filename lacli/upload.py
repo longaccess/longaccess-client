@@ -1,6 +1,7 @@
 import lacli.pool
 import multiprocessing as mp
 from itertools import repeat
+from lacli.log import getLogger, logToQueue, logHandler
 
 def results(it, timeout):
     while True:
@@ -8,8 +9,8 @@ def results(it, timeout):
 
 def upload_temp_key(poolmap, source, conn, name='archive'):
     with lacli.pool.MPUpload(conn,source,name=name) as upload:
-        print "starting to upload {0} parts (timeout={1})".format(
-                source.chunks, conn.timeout())
+        getLogger().debug("sending %d upload jobs to workers..",
+                source.chunks)
         args=enumerate(repeat(upload, source.chunks))
         rs=poolmap(lacli.pool.upload_part, args)
         successfull=[]
@@ -19,38 +20,50 @@ def upload_temp_key(poolmap, source, conn, name='archive'):
         except StopIteration:
             pass
         except mp.TimeoutError:
-            print "timed out!"
+            getLogger().debug("stopping before credentials expire.")
         return upload.combineparts(successfull)
 
-def pool_upload(path, tvm, init):
-    try:
+class Upload(object):
+    def __init__(self, tvm, logq=None, progq=None):
+        self.tvm=tvm
+        self.logq=logq
+        self.progq=progq
+
+    def upload(self, fname):
+
         poolsize=max(mp.cpu_count()-1,3)
-        pool=mp.Pool(poolsize, init)
-        source=lacli.pool.File(path)
-        keys=[]
-        seq=1
-        for token in tvm():
-            name="archive-{}".format(seq)
-            conn = lacli.pool.MPConnection(token)
-            try:
-                res=upload_temp_key(pool.imap, source, conn, name=name)
-                keys.append((res[0],res[1]))
-                if res[2] is None:
+
+        # initializer that sets up logging and progress from sub procs
+        def init():
+            logToQueue(self.logq)
+            lacli.pool.progress.queue=self.progq
+
+        try:
+            pool=mp.Pool(poolsize, init)
+            source=lacli.pool.File(fname)
+            keys=[]
+            seq=1
+            for token in self.tvm():
+                name="archive-{}".format(seq)
+                conn = lacli.pool.MPConnection(token)
+                try:
+                    res=upload_temp_key(pool.imap, source, conn, name=name)
+                    keys.append((res[0],res[1]))
+                    if res[2] is None:
+                        break
+                    source=res[2]  # continue with remaining file
+                except Exception:
+                    getLogger().error("couldn't upload to temporary key",
+                            exc_info=True)
                     break
-                source=res[2]  # continue with remaining file
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
-                break
-        print "uploaded {} temp keys".format(len(keys))
-        for key in keys:
-            print "key: {0} (etag: {1})".format(key[0],key[1])
-        # TODO join keys into one key
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-    finally:
-        print "terminating all procs.."
-        # complete upload
-        pool.terminate()
+            getLogger().debug("uploaded %d temp keys", len(keys))
+            for key in keys:
+                getLogger().debug("key: %s (etag: %s)", key[0],key[1])
+            # TODO join keys into one key
+        except Exception:
+            getLogger().error("exception", exc_info=True)
+            raise
+        finally:
+            getLogger().debug("terminating all procs..")
+            pool.terminate()
 

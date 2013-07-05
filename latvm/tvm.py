@@ -8,11 +8,17 @@ class MyTvm(object):
     credfile=os.path.expanduser('~/.latvm.json')
 
     def __init__(self,region='us-east-1',bucket='lastage',prefix='upload'):
+        self.region=region
+        self.bucket=bucket
         self.federation_policy=upload_policy(bucket, prefix)
         self.readcreds()
         self.connection = boto.sts.connect_to_region(
                 region_name=region,aws_access_key_id=self.key,
                 aws_secret_access_key=self.secret)
+
+    def __str__(self):
+        return "<MyTVM region:{} bucket:{} {}>".format(
+                self.region, self.bucket, (self.credfile if self.key else ""))
 
     def readcreds(self):
         # use boto defaults
@@ -20,7 +26,6 @@ class MyTvm(object):
         self.secret=None
         # unless user configured other credentials
         if os.path.isfile(self.credfile):
-            print "Reading TVM credentials from {}".format(self.credfile)
             with open(self.credfile) as f:
                 creds=json.loads(f.read())
                 self.key=creds['key']

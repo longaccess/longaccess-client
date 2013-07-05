@@ -20,18 +20,18 @@ from lacli.upload import *
 from lacli.command import LaCommand
 from latvm.session import UploadSession, NoCredentialsException
 from lacli import __version__
-import lacli.log
+from lacli.log import setupLogging, getLogger
 
 if __name__ == "__main__":
     options=docopt(__doc__, version='laput {}'.format(__version__))
-    lacli.log.setupLogging(options['--debug'])
-    logger = lacli.log.getLogger()
+    setupLogging(int(options['--debug']))
     try:
         session=UploadSession(
             uid=options['--user'],
             secs=options['--duration'],
             bucket=options['--bucket'],
             debug=int(options['--debug']))
+        getLogger().debug("Using TVM: %s", session.tvm)
         cli=LaCommand(session, debug=int(options['--debug']))
         if len(options['<filename>'])>0:
             for fname in options['<filename>']:
