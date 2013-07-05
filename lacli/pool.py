@@ -5,10 +5,16 @@ import dateutil.parser
 import dateutil.tz
 import datetime
 import math
+from lacli.log import getLogger
 from boto.s3.connection import S3Connection
 from boto.utils import compute_md5
 from filechunkio import FileChunkIO
 
+class Progress(object):
+    def __init__(self):
+        self.queue=None
+
+progress=Progress()
 
 class MPConnection(object):
     def __init__(self, token, bucket='lastage', grace=1200):
@@ -66,10 +72,6 @@ class FileHash(object):
         except AttributeError:
             instance.seek(0)
             (instance.md5,instance.b64md5,size) = compute_md5(instance,instance.bytes)
-            print "calculated md5 for offset={0}/size={1}: {2}".format(
-                    instance.offset,
-                    instance.bytes,
-                    instance.b64md5)
             instance.seek(0)
             return (instance.md5,instance.b64md5)
 
@@ -111,20 +113,17 @@ class MPUpload(object):
     def _getupload(self):
         bucket=self.connection.getbucket()
 
-        print "trying to initiate upload to {}".format(self.key)
         if self.upload_id is None:
             return bucket.initiate_multipart_upload(self.key)
 
-        print "trying to retrieve previous upload to {0} (id: {1})".format(
-                self.key, self.upload_id)
         for upload in bucket.get_all_multipart_uploads():
             if self.upload_id == upload.id:
                 return upload 
 
     def __enter__(self):
         self.upload=self._getupload()
-        print "upload id: "+self.upload.id 
         self.upload_id=self.upload.id 
+        getLogger().debug("processing upload with id: %s", self.upload_id)
         return self
     def __exit__(self,type, value, traceback):
         if len(self.results) == 0:
@@ -144,53 +143,50 @@ class MPUpload(object):
         """ transfer a part. runs in a separate process. """
         # reestablish the connection
         for attempt in range(self.retries):
-            print "attempt {0} to transfer part {1}".format(attempt, seq)
+            getLogger().debug("attempt %d/%d to transfer part %d",
+                    attempt, self.retries, seq)
 
             with FilePart(self.source, seq) as part:
                 try:
-                    print "chunk {0}, offset {1}, size {2}".format(seq, part.offset, part.bytes)
-                    self._upload_part(seq, part)
+                    def cb(tx, total):
+                        # fetch progress queue from global scope
+                        progress.queue.put({'part': seq, 'tx':tx, 'total': total})
+                    self.upload.upload_part_from_file(
+                            fp=part,
+                            part_num=seq+1,
+                            cb=cb,
+                            num_cb=100,
+                            size=part.bytes,
+                            # although not necessary, boto does it, good to know how:
+                            md5=part.hash,
+                            )
                 except Exception as exc:
-                    print 'failed to upload part {0}'.format(seq)
-                    import traceback
-                    traceback.print_exc()
+                    getLogger().debug("exception while uploading part %d",
+                            seq, exc_info=True) 
 
                     if attempt==self.retries-1:
-                        print "giving up on part {0} after {1} tries".format(
-                                seq, self.retries)
                         raise exc
                 else:
-                    print 'succesfully uploaded {0} part {1}'.format(
+                    getLogger().debug("succesfully uploaded %s part %d",
                         self.source, seq)
                     return seq
 
-    def _upload_part(self, seq, part):
-        print "MD5: "+part.hash[1]
-        self.upload.upload_part_from_file(
-                fp=part,
-                part_num=seq+1,
-                cb=self._progress(part),
-                num_cb=10,
-                size=part.bytes,
-                # although not necessary, good to know how:
-                md5=part.hash,
-                )
 
     def _progress(self, seq):
         def cb(tx, total):
             sys.stdout.write('.')
             sys.stdout.flush()
             if tx == total:
-                print "completed part {}".format(seq)
+                getLogger().debug("completed part %d",seq)
         return cb
 
 def upload_part(args):
     try:
-        print "worker uploading chunk {}".format(args[0])
+        chunk=args[0]
         upload=args[1]
-        upload.do_part(args[0])
+        getLogger().debug("uploading chunk %d", chunk)
+        upload.do_part(chunk)
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        getLogger().debug("exception uploading chunk %d", 
+                args[0], exc_info=True)
         pass
-
