@@ -35,10 +35,9 @@ class Upload(object):
         self.progq=progq
 
 
-    def upload(self, fname):
-
-        poolsize=max(mp.cpu_count()-1,3)
-
+    def upload(self, fname, poolsize=None):
+        if poolsize is None:
+            poolsize=max(mp.cpu_count()-1,1)
        
         try:
             pool=mp.Pool(poolsize, initworker, [self.logq, self.progq])

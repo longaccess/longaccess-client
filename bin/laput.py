@@ -2,7 +2,7 @@
 """Upload a file to S3
 
 Usage: laput.py [-d <sec>] [-D <level>] [-u <user>]
-            [-b <bucket> ] [<filename>...]
+            [-b <bucket> ] [-p <np>] [<filename>...]
        laput.py -h, --help
 
 Options:
@@ -10,6 +10,7 @@ Options:
     -d <sec>, --duration <sec>      duration of token in seconds [default: 3600]
     -D <level>, --debug <level>     debugging level, from 0 to 2 [default: 0]
     -b <bucket>, --bucket <bucket>  bucket to upload to [default: lastage]
+    -p <np>, --procs <np>           number of processes [default: auto]
 
 """
      
@@ -30,7 +31,8 @@ if __name__ == "__main__":
             uid=options['--user'],
             secs=options['--duration'],
             bucket=options['--bucket'],
-            debug=int(options['--debug']))
+            debug=int(options['--debug']),
+            nprocs=options['--procs'])
         getLogger().debug("Using TVM: %s", session.tvm)
         cli=LaCommand(session, debug=int(options['--debug']))
         if len(options['<filename>'])>0:
