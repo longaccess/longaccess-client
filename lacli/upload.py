@@ -1,7 +1,7 @@
 import lacli.pool
 import multiprocessing as mp
 from itertools import repeat
-from lacli.log import getLogger, logToQueue, logHandler
+from lacli.log import getLogger, logToQueue
 
 def results(it, timeout):
     while True:
