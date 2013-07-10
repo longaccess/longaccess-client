@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Python
 *.py[cod]
 
@@ -40,3 +41,7 @@ robohydra/plugins/longaccessmock/tokens.js
 pyinstall/install.sh
 pyinstall/*.tar.bz2
 pyinstall/upload.sh
+
+# eclipse, pydev, etc
+.project
+.pydevproject
