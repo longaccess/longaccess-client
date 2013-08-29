@@ -11,5 +11,9 @@ setup(version=unicode(__version__),
           'progressbar', 'logutils'],
       tests_require=['testtools'],
       test_suite="lacli.t",
-      scripts=['bin/laput.py', 'bin/lacreds.py']
+      entry_points="""
+      [console_scripts]
+      laput = lacli.main:main
+      lacreds = latvm.main:main
+      """
 )

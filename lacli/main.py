@@ -23,7 +23,9 @@ from latvm.session import UploadSession, NoCredentialsException
 from lacli import __version__
 from lacli.log import setupLogging, getLogger
 
-if __name__ == "__main__":
+def main(args=sys.argv[1:]):
+    """Main function called by `laput` command.
+    """
     options=docopt(__doc__, version='laput {}'.format(__version__))
     setupLogging(int(options['--debug']))
     try:
@@ -44,3 +46,6 @@ if __name__ == "__main__":
         print "Error: no AWS credentials have been configured."
         print "Either setup a Boto configuration or run 'lacreds init'."
         sys.exit(1)
+
+if __name__ == "__main__":
+    main()
