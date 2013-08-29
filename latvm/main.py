@@ -11,17 +11,18 @@ Options:
     -s <secret>, --secret <secret>  the AWS secret
 
 """
-     
-
-import os, errno, sys
+import os
+import errno
+import sys
 from docopt import docopt
 from latvm.tvm import MyTvm
 from latvm import __version__
 
+
 def main(args=sys.argv[1:]):
     """Main function called by `lacreds` command.
     """
-    options=docopt(__doc__, version='lacreds {}'.format(__version__))
+    options = docopt(__doc__, version='lacreds {}'.format(__version__))
     if options['init']:
         MyTvm.storecreds(options['--key'], options['--secret'])
     elif options['list']:

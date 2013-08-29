@@ -8,7 +8,7 @@ setup(version=unicode(__version__),
       long_description=open('README').read(),
       packages=['lacli', 'lacli.t', 'latvm', 'latvm.t'],
       install_requires=['boto', 'python-dateutil', 'filechunkio', 'docopt',
-          'progressbar', 'logutils'],
+                        'progressbar', 'logutils'],
       tests_require=['testtools'],
       test_suite="lacli.t",
       entry_points="""
@@ -16,4 +16,4 @@ setup(version=unicode(__version__),
       laput = lacli.main:main
       lacreds = latvm.main:main
       """
-)
+      )

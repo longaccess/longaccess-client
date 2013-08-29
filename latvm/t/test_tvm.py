@@ -1,8 +1,9 @@
 from testtools import TestCase
 from testtools.matchers import Equals
 
+
 class TVMTest(TestCase):
-    def _makeit(self, *args ,**kw):
+    def _makeit(self, *args, **kw):
         import latvm.tvm
         return latvm.tvm.MyTvm(*args, **kw)
 
@@ -11,5 +12,5 @@ class TVMTest(TestCase):
 
     def test_upload_token(self):
         tvm = self._makeit()
-        token = tvm.get_upload_token('testuser1',3600)
+        token = tvm.get_upload_token('testuser1', 3600)
         self.assertThat(len(token), Equals(5))
