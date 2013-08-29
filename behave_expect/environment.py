@@ -1,4 +1,4 @@
-from . import setup
+from . import setup, teardown
 
 
 def before_all(context):
@@ -6,7 +6,7 @@ def before_all(context):
 
 
 def after_all(context):
-    pass
+    teardown(context)
 
 
 def before_feature(context, feature):
@@ -22,4 +22,4 @@ def before_scenario(context, scenario):
 
 
 def after_scenario(context, scenario):
-    pass
+    teardown(context)
