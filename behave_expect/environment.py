@@ -1,5 +1,8 @@
+import os
+
+
 def before_all(context):
-    pass
+    context.environ = os.environ.copy()
 
 
 def after_all(context):

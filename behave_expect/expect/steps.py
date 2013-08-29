@@ -1,10 +1,10 @@
 from behave import step
+import os
 
 
 @step(u'the home directory is "{dir}"')
 def home_directory(context, dir):
-    import os
-    os.environ['HOME'] = dir
+    context.environ['HOME'] = dir
     assert os.path.isdir(dir), "Home directory exists"
 
 
