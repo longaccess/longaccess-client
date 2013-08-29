@@ -1,8 +1,8 @@
-import os
+from . import setup
 
 
 def before_all(context):
-    context.environ = os.environ.copy()
+    setup(context)
 
 
 def after_all(context):
@@ -18,7 +18,7 @@ def after_feature(context, feature):
 
 
 def before_scenario(context, scenario):
-    pass
+    setup(context)
 
 
 def after_scenario(context, scenario):
