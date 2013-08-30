@@ -9,7 +9,7 @@ class NoCredentialsException(Exception):
 class UploadSession(object):
 
     def __init__(self, uid=None, secs=3600, nprocs='auto',
-                 bucket='lastage', retries=0, debug=0):
+                 bucket='lastage', retries=0, debug=0, token_machine=None):
         self.uid = uid
         self.secs = 3600
         try:
@@ -17,10 +17,13 @@ class UploadSession(object):
         except ValueError:
             self.nprocs = None
 
-        try:
-            self.tvm = MyTvm(bucket=bucket)
-        except NoAuthHandlerFound:
-            raise NoCredentialsException
+        if token_machine is None:
+            try:
+                self.tvm = MyTvm(bucket=bucket)
+            except NoAuthHandlerFound:
+                raise NoCredentialsException
+        else:
+            self.tvm = token_machine
 
     def tokens(self):
         while True:
