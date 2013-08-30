@@ -26,7 +26,7 @@ def run_console_script(context, entry):
     if entry is not None:
         run_named_command(
             context,
-            "python -c 'from {m} import {f}; f()' {a}".format(
+            "python -c 'from {m} import {f}; {f}()' {a}".format(
                 m=e.module_name,
                 f=e.attrs[0],
                 a=context.args,
