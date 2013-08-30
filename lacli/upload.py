@@ -2,6 +2,12 @@ import lacli.pool
 import multiprocessing as mp
 from itertools import repeat
 from lacli.log import getLogger, logToQueue
+from latvm.tvm import BaseTvm
+
+
+class UploadTvm(BaseTvm):
+    def get_upload_token(self, uid=None, secs=3600):
+        pass
 
 
 def results(it, timeout):

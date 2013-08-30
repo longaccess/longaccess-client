@@ -17,7 +17,7 @@ Options:
 
 import sys
 from docopt import docopt
-from lacli.upload import *
+from lacli.upload import UploadTvm
 from lacli.command import LaCommand
 from latvm.session import UploadSession, NoCredentialsException
 from lacli import __version__
@@ -35,7 +35,8 @@ def main(args=sys.argv[1:]):
             secs=options['--duration'],
             bucket=options['--bucket'],
             debug=int(options['--debug']),
-            nprocs=options['--procs'])
+            nprocs=options['--procs'],
+            token_machine=UploadTvm())
         getLogger().debug("Using TVM: %s", session.tvm)
         cli = LaCommand(session, debug=int(options['--debug']))
         if len(options['<filename>']) > 0:
