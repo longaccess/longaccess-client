@@ -43,7 +43,8 @@ def run_command(context, command):
 @step(u'I spawn "{command}" named "{name}"')
 def run_named_command(context, command, name):
     context.children[name] = pexpect.spawn(
-        command, cwd=context.cwd, env=context.environ)
+        command, cwd=context.cwd, env=context.environ,
+        logfile=context.stdout_capture)
     context.child = context.children[name]
 
 
