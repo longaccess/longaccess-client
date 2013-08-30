@@ -1,13 +1,38 @@
+from . import expected_text
 from behave import step
 import os
 import pexpect
-import pipes
+import pkg_resources
 
 
 @step(u'the home directory is "{dir}"')
 def home_directory(context, dir):
     context.environ['HOME'] = dir
     assert os.path.isdir(dir), "Home directory exists"
+
+
+@step(u'the command line arguments "{args}"')
+def cli_args(context, args):
+    context.args = args
+
+
+@step(u'I run console script "{entry}"')
+def run_console_script(context, entry):
+    e = None
+    for p in pkg_resources.iter_entry_points(group='console_scripts'):
+        if p.name == entry:
+            e = p
+    assert e
+    if entry is not None:
+        run_named_command(
+            context,
+            "python -c 'from {m} import {f}; f()' {a}".format(
+                m=e.module_name,
+                f=e.attrs[0],
+                a=context.args,
+                ),
+            ''
+            )
 
 
 @step(u'I run "{command}"')

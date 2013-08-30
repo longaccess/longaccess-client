@@ -4,6 +4,7 @@ Feature: upload command
         Given the home directory is "/tmp/test"
 
     Scenario: I run the command
-        When I run "laput"
+        Given the command line arguments "-h"
+        When I run console script "laput"
         Then I see "Upload to Long Access"
 

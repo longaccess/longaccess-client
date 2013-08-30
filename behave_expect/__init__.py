@@ -6,6 +6,7 @@ def setup(context):
     context.child = None
     context.children = {}
     context.cwd = os.getcwd()
+    context.args = None
 
 
 def teardown(context):
@@ -13,3 +14,5 @@ def teardown(context):
         child.close()
     context.child = None
     context.children = {}
+    context.args = None
+
