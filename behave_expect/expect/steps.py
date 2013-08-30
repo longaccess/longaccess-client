@@ -29,7 +29,7 @@ def run_console_script(context, entry):
             "python -c 'from {m} import {f}; {f}()' {a}".format(
                 m=e.module_name,
                 f=e.attrs[0],
-                a=context.args,
+                a=(context.args or ''),
                 ),
             ''
             )
