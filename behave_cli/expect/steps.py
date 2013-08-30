@@ -1,5 +1,7 @@
 from . import expected_text
 from behave import step
+from behave_cli.files.file import file_vars
+
 import os
 import pexpect
 import pkg_resources
@@ -12,6 +14,7 @@ def home_directory(context, dir):
 
 
 @step(u'the command line arguments "{args}"')
+@file_vars
 def cli_args(context, args):
     context.args = args
 

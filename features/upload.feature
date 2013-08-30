@@ -14,6 +14,6 @@ Feature: upload command
 
     Scenario: I upload an empty file
         Given an empty file "foo"
-        And the command line arguments "foo"
+        And the command line arguments "{foo}"
         When I run console script "laput"
         Then I see "done"
