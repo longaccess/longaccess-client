@@ -1,25 +1,32 @@
-from . import setup, teardown
+from behave_cli.expect import environment as expenv
+from behave_cli.files import environment as fileenv
 
 
 def before_all(context):
-    setup(context)
+    expenv.before_all(context)
+    fileenv.before_all(context)
 
 
 def after_all(context):
-    teardown(context)
+    expenv.after_all(context)
+    fileenv.after_all(context)
 
 
 def before_feature(context, feature):
-    pass
+    expenv.before_feature(context, feature)
+    fileenv.before_feature(context, feature)
 
 
 def after_feature(context, feature):
-    pass
+    expenv.after_feature(context, feature)
+    fileenv.after_feature(context, feature)
 
 
 def before_scenario(context, scenario):
-    setup(context)
+    expenv.before_scenario(context, scenario)
+    fileenv.before_scenario(context, scenario)
 
 
 def after_scenario(context, scenario):
-    teardown(context)
+    expenv.after_scenario(context, scenario)
+    fileenv.after_scenario(context, scenario)
