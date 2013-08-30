@@ -6,5 +6,5 @@ Feature: upload command
     Scenario: I run the command
         Given the command line arguments "-h"
         When I run console script "laput"
-        Then I see "Upload to Long Access"
+        Then I see "Upload a file to Long Access"
 

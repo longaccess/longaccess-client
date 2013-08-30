@@ -1,5 +1,5 @@
 #!/home/kouk/code/bototest/bin/python
-"""Upload a file to S3
+"""Upload a file to Long Access
 
 Usage: laput.py [-d <sec>] [-D <level>] [-u <user>]
             [-b <bucket> ] [-p <np>] [<filename>...]
