@@ -15,4 +15,3 @@ def teardown(context):
     context.child = None
     context.children = {}
     context.args = None
-
