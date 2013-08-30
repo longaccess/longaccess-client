@@ -4,7 +4,13 @@ import boto.sts
 import json
 
 
-class MyTvm(object):
+class BaseTvm(object):
+    def get_upload_token(self, uid=None, secs=3600):
+        raise NotImplementedError("{}: must implement.".format(
+            self.__class__.__name__))
+
+
+class MyTvm(BaseTvm):
 
     credfile = os.path.expanduser('~/.latvm.json')
 
