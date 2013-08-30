@@ -24,4 +24,4 @@ def run_named_command(context, command, name):
 
 @step(u'I see "{text}"')
 def i_see_text(context, text):
-    assert False
+    assert expected_text(context.child, text), "Expected '{}'".format(text)
