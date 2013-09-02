@@ -2,6 +2,7 @@ Feature: upload command
 
     Background: setup the command configuration
         Given the home directory is "/tmp/test"
+        And the mock API "longaccessmock"
 
     Scenario: I run the command with no arguments
         When I run console script "laput"
@@ -11,6 +12,14 @@ Feature: upload command
         Given the command line arguments "-h"
         When I run console script "laput"
         Then I see "Upload a file to Long Access"
+
+    @wip
+    Scenario: I upload an empty file to a failing API
+        Given an empty file "foo"
+        And the command line arguments "{foo}"
+        And the API is failing
+        When I run console script "laput"
+        Then I see "error: the server couldn't fulfill your request"
 
     Scenario: I upload an empty file
         Given an empty file "foo"

@@ -16,6 +16,11 @@ then
 fi
 echo "nosetests passed"
 
+./node_modules/.bin/robohydra mockapi.conf &
+robohydra_pid=$!
+
 behave -w
+
+kill $robohydra_pid
 
 exit 0
