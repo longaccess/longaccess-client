@@ -7,6 +7,11 @@ import pexpect
 import pkg_resources
 
 
+@step(u'the environment variable "{name}" is "{value}"')
+def env_var(context, name, value):
+    context.environ[name] = value
+
+
 @step(u'the home directory is "{dir}"')
 def home_directory(context, dir):
     context.environ['HOME'] = dir

@@ -14,6 +14,14 @@ Feature: upload command
         Then I see "Upload a file to Long Access"
 
     @wip
+    Scenario: I upload an empty file to a nonexistent API
+        Given an empty file "foo"
+        And the command line arguments "{foo}"
+        And the environment variable "LA_API_URL" is "http://server.in/web/not"
+        When I run console script "laput"
+        Then I see "error: couldn't contact the server"
+
+
     Scenario: I upload an empty file to a failing API
         Given an empty file "foo"
         And the command line arguments "{foo}"
