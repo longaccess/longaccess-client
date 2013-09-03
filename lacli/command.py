@@ -3,8 +3,8 @@ import cmd
 import glob
 from progressbar import (ProgressBar, Bar,
                          ETA, FileTransferSpeed)
-from lacli.upload import Upload
 from lacli.log import queueOpened, logHandler
+from lacli.upload import UploadManager
 
 
 class progressHandler(object):
@@ -54,8 +54,8 @@ class LaCommand(cmd.Cmd):
             with queueOpened(logHandler('lacli')) as q:
                 with queueOpened(progressHandler(fname,
                                                  os.path.getsize(fname))) as p:
-                    Upload(self.session.tokens, logq=q, progq=p).upload(
-                        fname, self.session.nprocs)
+                    with UploadManager(self.session) as s:
+                        s.upload(fname, {'logq': q, 'progq': p})
                     print ''
 
     def complete_put(self, text, line, begidx, endidx):

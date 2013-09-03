@@ -19,9 +19,12 @@ import sys
 from docopt import docopt
 from lacli.upload import UploadTvm
 from lacli.command import LaCommand
-from latvm.session import UploadSession, NoCredentialsException
+from latvm.session import Session, NoCredentialsException
 from lacli import __version__
 from lacli.log import setupLogging, getLogger
+
+
+API_URL = 'http://stage.longaccess.com/api/v1/'
 
 
 def main(args=sys.argv[1:]):
@@ -30,12 +33,13 @@ def main(args=sys.argv[1:]):
     options = docopt(__doc__, version='laput {}'.format(__version__))
     setupLogging(int(options['--debug']))
     try:
-        session = UploadSession(
+        session = Session(
             uid=options['--user'],
             secs=options['--duration'],
             bucket=options['--bucket'],
             debug=int(options['--debug']),
             nprocs=options['--procs'],
+            api=API_URL,
             token_machine=UploadTvm())
         getLogger().debug("Using TVM: %s", session.tvm)
         cli = LaCommand(session, debug=int(options['--debug']))
