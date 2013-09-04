@@ -8,6 +8,11 @@ then
     echo "PEP8 violations detected. Stopping run."
     exit 1
 fi
+
+./node_modules/.bin/robohydra mockapi.conf &
+robohydra_pid=$!
+export MOCK_API_URL='http://localhost:3000/'
+
 nosetests
 if [ $? -ne 0 ]
 then
@@ -16,10 +21,7 @@ then
 fi
 echo "nosetests passed"
 
-./node_modules/.bin/robohydra mockapi.conf &
-robohydra_pid=$!
-
-behave -w
+behave
 
 kill $robohydra_pid
 
