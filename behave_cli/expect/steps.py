@@ -1,6 +1,8 @@
 from . import expected_text
 from behave import step
-from behave_cli.files.file import file_vars
+from behave_cli.files.file import filename_vars
+from behave_cli.vars import format_vars
+from behave_cli.api import api_vars
 
 import os
 import pexpect
@@ -8,6 +10,7 @@ import pkg_resources
 
 
 @step(u'the environment variable "{name}" is "{value}"')
+@format_vars(filename_vars, api_vars)
 def env_var(context, name, value):
     context.environ[name] = value
 
@@ -19,7 +22,7 @@ def home_directory(context, dir):
 
 
 @step(u'the command line arguments "{args}"')
-@file_vars
+@format_vars(filename_vars)
 def cli_args(context, args):
     context.args = args
 
