@@ -1,36 +1,15 @@
-import requests
-
-
-MOCK_API_BASE = "http://localhost:3000/"
-
-
 def api_vars(ctx):
-    return dict([(ctx.robohydra_plugin, MOCK_API_BASE)])
-
-
-class RoboHydraTest(object):
-    def __init__(self, name,
-                 base="robohydra-admin/tests/"):
-        self.url = MOCK_API_BASE + base + name
-        self.action('start')
-
-    def deactivate(self):
-        self.action('stop')
-
-    def action(self, act):
-        requests.post(self.url, data={'action': act})
-
-
-def cleanup(context):
-    context.robohydra_tests = []
-    context.robohydra_plugin = None
+    vs = {}
+    if ctx.mock_api is not None:
+        vs['api_url'] = ctx.mock_api.url()
+    return vs
 
 
 def setup(context):
-    cleanup(context)
+    context.mock_api = None
 
 
 def teardown(context):
-    for test in context.robohydra_tests:
-        test.deactivate()
-    cleanup(context)
+    if context.mock_api is not None:
+        context.mock_api.close()
+    context.mock_api = None
