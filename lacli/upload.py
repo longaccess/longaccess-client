@@ -2,13 +2,7 @@ import lacli.pool
 import multiprocessing as mp
 from itertools import repeat
 from lacli.log import getLogger, logToQueue
-from latvm.tvm import BaseTvm
-import requests
-
-
-class UploadTvm(BaseTvm):
-    def get_upload_token(self, uid=None, secs=3600):
-        pass
+from lacli.api import ApiUnavailableException
 
 
 class UploadManager(object):
@@ -17,18 +11,20 @@ class UploadManager(object):
         self.session = session
 
     def __enter__(self, **kwargs):
-        response = requests.get(self.session.api)
-        response.raise_for_status()
-        print(self.session.api)
-        raise Exception()
-        assert response.status_code == 200
-
         return Upload(self.session.tokens,
                       poolsize=self.session.nprocs, **kwargs)
 
     def __exit__(self, type, value, tb):
         if type is not None:
-            pass
+            if type is ApiUnavailableException:
+                getLogger().debug("API is unavailable",
+                                  exc_info=True)
+                print "error: server not found"
+            else:
+                getLogger().debug("exception while uploading",
+                                  exc_info=True)
+                print "error: unknown"
+            return True
         pass
 
 
@@ -91,7 +87,7 @@ class Upload(object):
                 getLogger().debug("key: %s (etag: %s)", key[0], key[1])
             # TODO join keys into one key
         except Exception:
-            getLogger().error("exception", exc_info=True)
+            getLogger().debug("exception", exc_info=True)
             raise
         finally:
             getLogger().debug("terminating all procs..")
