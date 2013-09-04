@@ -3,6 +3,7 @@ Feature: upload command
     Background: setup the command configuration
         Given the home directory is "/tmp/test"
         And the mock API "longaccessmock"
+        And the environment variable "LA_API_URL" is "{longaccessmock}"
 
     Scenario: I run the command with no arguments
         When I run console script "laput"
