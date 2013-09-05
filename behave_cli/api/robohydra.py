@@ -32,6 +32,11 @@ class RoboHydra(MockRestApi):
                 self.url())
         self.tests[name].start()
 
+    def results(self):
+        url = self.url() + "robohydra-admin/tests/results.json"
+        result = requests.get(url)
+        return result.json()
+
     def close(self):
         for test in self.tests.iterkeys():
             self.tests[test].stop()
