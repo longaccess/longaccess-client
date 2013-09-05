@@ -2,7 +2,7 @@ import lacli.pool
 import multiprocessing as mp
 from itertools import repeat
 from lacli.log import getLogger, logToQueue
-from lacli.api import ApiUnavailableException, ApiErrorException
+from lacli.exceptions import ApiUnavailableException, ApiErrorException
 
 
 class UploadManager(object):
