@@ -3,9 +3,10 @@ import requests
 
 
 class RoboHydraTest(object):
+
     def __init__(self, name, base):
         self.name = name
-        self.base = base
+        self.base = base + "robohydra-admin/tests/"
 
     def start(self):
         self.action('start')
@@ -14,7 +15,7 @@ class RoboHydraTest(object):
         self.action('stop')
 
     def action(self, act):
-        url = self.base + "robohydra-admin/tests/{}".format(self.name)
+        url = self.base + self.name
         requests.post(url, data={'action': act})
 
 
