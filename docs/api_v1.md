@@ -212,6 +212,8 @@ Example:
 - `id` - the upload operation id
 - `resource\_uri` - the API uri for the specific upload operation
 - `token` - an array with all the STS data (key, token, expiration)
+- `bucket` - the name of the S3 bucket to upload to
+- `prefix` - the prefix to add to the key name when uploading
 
 ### GET /upload/:id/
 
@@ -228,6 +230,8 @@ Get upload operation (with :id) details.
 - `resource\_uri` - the API uri for the specific upload operation.
 - `status` - the status of the upload operation.
 - `token` - an array with all the STS data (key, token, expiration)
+- `bucket` - the name of the S3 bucket to upload to
+- `prefix` - the prefix to add to the key name when uploading
 
 ### PUT /upload/:id
 
@@ -256,6 +260,8 @@ Example:
 - `resource\_uri` - the API uri for the specific upload operation.
 - `status` - the status of the upload operation.
 - `token` - an array with all the STS data (key, token, expiration)
+- `bucket` - the name of the S3 bucket to upload to
+- `prefix` - the prefix to add to the key name when uploading
 
 
 ## Testing
