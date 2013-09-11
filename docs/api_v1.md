@@ -148,11 +148,11 @@ A JSON object containing two attributes:
    * `next` - if another page of results is available this will contain the page's URI or, if not available, null.
    * `offset` - the number of results that appeared in previous pages
    * `previous` - if a previous page of results is available this will contain the page's URI or, if not available, null.
-   * `total_count` - the total number of results (independent of pagination)
+   * `total\_count` - the total number of results (independent of pagination)
 - `objects` - a JSON list of objects which briefly describe each capsule in the current result page. Each object contains the following attributes:
    * `created` - when the archive was created, a timestamp in ISO format (e.g. `2013-06-07T10:45:01`)
    * `id` - a unique identifier for this archive.
-   * `resource_uri` - the absolute URI of the archive resource (e.g.`/api/v1/archive/3/`).
+   * `resource\_uri` - the absolute URI of the archive resource (e.g.`/api/v1/archive/3/`).
    * `title` - the title given to this archive.
    * `capsule` - the URI of the capsule where this archive belongs.
    * `expires` - when the archive expires, a timestamp in ISO format (e.g. `2013-06-07T10:45:01`)
@@ -210,7 +210,7 @@ Example:
 **Returns**:
 
 - `id` - the upload operation id
-- `resource_uri` - the API uri for the specific upload operation
+- `resource\_uri` - the API uri for the specific upload operation
 - `token` - an array with all the STS data (key, token, expiration)
 
 ### GET /upload/:id/
@@ -225,7 +225,7 @@ Get upload operation (with :id) details.
 - `capsule` - the API uri for the capsule that this upload belongs to.
 - `title` - the title given to this archive.
 - `description` - the description given to this archive.
-- `resource_uri` - the API uri for the specific upload operation.
+- `resource\_uri` - the API uri for the specific upload operation.
 - `status` - the status of the upload operation.
 - `token` - an array with all the STS data (key, token, expiration)
 
@@ -253,7 +253,7 @@ Example:
 - `capsule` - the API uri for the capsule that this upload belongs to.
 - `title` - the title given to this archive.
 - `description` - the description given to this archive.
-- `resource_uri` - the API uri for the specific upload operation.
+- `resource\_uri` - the API uri for the specific upload operation.
 - `status` - the status of the upload operation.
 - `token` - an array with all the STS data (key, token, expiration)
 
