@@ -1,2 +1,3 @@
 botofun/config.py
 *.pyc
+build/

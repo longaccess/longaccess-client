@@ -5,9 +5,13 @@ class NoCredentialsException(Exception): pass
 
 class UploadSession(object):
 
-    def __init__(self, uid=None, secs=3600, bucket='lastage', retries=0, debug=0):
+    def __init__(self, uid=None, secs=3600, nprocs='auto', bucket='lastage', retries=0, debug=0):
         self.uid=uid
         self.secs=3600
+        try:
+            self.nprocs=int(nprocs)
+        except ValueError:
+            self.nprocs=None
 
         try:
             self.tvm = MyTvm(bucket=bucket)

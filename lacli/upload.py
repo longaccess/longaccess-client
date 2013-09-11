@@ -1,7 +1,7 @@
 import lacli.pool
 import multiprocessing as mp
 from itertools import repeat
-from lacli.log import getLogger, logToQueue, logHandler
+from lacli.log import getLogger, logToQueue
 
 def results(it, timeout):
     while True:
@@ -23,23 +23,24 @@ def upload_temp_key(poolmap, source, conn, name='archive'):
             getLogger().debug("stopping before credentials expire.")
         return upload.combineparts(successfull)
 
+# initializer that sets up logging and progress from sub procs
+def initworker(logq, progq):
+    logToQueue(logq)
+    lacli.pool.progress.queue=progq
+
 class Upload(object):
     def __init__(self, tvm, logq=None, progq=None):
         self.tvm=tvm
         self.logq=logq
         self.progq=progq
 
-    def upload(self, fname):
 
-        poolsize=max(mp.cpu_count()-1,3)
-
-        # initializer that sets up logging and progress from sub procs
-        def init():
-            logToQueue(self.logq)
-            lacli.pool.progress.queue=self.progq
-
+    def upload(self, fname, poolsize=None):
+        if poolsize is None:
+            poolsize=max(mp.cpu_count()-1,1)
+       
         try:
-            pool=mp.Pool(poolsize, init)
+            pool=mp.Pool(poolsize, initworker, [self.logq, self.progq])
             source=lacli.pool.File(fname)
             keys=[]
             seq=1

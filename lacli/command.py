@@ -49,7 +49,7 @@ class LaCommand(cmd.Cmd):
         else:
             with queueOpened(logHandler('lacli')) as q:
                 with queueOpened(progressHandler(fname,os.path.getsize(fname))) as p:
-                    Upload(self.session.tokens, logq=q, progq=p).upload(fname)
+                    Upload(self.session.tokens, logq=q, progq=p).upload(fname, self.session.nprocs)
                     print ''
                 
     def complete_put(self, text, line, begidx, endidx):
