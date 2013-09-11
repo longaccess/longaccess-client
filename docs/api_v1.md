@@ -15,6 +15,10 @@ While in private alpha, the API endpoint is
 ## Request format
 *:resource* refers to the value of a resource. For example, *:id* will be substituted by the numeric ID of the resource when an API call is used.
 
+A request to a resource can provide URL parameters (e.g. GET /capsules/?limit=10) and can provide a request body in JSON format.
+
+
+## Response format
 The return format is by default JSON: any request that doesn't request a format explicitly will produce a reply in the JSON format. Since other formats may be supported in the future a client can explicitly request a reply in JSON format by:
 
    * supplying an HTTP `Accept` header in the request with the MIME type type `application/json` as the value.
@@ -183,14 +187,25 @@ When the upload is complete, the client calls */complete/*.
 
 ### POST /upload/
 
-Initiates a new upload operation for the authenticated user.
+Initiates a new upload operation for the authenticated user. The POST body must be JSON encoded and the `Content-Type` header should be `application/json`. 
 
-**Parameters**:
+**Parameters**: None
+
+**Request body**: JSON mapping with the following keys:
 
 - `capsule` - the uri of the capsule (for example: /api/v1/capsule/3/)
 - `size` - the size of the archive (in MB)
 - `title` - the title of the archive
 - `description` - the description of the archive
+
+Example:
+
+    {
+        "title": "test",
+        "description": "blah blah",
+        "capsule": "/api/v1/capsule/1/",
+        "size": 1024
+    }
 
 **Returns**:
 
@@ -216,12 +231,21 @@ Get upload operation (with :id) details.
 
 ### PUT /upload/:id
 
-Update upload operation status, get new token, etc.
+Update upload operation status, get new token, etc. The PUT body must be JSON encoded and the `Content-Type` header should be `application/json`. 
 
-**Parameters**:
+**Parameters**: None
+
+**Request body**: JSON mapping with the following keys:
 
 - `id` - the upload_id
 - `status` - (pending, uploaded)
+
+Example: 
+
+    {
+        "id": "13",
+        "status": "pending
+    }
 
 **Returns**:
 
