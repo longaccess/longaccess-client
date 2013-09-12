@@ -50,6 +50,14 @@ For encryption we recommend a 256 bit key size with AES in CTR mode. Special con
  
 In all cases using a mature cryptography library, like [openssl][], [cryptlib][] or [BouncyCastle][] is highly recommended.
 
+ [LZMA2]: https://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Markov_chain_algorithm#LZMA2_format
+ [7z]: http://7-zip.org/7z.html
+ [XZ]: http://tukaani.org/xz/format.html
+ [openssl]: https://www.openssl.org/
+ [BouncyCastle]: http://bouncycastle.org/
+ [cryptlib]: http://www.cs.auckland.ac.nz/~pgut001/cryptlib/
+ [ADF]: adf.md 
+
 ## Uploading the archive.
 
 Briefly the steps for the archive upload are (more details follow):
@@ -81,10 +89,3 @@ Then the client initiates the upload using the `/upload/` call, providing the de
     -X POST \
     --data '{"title": "test", "description": "...", "capsule": "/api/v1/capsule/1/", "status": "pending"}' http://stage.longaccess.com/api/v1/upload/
 
- [LZMA2]: https://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Markov_chain_algorithm#LZMA2_format
- [7z]: http://7-zip.org/7z.html
- [XZ]: http://tukaani.org/xz/format.html
- [openssl]: https://www.openssl.org/
- [BouncyCastle]: http://bouncycastle.org/
- [cryptlib]: http://www.cs.auckland.ac.nz/~pgut001/cryptlib/
- [ADF]: adf.md 
