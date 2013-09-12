@@ -34,10 +34,6 @@ There are two steps here, preparing the archive and encrypting the archive. Ther
 * It generates a 256 bit random key 
 * It encrypts the archive with AES in CTR mode
 * It calculates an authenticating code with HMAC-SHA512
-* It transmits to the service:
-    - the encrypted archive
-    - the authenticating code
-    - the archive description
 
 ### Archiving and compressing the files
 The archive is assembled and encrypted locally on the user's computer. 
@@ -56,20 +52,34 @@ In all cases using a mature cryptography library, like [openssl][], [cryptlib][]
 
 ## Uploading the archive.
 
-Once the encrypted archive is ready (we will refer to it ar the *archive* from now on), the client should use the API to verify user, get available DataCapsules, and present the user with the ones that have enough free space to hold the archive.
+Briefly the steps for the archive upload are (more details follow):
+
+* the user selects which data capsule to upload to
+* she inputs a title and free text description for the archive
+* the client compiles an archive description file
+* it initializes an upload 
+* it transmits the archive
+* it requests confirmation of successful completion
+
+So, after preparing the encrypted archive (just *archive* from now on) the user must upload it to the archive. Before actually uploading the client should use the API to verify user, get available DataCapsules, and present the user with the ones that have enough free space to hold the archive.
 
 An optional (but it is highly recomended to so so) `title` and `description` should also be provided by the user. This information will make it easier to navigate a user's list of archives in the future, and it's the only piece of information we (longaccess) have about the nature of the data stored (and can present to the user in the future).
 
-Then the client initiates the upload using the `/upload/` call. This will return 
+The client then proceeds to compile an [archive description file][ADF] with the following information:
+- the archive format
+- the compression method, if any,
+- the encryption algorithm
+- the authenticating code and type of algorithm used
+- the user supplied title and description
+- the archive size and other descriptive metadata
 
-Example of archive upload initiation:
+Then the client initiates the upload using the `/upload/` call, providing the destination capsule and archive description. Example of archive upload initiation:
     
     curl -u email:password \
     --dump-header - \
     -H "Content-Type: application/json" \
     -X POST \
-    --data '{"title": "test", "description": "blah blah", "capsule": "/api/v1/capsule/1/", "status": "pending"}' http://stage.longaccess.com/api/v1/upload/
-
+    --data '{"title": "test", "description": "...", "capsule": "/api/v1/capsule/1/", "status": "pending"}' http://stage.longaccess.com/api/v1/upload/
 
  [LZMA2]: https://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Markov_chain_algorithm#LZMA2_format
  [7z]: http://7-zip.org/7z.html
@@ -77,3 +87,4 @@ Example of archive upload initiation:
  [openssl]: https://www.openssl.org/
  [BouncyCastle]: http://bouncycastle.org/
  [cryptlib]: http://www.cs.auckland.ac.nz/~pgut001/cryptlib/
+ [ADF]: adf.md 
