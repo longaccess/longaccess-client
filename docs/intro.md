@@ -69,6 +69,8 @@ Briefly the steps for the archive upload are (more details follow):
 * it transmits the archive
 * it requests confirmation of successful completion
 
+### Preparation
+
 So, after preparing the encrypted archive (just *archive* from now on) the user must upload it to the archive. Before actually uploading the client should use the API to verify user, get available DataCapsules, and present the user with the ones that have enough free space to hold the archive.
 
 An optional (but highly recommended) `title` and `description` should also be provided by the user. This information will make it easier to navigate a user's list of archives in the future, and it's the only piece of information we (longaccess) have about the nature of the data stored (and can present to the user in the future).
@@ -80,6 +82,8 @@ The client then proceeds to compile an [archive description file][ADF] with the 
 - the authenticating code and type of algorithm used
 - the user supplied title and description
 - the archive size and other descriptive metadata
+
+### Initialization
 
 Then the client initiates the upload using the `/upload/` call, providing the destination capsule and archive description. The API responds with all the available information about the transmission of the archive. Example of archive upload initiation request:
     
@@ -95,7 +99,7 @@ and response:
         "id": "1",
         "resource_uri": "/api/v1/upload/1",
         "bucket": "arn:aws:s3:::lastage",
-        "prefix": "upload/13423/",
+        "prefix": "upload/",
         "capsule": "/api/v1/capsule/1/", 
         "description": "...",
         "status": "pending", 
@@ -109,4 +113,30 @@ and response:
         ]
     }
 
+### Upload
+
+Using the information in the response the client can then begin uploading to S3: in particular the `bucket`, `prefix` and `token` values are necessary for:
+
+* establishing a connection to S3 using:
+    - `token[0]` as the access key,
+    - `token[1]` as the API secret, and
+    - `token[2]` as the secure token.
+* determining the destination bucket (JSON key `bucket`) and key prefix by concatenating `prefix` and `token[4]`.
+
+If the archive is less than 5GB the client simply uploads the archive to the destination key using the appropriate S3 API or SDK method.
+
+If the archive is bigger than 5 GB the client calls the appropriate AWS SDK or [API method to initiate a multipart upload][InitMultiPart] and receives a MultiPart Upload ID. It then proceeds to upload the archive in parts of a certain size (we recommend 500 MB) using the [appropriate S3 API or SDK method][UploadPart]. Each part is uploaded to a sequentially named key using the prefix calculated earlier. After all parts are uploaded the appropriate S3 API or SDK method is called to signal [completion of the MultiPart Upload][CompleteMultiPart].
+
+After completing the upload to S3 the client contacts the Long Access API to signal the completion like this:
+
+    curl -u email:password \
+    --dump-header - \
+    -H "Content-Type: application/json" \
+    -X PATCH \
+    --data '{"id": "1", "status": "uploaded"}' http://stage.longaccess.com/api/v1/upload/1
+
+
+ [InitMultiPart]: http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadInitiate.html
+ [CompleteMultiPart]: http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadComplete.html
+ [UploadPart]: http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadUploadPart.html
 
