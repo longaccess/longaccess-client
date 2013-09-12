@@ -114,17 +114,19 @@ The key is a mapping with the following keys:
 
 Example compression algorithm names:
 
-* `[deflate][]`
-* `[bzip2][]`
-* `[lzma][]`
+* `[deflate][]` - widely available, low compression, ok performance
+* `[bzip2][]` - less available, good compression, poor performance
+* `[lzma][]` - widely available, high compression, ok performance
+* `[lzma2][]` - not widespread, highest compression, good performance
+* `[Snappy][]` - not widespread, low compression,  extreme performance
 
 Example container format names:
 
-* `[ustar][]`
-* `[cpio][]`
-* `[zip][]`
-* `[7z][]`
-* `[xz][]`
+* `[ustar][]` - standard TAR format, widely implemented
+* `[cpio][]` - standard CPIO format, mostly Unix
+* `[zip][]` - standard ZIP format, widely implemented
+* `[7z][]` - 7zip format, mostly Windows
+* `[xz][]` - XZ format, mostly Unix 
 
 ### Description
 
@@ -139,6 +141,7 @@ of the following keys:
 
  [YAML]: http://www.yaml.org "YAML"
  [deflate]: https://en.wikipedia.org/wiki/DEFLATE#Stream_format "Deflate stream format"
+ [Snappy]: http://code.google.com/p/snappy/source/browse/trunk/README
  [lzma]: https://en.wikipedia.org/wiki/LZMA#Compressed_format_overview "LZMA compressed format"
  [bzip2]: https://en.wikipedia.org/wiki/Bzip2#File_format "Bzip2"
  [zip]: https://en.wikipedia.org/wiki/ZIP_(file_format) "Zip file format"
