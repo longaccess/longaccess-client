@@ -15,6 +15,10 @@ While in private alpha, the API endpoint is
 ## Request format
 *:resource* refers to the value of a resource. For example, *:id* will be substituted by the numeric ID of the resource when an API call is used.
 
+A request to a resource can provide URL parameters (e.g. GET /capsules/?limit=10) and can provide a request body in JSON format.
+
+
+## Response format
 The return format is by default JSON: any request that doesn't request a format explicitly will produce a reply in the JSON format. Since other formats may be supported in the future a client can explicitly request a reply in JSON format by:
 
    * supplying an HTTP `Accept` header in the request with the MIME type type `application/json` as the value.
@@ -144,11 +148,11 @@ A JSON object containing two attributes:
    * `next` - if another page of results is available this will contain the page's URI or, if not available, null.
    * `offset` - the number of results that appeared in previous pages
    * `previous` - if a previous page of results is available this will contain the page's URI or, if not available, null.
-   * `total_count` - the total number of results (independent of pagination)
+   * `total\_count` - the total number of results (independent of pagination)
 - `objects` - a JSON list of objects which briefly describe each capsule in the current result page. Each object contains the following attributes:
    * `created` - when the archive was created, a timestamp in ISO format (e.g. `2013-06-07T10:45:01`)
    * `id` - a unique identifier for this archive.
-   * `resource_uri` - the absolute URI of the archive resource (e.g.`/api/v1/archive/3/`).
+   * `resource\_uri` - the absolute URI of the archive resource (e.g.`/api/v1/archive/3/`).
    * `title` - the title given to this archive.
    * `capsule` - the URI of the capsule where this archive belongs.
    * `expires` - when the archive expires, a timestamp in ISO format (e.g. `2013-06-07T10:45:01`)
@@ -183,20 +187,33 @@ When the upload is complete, the client calls */complete/*.
 
 ### POST /upload/
 
-Initiates a new upload operation for the authenticated user.
+Initiates a new upload operation for the authenticated user. The POST body must be JSON encoded and the `Content-Type` header should be `application/json`. 
 
-**Parameters**:
+**Parameters**: None
+
+**Request body**: JSON mapping with the following keys:
 
 - `capsule` - the uri of the capsule (for example: /api/v1/capsule/3/)
 - `size` - the size of the archive (in MB)
 - `title` - the title of the archive
 - `description` - the description of the archive
 
+Example:
+
+    {
+        "title": "test",
+        "description": "blah blah",
+        "capsule": "/api/v1/capsule/1/",
+        "size": 1024
+    }
+
 **Returns**:
 
 - `id` - the upload operation id
-- `resource_uri` - the API uri for the specific upload operation
+- `resource\_uri` - the API uri for the specific upload operation
 - `token` - an array with all the STS data (key, token, expiration)
+- `bucket` - the name of the S3 bucket to upload to
+- `prefix` - the prefix to add to the key name when uploading
 
 ### GET /upload/:id/
 
@@ -210,18 +227,29 @@ Get upload operation (with :id) details.
 - `capsule` - the API uri for the capsule that this upload belongs to.
 - `title` - the title given to this archive.
 - `description` - the description given to this archive.
-- `resource_uri` - the API uri for the specific upload operation.
+- `resource\_uri` - the API uri for the specific upload operation.
 - `status` - the status of the upload operation.
 - `token` - an array with all the STS data (key, token, expiration)
+- `bucket` - the name of the S3 bucket to upload to
+- `prefix` - the prefix to add to the key name when uploading
 
 ### PUT /upload/:id
 
-Update upload operation status, get new token, etc.
+Update upload operation status, get new token, etc. The PUT body must be JSON encoded and the `Content-Type` header should be `application/json`. 
 
-**Parameters**:
+**Parameters**: None
+
+**Request body**: JSON mapping with the following keys:
 
 - `id` - the upload_id
 - `status` - (pending, uploaded)
+
+Example: 
+
+    {
+        "id": "13",
+        "status": "pending
+    }
 
 **Returns**:
 
@@ -229,9 +257,11 @@ Update upload operation status, get new token, etc.
 - `capsule` - the API uri for the capsule that this upload belongs to.
 - `title` - the title given to this archive.
 - `description` - the description given to this archive.
-- `resource_uri` - the API uri for the specific upload operation.
+- `resource\_uri` - the API uri for the specific upload operation.
 - `status` - the status of the upload operation.
 - `token` - an array with all the STS data (key, token, expiration)
+- `bucket` - the name of the S3 bucket to upload to
+- `prefix` - the prefix to add to the key name when uploading
 
 
 ## Testing

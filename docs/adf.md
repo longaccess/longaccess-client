@@ -34,6 +34,7 @@ document:
     %YAML 1.2
     %TAG !a! tag:longaccess.com,2013-09-11/archive
     --- !a!adf
+    href: http://download.longaccess.com/x0fs8907494875
     crypto:
         !a!cipher: aes-256-ctr
         init: !!binary "GKrtCB10XLbtA9qHnyoZj67dgk1f1uLuHBF6xCBAvhI="
@@ -60,6 +61,7 @@ shall contain the following keys:
 * `crypto` - for cryptographic information
 * `format` - for archive format information
 * `description`  - optional, for descriptive metadata
+* `href` - optional, for providing a link to a copy of the archive available for downloading
 
 ### Header
 
