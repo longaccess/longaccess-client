@@ -27,12 +27,19 @@ Verify that the DataCapsule was created using the API:
 ## Preparing the archive.
 The archive is assembled and encrypted locally on the user's computer. 
 
-Once the user indicates the files that he wants to upload, the client will create a ZIP archive containing them. 
+Once the user indicates the files that he wants to upload, the client will create an archive containing them. If the archive format chosen, e.g. TAR, does not compress it's contents the client can optionally apply a compression algorithm on top of the archived data. For example a TAR archive could be compressed to an [XZ][] file, e.g. `archive.tar.xz`.
 
-Then, the client will have to generate a random 256bit key that will be used to encrypt the ZIP file using AES256. Great care should be taken in choosing a random Initialisation Vector and a random Encryption Key.
+Another possibility is using an archive format that handles compression itself, preferably with an open specification and as widely implemented as possible. E.g. something based on [LZMA2][], like [7z][], could be used. More simply one could use ZIP (which uses the DEFLATE algorithm).
+
+## Encrypting and authenticating the archive
+
+For each archive, the client will have to generate a new random key and encrypt the archive with it before uploading it to the service. Additionally the client should provide for the calculation of an authentication code (MAC) that will permit the user to later check the archive's authenticity and integrity.
+
+For encryption we recommend a 256 bit key size with AES in either CTR, EAX or GCM mode. Special considerations for these modes must be dealt seriously, e.g. for CTR mode as described in the [relevant NIST Standard][NIST SP 800-38A]. For the MAC we recommend either using a HMAC, based on a SHA-2 digest algorithm, such as HMAC-SHA512, or using the GHASH provided in the previous step by AES-GCM. 
  
 ## Uploading the archive.
-Once the AES-encrypted ZIP archive is ready (we will refer to it ar the *archive* from now on), the client should use the API to verify user, get available DataCapsules, and present the user with the ones that have enough free space to hold the archive.
+
+Once the encrypted archive is ready (we will refer to it ar the *archive* from now on), the client should use the API to verify user, get available DataCapsules, and present the user with the ones that have enough free space to hold the archive.
 
 An optional (but it is highly recomended to so so) `title` and `description` should also be provided by the user. This information will make it easier to navigate a user's list of archives in the future, and it's the only piece of information we (longaccess) have about the nature of the data stored (and can present to the user in the future).
 
@@ -45,3 +52,8 @@ Example of archive upload initiation:
     -H "Content-Type: application/json" \
     -X POST \
     --data '{"title": "test", "description": "blah blah", "capsule": "/api/v1/capsule/1/", "status": "pending"}' http://stage.longaccess.com/api/v1/upload/
+
+
+ [LZMA2]: https://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Markov_chain_algorithm#LZMA2_format
+ [7z]: http://7-zip.org/7z.html
+ [XZ]: http://tukaani.org/xz/format.html
