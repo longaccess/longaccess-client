@@ -10,11 +10,15 @@ This is version 0.9.
 While in private alpha, the API endpoint is
 `http://stage.longaccess.com/api/v1/`
 
----
+#---
 
 ## Request format
 *:resource* refers to the value of a resource. For example, *:id* will be substituted by the numeric ID of the resource when an API call is used.
 
+A request to a resource can provide URL parameters (e.g. GET /capsules/?limit=10) and can provide a request body in JSON format.
+
+
+## Response format
 The return format is by default JSON: any request that doesn't request a format explicitly will produce a reply in the JSON format. Since other formats may be supported in the future a client can explicitly request a reply in JSON format by:
 
    * supplying an HTTP `Accept` header in the request with the MIME type type `application/json` as the value.
@@ -67,12 +71,12 @@ A JSON object containing two attributes:
    * `previous` - if a previous page of results is available this will contain the page's URI or, if not available, null.
    * `total_count` - the total number of results (independent of pagination)
 - `objects` - a JSON list of objects which briefly describe each capsule in the current result page. Each object contains the following attributes:
-   * `created` - when the capsule was created, a timestamp in ISO format (e.g. `2013-06-07T10:45:01`)
+   * `created` - when the capsule was created, a timestamp in ISO format (e.g. `2013-06-07 10:45:01`)
    * `id` - a unique identifier for this capsule
    * `resource_uri` - the absolute URI of the capsule resource (e.g.`/api/v1/capsule/3/`)
    * `title` - the title given to this capsule
    * `user` - the URI of the User resource who owns this capsule.
-   * `expires` - when the capsule expires, a timestamp in ISO format (e.g. `2013-06-07T10:45:01`)
+   * `expires` - when the capsule expires, a timestamp in ISO format (e.g. `2013-06-07 10:45:01`)
 
 Example:
 
@@ -87,14 +91,14 @@ Example:
   },
   "objects": [
      {
-         "created": "2013-06-07T10:45:01",
+         "created": "2013-06-07 10:45:01",
          "id": 3,
          "resource_uri": "/api/v1/capsule/3/",
          "title": "Photos",
          "user": "/api/v1/user/3/"
       },
       {
-          "created": "2013-06-07T10:44:38",
+          "created": "2013-06-07 10:44:38",
           "id": 2,
           "resource_uri":
           "/api/v1/capsule/2/",
@@ -113,14 +117,14 @@ Get details for capsule :id. The capsule must be owned by the authenticated user
 **Returns**:
 
 - `id` - a unique identifier of the capsule
-- `created` - when the capsule was created, a timestamp in ISO format
-- `expires` - when the capsule will expire, a timestamp in ISO format
+- `created` - when the capsule was created, a timestamp in ISO format (e.g. `2013-06-07 10:45:01`)
+- `expires` - when the capsule will expire, a timestamp in ISO format (e.g. `2013-06-07 10:45:01`)
 - `size` - the capsule's size in megabytes
 - `used` - the total size of all archives in this capsule, in megabytes
 - `archives` - a list of JSON objects, one for each archive associated with this capsule. Each object has the following data:
    * `id` - a unique identifier for this archive
    * `size` - the size of this archive, in megabytes
-   * `created` - when this archive was created
+   * `created` - when this archive was created, a timestamp in ISO format (e.g. `2013-06-07 10:45:01`)
    * `title` - the title of this archive
 
 ---
@@ -146,12 +150,12 @@ A JSON object containing two attributes:
    * `previous` - if a previous page of results is available this will contain the page's URI or, if not available, null.
    * `total_count` - the total number of results (independent of pagination)
 - `objects` - a JSON list of objects which briefly describe each capsule in the current result page. Each object contains the following attributes:
-   * `created` - when the archive was created, a timestamp in ISO format (e.g. `2013-06-07T10:45:01`)
+   * `created` - when the archive was created, a timestamp in ISO format (e.g. `2013-06-07 10:45:01`)
    * `id` - a unique identifier for this archive.
    * `resource_uri` - the absolute URI of the archive resource (e.g.`/api/v1/archive/3/`).
    * `title` - the title given to this archive.
    * `capsule` - the URI of the capsule where this archive belongs.
-   * `expires` - when the archive expires, a timestamp in ISO format (e.g. `2013-06-07T10:45:01`)
+   * `expires` - when the archive expires, a timestamp in ISO format (e.g. `2013-06-07 10:45:01`)
 
 ### GET /archive/:id/
 
@@ -162,8 +166,8 @@ Get archive (with :id) details.
 **Returns**:
 
 - `id` - a unique identifier of the capsule
-- `created` - when the capsule was created, a timestamp in ISO format
-- `expires` - when the capsule will expire, a timestamp in ISO format
+- `created` - when the capsule was created, a timestamp in ISO format (e.g. `2013-06-07 10:45:01`)
+- `expires` - when the capsule will expire, a timestamp in ISO format (e.g. `2013-06-07 10:45:01`)
 - `size` - the capsule's size in megabytes
 - `used` - the total size of all archives in this capsule, in megabytes
 - `title` - the title given to this archive.
@@ -173,30 +177,45 @@ Get archive (with :id) details.
 
 ## Uploads
 
-An *upload* is a temporary object used to upload archives. When an archive is to be uploaded, *init* must be called. *Init* will return an *upload_id*, a TST (Amazon AWS temporary service token) and the expiration datetime of the TST.
+An *upload* is a temporary object used to upload archives. When an archive is to be uploaded, a POST call is made to /upload/ (see example 2 at the end of this document). API will return an *upload_id*, a TST (Amazon AWS temporary service token) and the expiration datetime of the TST.
 
-The upload client will use the credentials to upload the archive (in chunks) to Amazon S3. After each chunk is uploaded, the client must call *update* to inform the service.
+The upload client will use the credentials to upload the archive (in chunks) to Amazon S3.
 
-When credentials are close to expiring (or if the expire), the client can call *credentials* to get a new set of credentials.
+When credentials are close to expiring (or if they expired), the client can do a PATCH call to /upload/:id/ changing the status to 'pending' (see example 3 at the end of this document). The API will return a new set of credentials.
 
-When the upload is complete, the client calls */complete/*.
+When the upload is complete, the client does a PATCH call to /upload/:id/ sending the archive checksum, the parts number and updating the status to 'uploaded'.
+
+Periodically the client does a GET call to /upload/:id/ to check the status of the operation. When the status is 'completed' the archive has been verified and archived by the backend. The client can now issue the PeperKey.
 
 ### POST /upload/
 
-Initiates a new upload operation for the authenticated user.
+Initiates a new upload operation for the authenticated user. The POST body must be JSON encoded and the `Content-Type` header should be `application/json`.
 
-**Parameters**:
+**Parameters**: None
+
+**Request body**: JSON mapping with the following keys:
 
 - `capsule` - the uri of the capsule (for example: /api/v1/capsule/3/)
 - `size` - the size of the archive (in MB)
 - `title` - the title of the archive
 - `description` - the description of the archive
 
+Example:
+
+    {
+        "title": "test",
+        "description": "blah blah",
+        "capsule": "/api/v1/capsule/1/",
+        "size": 1024
+    }
+
 **Returns**:
 
 - `id` - the upload operation id
 - `resource_uri` - the API uri for the specific upload operation
 - `token` - an array with all the STS data (key, token, expiration)
+- `bucket` - the name of the S3 bucket to upload to
+- `prefix` - the prefix to add to the key name when uploading
 
 ### GET /upload/:id/
 
@@ -211,17 +230,28 @@ Get upload operation (with :id) details.
 - `title` - the title given to this archive.
 - `description` - the description given to this archive.
 - `resource_uri` - the API uri for the specific upload operation.
-- `status` - the status of the upload operation.
+- `status` - the status of the upload operation ((pending, uploaded, completed, error)
 - `token` - an array with all the STS data (key, token, expiration)
+- `bucket` - the name of the S3 bucket to upload to
+- `prefix` - the prefix to add to the key name when uploading
 
-### PUT /upload/:id
+### PATCH /upload/:id/
 
-Update upload operation status, get new token, etc.
+Update upload operation status, get new token, etc. The PATCH body must be JSON encoded and the `Content-Type` header should be `application/json`.
 
-**Parameters**:
+**Parameters**: None
+
+**Request body**: JSON mapping with the following keys:
 
 - `id` - the upload_id
 - `status` - (pending, uploaded)
+
+Example:
+
+    {
+        "id": "13",
+        "status": "pending"
+    }
 
 **Returns**:
 
@@ -232,6 +262,8 @@ Update upload operation status, get new token, etc.
 - `resource_uri` - the API uri for the specific upload operation.
 - `status` - the status of the upload operation.
 - `token` - an array with all the STS data (key, token, expiration)
+- `bucket` - the name of the S3 bucket to upload to
+- `prefix` - the prefix to add to the key name when uploading
 
 
 ## Testing
@@ -242,12 +274,24 @@ You can easily test API with [curl](http://curl.haxx.se/).
 
 1. Get all capsules of authenticated user
 
-`curl -u user1@longaccess.com:test123la --dump-header - -H "Accept: application/json" http://stage.longaccess.com/api/v1/capsule/`
+```
+curl -u user1@longaccess.com:test123la --dump-header - \
+-H "Accept: application/json" http://stage.longaccess.com/api/v1/capsule/
+```
 
 2. Initiate a new upload operation
 
-`curl -u user1@longaccess.com:test123la --dump-header - -H "Content-Type: application/json" -X POST --data '{"title": "test", "description": "blah blah", "capsule": "/api/v1/capsule/1/", "status": "pending"}' http://stage.longaccess.com/api/v1/upload/`
+```
+curl -u user1@longaccess.com:test123la --dump-header - \
+-H "Content-Type: application/json" -X POST \
+--data '{"title": "test", "description": "blah blah", "capsule": "/api/v1/capsule/1/", "status": "pending"}' \
+http://stage.longaccess.com/api/v1/upload/
+```
 
 3. Get a new token for an existing upload operation
 
-`curl -u user1@longaccess.com:test123la --dump-header - -H "Content-Type: application/json" -X PATCH --data '{"status": "pending"}' http://stage.longaccess.com/api/v1/upload/1/`
+```
+curl -u user1@longaccess.com:test123la --dump-header - \
+-H "Content-Type: application/json" -X PATCH \
+--data '{"status": "pending"}' http://stage.longaccess.com/api/v1/upload/1/
+```
