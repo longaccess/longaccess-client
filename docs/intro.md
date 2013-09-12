@@ -71,7 +71,7 @@ Briefly the steps for the archive upload are (more details follow):
 
 So, after preparing the encrypted archive (just *archive* from now on) the user must upload it to the archive. Before actually uploading the client should use the API to verify user, get available DataCapsules, and present the user with the ones that have enough free space to hold the archive.
 
-An optional (but it is highly recomended to so so) `title` and `description` should also be provided by the user. This information will make it easier to navigate a user's list of archives in the future, and it's the only piece of information we (longaccess) have about the nature of the data stored (and can present to the user in the future).
+An optional (but highly recommended) `title` and `description` should also be provided by the user. This information will make it easier to navigate a user's list of archives in the future, and it's the only piece of information we (longaccess) have about the nature of the data stored (and can present to the user in the future).
 
 The client then proceeds to compile an [archive description file][ADF] with the following information:
 - the archive format
