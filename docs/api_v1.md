@@ -10,8 +10,6 @@ This is version 0.9.
 While in private alpha, the API endpoint is
 `http://stage.longaccess.com/api/v1/`
 
-#---
-
 ## Request format
 *:resource* refers to the value of a resource. For example, *:id* will be substituted by the numeric ID of the resource when an API call is used.
 
