@@ -81,11 +81,32 @@ The client then proceeds to compile an [archive description file][ADF] with the 
 - the user supplied title and description
 - the archive size and other descriptive metadata
 
-Then the client initiates the upload using the `/upload/` call, providing the destination capsule and archive description. Example of archive upload initiation:
+Then the client initiates the upload using the `/upload/` call, providing the destination capsule and archive description. The API responds with all the available information about the transmission of the archive. Example of archive upload initiation request:
     
     curl -u email:password \
     --dump-header - \
     -H "Content-Type: application/json" \
     -X POST \
     --data '{"title": "test", "description": "...", "capsule": "/api/v1/capsule/1/", "status": "pending"}' http://stage.longaccess.com/api/v1/upload/
+
+and response:
+
+    {
+        "id": "1",
+        "resource_uri": "/api/v1/upload/1",
+        "bucket": "arn:aws:s3:::lastage",
+        "prefix": "upload/13423/",
+        "capsule": "/api/v1/capsule/1/", 
+        "description": "...",
+        "status": "pending", 
+        "title": "test",
+        "token": [
+            "ASIAIBCURANIDXZJ2XYQ",
+            "5cqp0qsQbtMO13HsJ5bh1DzpY0kAX8brL+I/ZZ8Z",
+            "AQoDYXdzE...TGVW6ghd68B5czR9T51svX3rkzzhFtINn/xpEF",
+            "2013-09-12T14:21:29Z",
+            "042584473589:stage17"
+        ]
+    }
+
 
