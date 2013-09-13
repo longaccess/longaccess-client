@@ -1,4 +1,4 @@
-# Introduction to longaccess API v1
+# Introduction to Long Access API v1
 
 ## Getting started
 
@@ -61,7 +61,7 @@ Briefly the steps for the archive upload are (more details follow):
 
 So, after preparing the encrypted archive (just *archive* from now on) the user must upload it to the archive. Before actually uploading the client should use the API to verify user, get available DataCapsules, and present the user with the ones that have enough free space to hold the archive.
 
-An optional (but highly recommended) `title` and `description` should also be provided by the user. This information will make it easier to navigate a user's list of archives in the future, and it's the only piece of information we (longaccess) have about the nature of the data stored (and can present to the user in the future).
+An optional (but highly recommended) `title` and `description` should also be provided by the user. This information will make it easier to navigate a user's list of archives in the future, and it's the only piece of information we (Long Access) have about the nature of the data stored (and can present to the user in the future).
 
 ### Initialization
 
@@ -80,7 +80,7 @@ Then the client initiates the upload using the `/upload/` call, providing the de
     }' \
     http://stage.longaccess.com/api/v1/upload/
 
-and response:
+And response:
 
     {
         "id": "1573",
@@ -128,7 +128,7 @@ After each portion is finalized, but before the next portion's upload begins, th
     
 The response will be identical with the response to the initial POST request, with the exception that it will contain a fresh security token.
 
-Once the archive upload is complete, i.e. all portions have been uploaded, the client **MUST** call `PATCH /upload/:id/` with status "uploaded". This will notify the backend to start processing the uploaded portions, assemble them into the complete archive, and verify the MD5 checksum.
+Once the archive upload is complete, i.e. all portions have been uploaded, the client **MUST** call `PATCH /upload/:id/` with status "uploaded". This will notify the API to start processing the uploaded portions, assemble them into the complete archive, and verify the MD5 checksum.
 
     Example: 
 
@@ -141,7 +141,7 @@ Once the archive upload is complete, i.e. all portions have been uploaded, the c
 
 After completing the upload the client will have to wait while the server checks the integrity of the archive. To do this it should periodically call `GET /upload/:id/` (we suggest at 30 minute intervals) until the API returns with a status of `completed`. When status is `completed`, an extra JSON key is returned, called `archive_id`. Now the upload process is completed, the archive is safely stored and the client can generate the certificate.
 
-The certificate must include the folowing information:
+The certificate must include the following information:
 
 - Archive id 
 - Checksum 
