@@ -110,7 +110,7 @@ Using the information in the response the client can then begin uploading to S3:
     - `token[1]` as the API secret, and
     - `token[2]` as the secure token.
 * determining the destination bucket (JSON key `bucket`) and key prefix by (JSON key `prefix`).
-* determining the expiration time and date of the token (JSON key `token[4]`).
+* determining the expiration time and date of the token (JSON key `token[3]`).
 
 For example, in the example response listed above the client would upload the archive to the S3 URL `s3://lastage/upload/1573/` using the access key and secret in `token`. It will also renew the token before 2:21 PM UTC on the 12th of September.
 
