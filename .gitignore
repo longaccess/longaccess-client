@@ -1,3 +1,4 @@
 botofun/config.py
 *.pyc
 build/
+.DS_Store
