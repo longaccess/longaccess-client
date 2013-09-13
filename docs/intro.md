@@ -122,11 +122,11 @@ Depending on the size of the archive and the duration of the token the client ma
 - `/upload/1573/3`
 - etc.
 
-After each portion is finalized, but before the next portion's upload begins, the client must request a new token from the API. This can be done by using the upload id and calling:
+After each portion is finalized, but before the next portion's upload begins, the client may request a new token from the API. This can be done by using the upload id and calling:
 
     GET /upload/:id/
     
-The response will be identical with the response to the initial POST request, with the exception that it will contain a fresh security token.
+The response will be identical with the response to the initial POST request, with the exception that it will contain a fresh security token, if the current one is about to expire or has expired.
 
 Once the archive upload is complete, i.e. all portions have been uploaded, the client **MUST** call `PATCH /upload/:id/` with status "uploaded". This will notify the API to start processing the uploaded portions, assemble them into the complete archive, and verify the MD5 checksum.
 
