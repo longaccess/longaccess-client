@@ -2,3 +2,8 @@ botofun/config.py
 *.pyc
 build/
 *.swp
+
+# vim files 
+.vimrc_local
+tags
+spell.*
