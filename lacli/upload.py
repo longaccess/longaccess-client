@@ -20,15 +20,13 @@ class UploadManager(object):
 
     def _handle_error(self, type):
         if type is ApiUnavailableException:
-            getLogger().debug("API is unavailable",
-                              exc_info=True)
             print "error: server not found"
         elif type is ApiErrorException:
             print "error: the server couldn't fulfill your request"
         else:
-            getLogger().debug("exception while uploading",
-                              exc_info=True)
             print "error: unknown"
+        getLogger().debug("exception while uploading",
+                          exc_info=True)
         return True
 
 
