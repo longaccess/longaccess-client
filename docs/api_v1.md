@@ -175,11 +175,11 @@ Get archive (with :id) details.
 
 ## Uploads
 
-An *upload* is a temporary object used to upload archives. When an archive is to be uploaded, a POST call is made to /upload/ (see example 2 at the end of this document). API will return an *upload_id*, a TST (Amazon AWS temporary service token) and the expiration datetime of the TST.
+An *upload* is a temporary object used to upload archives. When an archive is to be uploaded, a POST call is made to /upload/ (see example 2 at the end of this document). API will return an *upload_id*, a STS (Amazon AWS Secure Token Service) and the expiration datetime of the TST.
 
 The upload client will use the credentials to upload the archive (in chunks) to Amazon S3.
 
-When credentials are close to expiring (or if they expired), the client can do a PATCH call to /upload/:id/ changing the status to 'pending' (see example 3 at the end of this document). The API will return a new set of credentials.
+When credentials are close to expiring (or if they expired), the client can do a GET call to /upload/:id/ and get a new set of credentials.
 
 When the upload is complete, the client does a PATCH call to /upload/:id/ sending the archive checksum, the parts number and updating the status to 'uploaded'.
 
@@ -211,7 +211,11 @@ Example:
 
 - `id` - the upload operation id
 - `resource_uri` - the API uri for the specific upload operation
-- `token` - an array with all the STS data (key, token, expiration)
+- `token_access_key` - S3 Access key
+- `token_secret_key` - S3 Secret key
+- `token_session` - STS secure token
+- `token_expiration` - STS expiration datetime
+- `token_uid` - STS upload id
 - `bucket` - the name of the S3 bucket to upload to
 - `prefix` - the prefix to add to the key name when uploading
 
@@ -229,26 +233,28 @@ Get upload operation (with :id) details.
 - `description` - the description given to this archive.
 - `resource_uri` - the API uri for the specific upload operation.
 - `status` - the status of the upload operation ((pending, uploaded, completed, error)
-- `token` - an array with all the STS data (key, token, expiration)
+- `token_access_key` - S3 Access key
+- `token_secret_key` - S3 Secret key
+- `token_session` - STS secure token
+- `token_expiration` - STS expiration datetime
+- `token_uid` - STS upload id
 - `bucket` - the name of the S3 bucket to upload to
 - `prefix` - the prefix to add to the key name when uploading
 
 ### PATCH /upload/:id/
 
-Update upload operation status, get new token, etc. The PATCH body must be JSON encoded and the `Content-Type` header should be `application/json`.
+Update upload operation status. The PATCH body must be JSON encoded and the `Content-Type` header should be `application/json`.
 
 **Parameters**: None
 
 **Request body**: JSON mapping with the following keys:
 
-- `id` - the upload_id
 - `status` - (pending, uploaded)
 
 Example:
 
     {
-        "id": "13",
-        "status": "pending"
+        "status": "uploaded"
     }
 
 **Returns**:
@@ -259,7 +265,11 @@ Example:
 - `description` - the description given to this archive.
 - `resource_uri` - the API uri for the specific upload operation.
 - `status` - the status of the upload operation.
-- `token` - an array with all the STS data (key, token, expiration)
+- `token_access_key` - S3 Access key
+- `token_secret_key` - S3 Secret key
+- `token_session` - STS secure token
+- `token_expiration` - STS expiration datetime
+- `token_uid` - STS upload id
 - `bucket` - the name of the S3 bucket to upload to
 - `prefix` - the prefix to add to the key name when uploading
 
@@ -286,10 +296,8 @@ curl -u user1@longaccess.com:test123la --dump-header - \
 http://stage.longaccess.com/api/v1/upload/
 ```
 
-3. Get a new token for an existing upload operation
+3. Get information and a new set of credentials for an existing upload operation
 
 ```
-curl -u user1@longaccess.com:test123la --dump-header - \
--H "Content-Type: application/json" -X PATCH \
---data '{"status": "pending"}' http://stage.longaccess.com/api/v1/upload/1/
+curl -u user1@longaccess.com:test123la http://stage.longaccess.com/api/v1/upload/1/
 ```
