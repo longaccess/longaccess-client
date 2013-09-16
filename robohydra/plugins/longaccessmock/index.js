@@ -22,6 +22,12 @@ exports.getBodyParts = function(config) {
                         schema: apiPrefix + "/user/schema/"
                     }
                 }
+            }),
+            new RoboHydraHead({
+                path: apiPrefix + '/upload/',
+                handler: function(req, res, next) {
+                    res.end()
+                }
             })
         ],
         tests: {
