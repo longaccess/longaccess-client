@@ -1,24 +1,25 @@
 var heads               = require('robohydra').heads,
     RoboHydraHead       = require("robohydra").heads.RoboHydraHead,
-    RoboHydraHeadStatic = heads.RoboHydraHeadStatic;
+    RoboHydraHeadStatic = heads.RoboHydraHeadStatic,
+    apiPrefix           = "/path/to/api";
 
 exports.getBodyParts = function(config) {
     return {
         heads: [
             new RoboHydraHeadStatic({
-                path: '/',
+                path: apiPrefix + '/',
                 content: {
                     capsule: {
-                        list_endpoint: "/path/to/api/capsule/",
-                        schema: "/path/to/api/capsule/schema/"
+                        list_endpoint: apiPrefix + "/capsule/",
+                        schema: apiPrefix + "/capsule/schema/"
                     },
                     upload: {
-                        list_endpoint: "/path/to/api/upload/",
-                        schema: "/path/to/api/upload/schema/"
+                        list_endpoint: apiPrefix + "/upload/",
+                        schema: apiPrefix + "/upload/schema/"
                     },
                     user: {
-                        list_endpoint: "/path/to/api/user/",
-                        schema: "/path/to/api/user/schema/"
+                        list_endpoint: apiPrefix + "/user/",
+                        schema: apiPrefix + "/user/schema/"
                     }
                 }
             })
