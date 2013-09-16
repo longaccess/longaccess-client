@@ -22,7 +22,7 @@ def with_api_response(f):
         try:
             r = f(*args, **kwargs)
             r.raise_for_status()
-            return r.json()
+            return r.json
         except ConnectionError as e:
             raise ApiUnavailableException(e)
         except HTTPError as e:
