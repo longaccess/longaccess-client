@@ -7,3 +7,7 @@ build/
 .vimrc_local
 tags
 spell.*
+
+# robohydra
+node_modules
+robohydra.log
