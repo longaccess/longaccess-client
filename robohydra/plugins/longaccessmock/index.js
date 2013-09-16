@@ -3,7 +3,7 @@ var heads               = require('robohydra').heads,
     RoboHydraHeadStatic = heads.RoboHydraHeadStatic,
     apiPrefix           = "/path/to/api";
 
-exports.getBodyParts = function(config) {
+exports.getBodyParts = function(config, modules) {
     return {
         heads: [
             new RoboHydraHeadStatic({
@@ -26,6 +26,7 @@ exports.getBodyParts = function(config) {
             new RoboHydraHead({
                 path: apiPrefix + '/upload/',
                 handler: function(req, res, next) {
+                    modules.assert.equal(req.method, "POST", "Upload resource supports only POST")
                     res.end()
                 }
             })
