@@ -91,26 +91,25 @@ And response:
         "description": "My awesome photos",
         "status": "pending", 
         "title": "test",
-        "token": [
-            "ASIAIBCURANIDXZJ2XYQ",
-            "5cqp0qsQbtMO13HsJ5bh1DzpY0kAX8brL+I/ZZ8Z",
-            "AQoDYXdzE...TGVW6ghd68B5czR9T51svX3rkzzhFtINn/xpEF",
-            "2013-09-12T14:21:29Z",
-            "042584473589:stage17"
+        "token_access_key": "ASIAIBCURANIDXZJ2XYQ",
+        "token_secret_key": "5cqp0qsQbtMO13HsJ5bh1DzpY0kAX8brL+I/ZZ8Z",
+        "token_session": "AQoDYXdzE...TGVW6ghd68B5czR9T51svX3rkzzhFtINn/xpEF",
+        "token_expiration": "2013-09-12T14:21:29Z",
+        "token_uid": "stage1573"
         ]
     }
 
     
 /upload/ will return the upload operation `id` ("1573" in this example). You will need this identifier throughout the upload process.
 
-Using the information in the response the client can then begin uploading to S3: in particular the `bucket`, `prefix` and `token` values are necessary for:
+Using the information in the response the client can then begin uploading to S3: in particular the `bucket`, `prefix` and `token_*` values are necessary for:
 
 * establishing a connection to S3 using:
-    - `token[0]` as the access key,
-    - `token[1]` as the API secret, and
-    - `token[2]` as the secure token.
+    - `token_access_key` as the access key,
+    - `token_secret_key` as the API secret, and
+    - `token_session` as the secure token.
 * determining the destination bucket (JSON key `bucket`) and key prefix by (JSON key `prefix`).
-* determining the expiration time and date of the token (JSON key `token[3]`).
+* determining the expiration time and date of the token (JSON key `token_expiration`).
 
 For example, in the example response listed above the client would upload the archive to the S3 URL `s3://lastage/upload/1573/` using the access key and secret in `token`. It will also renew the token before 2:21 PM UTC on the 12th of September.
 
