@@ -5,6 +5,7 @@ from lacli.decorators import cached_property, with_api_response
 
 import os
 import requests
+import json
 
 
 API_URL = 'http://stage.longaccess.com/api/v1/'
@@ -33,9 +34,15 @@ class Api(BaseTvm):
 
     @with_api_response
     def _post(self, url, data=None):
-        return requests.post(url, data)
+        headers = {}
+        if data is not None:
+            headers['content-type'] = 'application/json'
+        return requests.post(url, headers=headers, data=data)
 
     def get_upload_token(self, uid=None, secs=3600):
         token_url = self.endpoints['upload']
         getLogger().debug("requesting token from {}".format(token_url))
-        return self._post(token_url)
+        return self._post(token_url, data=json.dumps({
+            'title': 'test',
+            'description': 'foobar',
+        }))

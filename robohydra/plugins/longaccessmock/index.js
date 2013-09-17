@@ -27,7 +27,26 @@ exports.getBodyParts = function(config, modules) {
                 path: apiPrefix + '/upload/',
                 handler: function(req, res, next) {
                     modules.assert.equal(req.method, "POST", "Upload resource supports only POST")
-                    res.end()
+                    modules.assert.ok("content-type" in req.headers, "client didn't send content-type")
+                    modules.assert.equal(req.headers['content-type'], 'application/json')
+                    content = JSON.parse(req.rawBody)
+                    modules.assert.ok("title" in content)
+                    modules.assert.ok("description" in content)
+                    modules.assert.ok("capsule" in content)
+                    modules.assert.ok("size" in content)
+                    res.statusCode='200';
+                    res.write(JSON.stringify({
+                        id: 1,
+                        resource_uri: '/path/to/upload/1',
+                        token_access_key: '123123',
+                        token_secret_key: '123123',
+                        token_session: '123123',
+                        token_expiration: '123123',
+                        token_uid: '123123',
+                        bucket: 'lastage',
+                        prefix: 'foobar',
+                    }));
+                    res.end(); 
                 }
             })
         ],

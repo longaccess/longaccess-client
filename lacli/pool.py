@@ -21,11 +21,11 @@ progress = Progress()
 
 class MPConnection(object):
     def __init__(self, token, bucket='lastage', grace=1200):
-        self.accesskey = token[0]
-        self.secret = token[1]
-        self.sectoken = token[2]
-        self.expiration = token[3]
-        self.uid = token[4]
+        self.accesskey = token['token_access_key']
+        self.secret = token['token_secret_key']
+        self.sectoken = token['token_session']
+        self.expiration = token['token_expiration']
+        self.uid = token['token_uid']
         self.bucket = bucket
         self.grace = grace
         self.conn = None
