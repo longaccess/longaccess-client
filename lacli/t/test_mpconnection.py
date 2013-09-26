@@ -13,6 +13,15 @@ class MPConnectionTest(TestCase):
             'token_uid': '',
         }
 
+    def setUp(self):
+        self.s3 = mock_s3()
+        self.s3.start()
+        super(MPConnectionTest, self).setUp()
+
+    def tearDown(self):
+        self.s3.stop()
+        super(MPConnectionTest, self).tearDown()
+
     def _makeit(self, *args, **kw):
         from lacli.pool import MPConnection
         return MPConnection(*args,  **kw)
@@ -20,7 +29,6 @@ class MPConnectionTest(TestCase):
     def test_mpconnection(self):
         assert self._makeit(self._token)
 
-    @mock_s3
     def test_mpconnection_nouid(self):
         token = self._token
         token['token_uid'] = None
