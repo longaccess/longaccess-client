@@ -10,3 +10,4 @@ wsgiref==0.1.2
 pexpect==2.4
 requests==1.2.3
 grip==1.2.0
+moto==0.2.9
