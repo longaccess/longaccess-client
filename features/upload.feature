@@ -4,6 +4,7 @@ Feature: upload command
         Given the home directory is "/tmp/test"
         And the mock API "longaccessmock"
         And the environment variable "LA_API_URL" is "{api_url}path/to/api"
+        And an S3 bucket named "lastage"
 
     Scenario: I run the command with no arguments
         When I run console script "laput"
