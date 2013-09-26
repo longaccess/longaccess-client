@@ -7,6 +7,8 @@ class RoboHydraTest(object):
     def __init__(self, name, base):
         self.name = name
         self.base = base + "robohydra-admin/tests/"
+        self.session = requests.Session()
+        self.session.headers['connection'] = 'Close'
 
     def start(self):
         self.action('start')
@@ -16,13 +18,16 @@ class RoboHydraTest(object):
 
     def action(self, act):
         url = self.base + self.name
-        requests.post(url, data={'action': act})
+
+        self.session.post(url, data={'action': act})
 
 
 class RoboHydra(MockRestApi):
 
     def __init__(self, *args, **kwargs):
         self.tests = {}
+        self.session = requests.Session()
+        self.session.headers['connection'] = 'Close'
         super(RoboHydra, self).__init__(*args, **kwargs)
 
     def test(self, name):
@@ -34,7 +39,7 @@ class RoboHydra(MockRestApi):
 
     def results(self):
         url = self.url() + "robohydra-admin/tests/results.json"
-        result = requests.get(url)
+        result = self.session.get(url)
         return result.json()
 
     def close(self):
