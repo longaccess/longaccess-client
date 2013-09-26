@@ -45,4 +45,6 @@ class Api(BaseTvm):
         return self._post(token_url, data=json.dumps({
             'title': 'test',
             'description': 'foobar',
+            'capsule': '',
+            'size': '',
         }))
