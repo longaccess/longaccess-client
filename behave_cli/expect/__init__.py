@@ -23,3 +23,8 @@ def teardown(context):
     context.child = None
     context.children = {}
     context.args = None
+
+
+def python_cmd(module, func, args):
+    call_stmt = "from {m} import {f}; {f}();".format(m=module, f=func)
+    return "python -c '{c}' {a}".format(c=call_stmt, a=args)

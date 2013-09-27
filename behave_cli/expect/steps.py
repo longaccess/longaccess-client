@@ -1,4 +1,4 @@
-from . import expected_text
+from . import expected_text, python_cmd
 from behave import step
 from behave_cli.files.file import filename_vars
 from behave_cli.vars import format_vars
@@ -34,16 +34,17 @@ def run_console_script(context, entry):
         if p.name == entry:
             e = p
     assert e
-    if entry is not None:
-        run_named_command(
-            context,
-            "python -c 'from {m} import {f}; {f}()' {a}".format(
-                m=e.module_name,
-                f=e.attrs[0],
-                a=(context.args or ''),
-                ),
-            ''
-            )
+    module = e.module_name
+    func = e.attrs[0]
+    run_named_command(
+        context,
+        python_cmd(
+            module,
+            func,
+            (context.args or '')
+        ),
+        ''
+        )
 
 
 @step(u'I run "{command}"')
