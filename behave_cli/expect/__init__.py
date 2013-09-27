@@ -26,5 +26,23 @@ def teardown(context):
 
 
 def python_cmd(module, func, args):
+    setup_stmt = '''
+try:
+    from features.steps import mp_setup
+    mp_setup()
+except ImportError:
+    pass
+'''
+    teardown_stmt = '''
+try:
+    from features.steps import mp_teardown
+    mp_teardown()
+except ImportError:
+    pass
+'''
     call_stmt = "from {m} import {f}; {f}();".format(m=module, f=func)
-    return "python -c '{c}' {a}".format(c=call_stmt, a=args)
+    return "python -c '{s}{c}' {a}".format(
+        s=setup_stmt,
+        c=call_stmt,
+        a=args,
+        t=teardown_stmt)
