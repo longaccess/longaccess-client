@@ -8,7 +8,6 @@ class RoboHydraTest(object):
         self.name = name
         self.base = base + "robohydra-admin/tests/"
         self.session = requests.Session()
-        self.session.headers['connection'] = 'Close'
 
     def start(self):
         self.action('start')
@@ -27,7 +26,6 @@ class RoboHydra(MockRestApi):
     def __init__(self, *args, **kwargs):
         self.tests = {}
         self.session = requests.Session()
-        self.session.headers['connection'] = 'Close'
         super(RoboHydra, self).__init__(*args, **kwargs)
 
     def test(self, name):
