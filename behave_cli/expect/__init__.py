@@ -27,16 +27,18 @@ def teardown(context):
 
 def python_cmd(module, func, args):
     setup_stmt = '''
+import mock
+ctx = mock.Mock()
 try:
     from features.steps import mp_setup
-    mp_setup()
+    mp_setup(ctx)
 except ImportError:
     pass
 '''
     teardown_stmt = '''
 try:
     from features.steps import mp_teardown
-    mp_teardown()
+    mp_teardown(ctx)
 except ImportError:
     pass
 '''
