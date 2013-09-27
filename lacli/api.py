@@ -18,6 +18,7 @@ class Api(BaseTvm):
             self.url = os.getenv('LA_API_URL')
         if self.url is None:
             self.url = API_URL
+        self.session = requests.Session()
 
     @cached_property
     def root(self):
@@ -30,14 +31,14 @@ class Api(BaseTvm):
 
     @with_api_response
     def _get(self, url):
-        return requests.get(url)
+        return self.session.get(url)
 
     @with_api_response
     def _post(self, url, data=None):
         headers = {}
         if data is not None:
             headers['content-type'] = 'application/json'
-        return requests.post(url, headers=headers, data=data)
+        return self.session.post(url, headers=headers, data=data)
 
     def get_upload_token(self, uid=None, secs=3600):
         token_url = self.endpoints['upload']
