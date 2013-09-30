@@ -6,7 +6,7 @@ import dateutil.tz
 import datetime
 import math
 from lacli.log import getLogger
-from boto.s3.connection import S3Connection
+from boto import connect_s3
 from boto.utils import compute_md5
 from filechunkio import FileChunkIO
 
@@ -34,9 +34,10 @@ class MPConnection(object):
 
     def getconnection(self):
         if self.conn is None:
-            self.conn = S3Connection(self.accesskey,
-                                     self.secret,
-                                     security_token=self.sectoken)
+            self.conn = connect_s3(
+                aws_access_key_id=self.accesskey,
+                aws_secret_access_key=self.secret,
+                security_token=self.sectoken)
         return self.conn
 
     def getbucket(self):
