@@ -10,5 +10,6 @@ wsgiref==0.1.2
 pexpect==2.4
 requests==2.0.0
 grip==1.2.0
+-e git+https://github.com/kouk/HTTPretty.git@fix-100#egg=httpretty
 -e git+https://github.com/kouk/moto.git#egg=moto
 mock==1.0.1
