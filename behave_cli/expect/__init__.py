@@ -10,7 +10,7 @@ def expected_text(child, text):
 
 
 def setup(context):
-    context.environ = os.environ.copy()
+    context.environ = {}
     context.child = None
     context.children = {}
     context.cwd = os.getcwd()
@@ -19,32 +19,8 @@ def setup(context):
 
 def teardown(context):
     for child in context.children.values():
+        child.__proc.join()
         child.close()
     context.child = None
     context.children = {}
     context.args = None
-
-
-def python_cmd(module, func, args):
-    setup_stmt = '''
-import mock
-ctx = mock.Mock()
-try:
-    from features.steps import mp_setup
-    mp_setup(ctx)
-except ImportError:
-    pass
-'''
-    teardown_stmt = '''
-try:
-    from features.steps import mp_teardown
-    mp_teardown(ctx)
-except ImportError:
-    pass
-'''
-    call_stmt = "from {m} import {f}; {f}();".format(m=module, f=func)
-    return "python -c '{s}{c}' {a}".format(
-        s=setup_stmt,
-        c=call_stmt,
-        a=args,
-        t=teardown_stmt)

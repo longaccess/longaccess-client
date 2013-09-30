@@ -1,12 +1,17 @@
-from . import expected_text, python_cmd
+from . import expected_text
 from behave import step
 from behave_cli.files.file import filename_vars
 from behave_cli.vars import format_vars
 from behave_cli.api import api_vars
+from multiprocessing import Process
+from importlib import import_module
 
 import os
 import pexpect
+import fdpexpect
 import pkg_resources
+import sys
+import shlex
 
 
 @step(u'the environment variable "{name}" is "{value}"')
@@ -29,22 +34,43 @@ def cli_args(context, args):
 
 @step(u'I run console script "{entry}"')
 def run_console_script(context, entry):
+    logfile = None
+    if hasattr(context, 'stdout_capture'):
+        logfile = context.stdout_capture
+
     e = None
     for p in pkg_resources.iter_entry_points(group='console_scripts'):
         if p.name == entry:
             e = p
     assert e
     module = e.module_name
-    func = e.attrs[0]
-    run_named_command(
-        context,
-        python_cmd(
-            module,
-            func,
-            (context.args or '')
-        ),
-        ''
-        )
+    target = e.attrs[0]
+
+    def run_script(pipe, ctx):
+        sys.stdout = os.fdopen(pipe, "w")
+        sys.stderr = os.fdopen(pipe, "w")
+
+        try:
+            from features.steps import mp_setup
+            mp_setup(ctx)
+        except ImportError:
+            pass
+        for name, value in ctx.environ.iteritems():
+            os.environ[name] = value
+        os.chdir(ctx.cwd)
+        sys.argv = ['-']
+        if ctx.args:
+            sys.argv += shlex.split(ctx.args)
+        getattr(import_module(module), target)()
+
+    me, pipe = os.pipe()
+    proc = Process(target=run_script, args=(pipe, context))
+    proc.start()
+
+    context.child = fdpexpect.fdspawn(me, logfile=logfile)
+    context.child.__proc = proc
+    context.child.__pipe = me
+    context.children[entry] = context.child
 
 
 @step(u'I run "{command}"')
