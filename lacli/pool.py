@@ -66,6 +66,8 @@ class File(object):
         self.size = os.path.getsize(self.path)-self.skip
         self.chunk = max(int(self.size/100), self.maxchunk)
         self.chunks = int(math.ceil(self.size/self.chunk))
+        if self.chunks == 0:
+            self.chunks = 1
 
     def chunkstart(self, num):
         return self.skip + num * self.chunk
