@@ -14,6 +14,7 @@ def setup(context):
     context.moto.start()
     context.patcher = patch('requests.Session', PatchedSession)
     context.patcher.start()
+    context.buckets = []
 
 
 def teardown(context):

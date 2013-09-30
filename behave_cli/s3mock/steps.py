@@ -10,3 +10,4 @@ def s3bucket_named(context, name):
     boto_config.set('Boto', 'debug', '0')
     boto = connect_s3()
     boto.create_bucket(name)
+    context.buckets.append(name)
