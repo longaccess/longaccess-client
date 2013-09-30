@@ -35,13 +35,16 @@ exports.getBodyParts = function(config, modules) {
                     modules.assert.ok("capsule" in content)
                     modules.assert.ok("size" in content)
                     res.statusCode='200';
+                    
+                    date = new Date()
+                    date.setTime(date.getTime()+(60*60*1000))
                     res.write(JSON.stringify({
                         id: 1,
                         resource_uri: '/path/to/upload/1',
                         token_access_key: '123123',
                         token_secret_key: '123123',
                         token_session: '123123',
-                        token_expiration: '123123',
+                        token_expiration: date.toISOString(),
                         token_uid: '123123',
                         bucket: 'lastage',
                         prefix: 'foobar',
