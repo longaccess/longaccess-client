@@ -31,7 +31,7 @@ def main(args=sys.argv[1:]):
     setupLogging(int(options['--debug']))
     session = Session(
         uid=options['--user'],
-        pwd=options['--pass'],
+        pwd=options['--password'],
         secs=options['--duration'],
         bucket=options['--bucket'],
         debug=int(options['--debug']),
