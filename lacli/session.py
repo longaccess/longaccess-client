@@ -12,7 +12,7 @@ class Session(object):
                  api=None):
         self.uid = uid
         self.pwd = pwd
-        self.secs = 3600
+        self.secs = secs
         try:
             self.nprocs = int(nprocs)
         except ValueError:
