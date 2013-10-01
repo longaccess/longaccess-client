@@ -1,5 +1,6 @@
 from testtools import TestCase
 from mock import Mock
+import json
 
 
 class ApiTest(TestCase):
@@ -19,7 +20,7 @@ class ApiTest(TestCase):
 
     def _makejson(self, json, **kwargs):
         mattr = {
-            'json.return_value': json,
+            'json.side_effect': json,
             'raise_for_status': Mock(**kwargs),
         }
         return self._makesession(Mock(**mattr))
@@ -28,21 +29,39 @@ class ApiTest(TestCase):
         assert self._makeit()
 
     def test_api_root(self):
-        s = self._makejson('lala')
+        r = json.loads(LA_ENDPOINTS_RESPONSE)
+        s = self._makejson([r])
         api = self._makeit(url="http://baz.com/", session=s)
-        self.assertEqual("lala", api.root)
+        self.assertEqual(r, api.root)
         s.get.assert_called_with("http://baz.com/")
 
     def test_capsules(self):
-        mattr = {
-            'json.return_value': LA_CAPSULES_RESPONSE,
-            'raise_for_status': None,
-        }
-        mattr = {'get.return_value': Mock(**mattr)}
-        s = Mock(**mattr)
-        api = self._makeit(url="http://baz.com", session=s)
+        r = map(json.loads, [LA_ENDPOINTS_RESPONSE, LA_CAPSULES_RESPONSE])
+        s = self._makejson(r)
+        api = self._makeit(url="http://baz.com/", session=s)
         capsules = api.get_capsules()
         self.assertEqual(len(capsules), 2)
+
+
+LA_ENDPOINTS_RESPONSE = """{
+  "account": {
+     "list_endpoint": "/api/v1/account/",
+     "schema": "/api/v1/account/schema/"
+  },
+  "archive": {
+     "list_endpoint": "/api/v1/archive/",
+     "schema": "/api/v1/archive/schema/"
+  },
+  "capsule": {
+     "list_endpoint": "/api/v1/capsule/",
+     "schema": "/api/v1/capsule/schema/"
+  },
+  "upload": {
+     "list_endpoint": "/api/v1/upload/",
+     "schema": "/api/v1/upload/schema/"
+  }
+}
+"""
 
 
 LA_CAPSULES_RESPONSE = """{
