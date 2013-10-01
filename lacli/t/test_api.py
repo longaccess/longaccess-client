@@ -35,6 +35,15 @@ class ApiTest(TestCase):
         self.assertEqual(r, api.root)
         s.get.assert_called_with("http://baz.com/")
 
+    def test_no_capsules(self):
+        caps = json.loads(LA_CAPSULES_RESPONSE)
+        caps['objects'] = []
+        caps['meta']['total_count'] = 0
+        s = self._makejson([json.loads(LA_ENDPOINTS_RESPONSE), caps])
+        api = self._makeit(url="http://baz.com/", session=s)
+        capsules = api.get_capsules()
+        self.assertEqual(len(capsules), 0)
+
     def test_capsules(self):
         r = map(json.loads, [LA_ENDPOINTS_RESPONSE, LA_CAPSULES_RESPONSE])
         s = self._makejson(r)
@@ -62,7 +71,6 @@ LA_ENDPOINTS_RESPONSE = """{
   }
 }
 """
-
 
 LA_CAPSULES_RESPONSE = """{
   "meta": {
