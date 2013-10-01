@@ -56,4 +56,4 @@ class Api(BaseTvm):
 
     def get_capsules(self, uid=None, pwd=None):
         capsules_url = self.endpoints['capsule']
-        return self._get(capsules_url)
+        return self._get(capsules_url)['objects']
