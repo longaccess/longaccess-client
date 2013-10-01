@@ -30,3 +30,12 @@ Feature: upload command
         And the command line arguments "put {foo}"
         When I run console script "lacli"
         Then I see "done"
+
+    Scenario: I upload a small file
+        Given a file "foo" with contents
+        """
+            The quick brown fox, ah whatever.
+        """
+        And the command line arguments "put {foo}"
+        When I run console script "lacli"
+        Then I see "done"
