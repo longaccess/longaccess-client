@@ -44,7 +44,7 @@ class Api(BaseTvm):
             headers['content-type'] = 'application/json'
         return self.session.post(url, headers=headers, data=data)
 
-    def get_upload_token(self, uid=None, secs=3600):
+    def get_upload_token(self, secs=3600):
         token_url = self.endpoints['upload']
         getLogger().debug("requesting token from {}".format(token_url))
         return self._post(token_url, data=json.dumps({
@@ -54,6 +54,6 @@ class Api(BaseTvm):
             'size': '',
         }))
 
-    def get_capsules(self, uid=None, pwd=None):
+    def get_capsules(self):
         capsules_url = self.endpoints['capsule']
         return self._get(capsules_url)['objects']

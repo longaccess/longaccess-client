@@ -7,11 +7,8 @@ class NoCredentialsException(Exception):
 
 class Session(object):
 
-    def __init__(self, uid=None, pwd=None, secs=3600, nprocs='auto',
-                 bucket='lastage', retries=0, debug=0,
-                 api=None):
-        self.uid = uid
-        self.pwd = pwd
+    def __init__(self, secs=3600, nprocs='auto',
+                 bucket='lastage', retries=0, api=None):
         self.secs = secs
         try:
             self.nprocs = int(nprocs)
@@ -24,8 +21,7 @@ class Session(object):
 
     def tokens(self):
         while True:
-            yield self.api.get_upload_token(uid=self.uid,
-                                            secs=self.secs)
+            yield self.api.get_upload_token(secs=self.secs)
 
     def capsules(self):
-        return self.api.get_capsules(uid=self.uid, pwd=self.pwd)
+        return self.api.get_capsules()

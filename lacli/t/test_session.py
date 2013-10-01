@@ -26,10 +26,10 @@ class SessionTest(TestCase):
         for token in range(3):
             self.assertEqual(token, next(tokens))
         self.assertEqual(3, api.get_upload_token.call_count)
-        api.get_upload_token.assert_called_with(uid='foo', secs=0)
+        api.get_upload_token.assert_called_with(secs=0)
 
     def test_no_capsules(self):
         mattr = {'get_capsules.return_value': []}
         api = Mock(**mattr)
-        session = self._makeit(uid='foo', pwd='bar', api=api)
+        session = self._makeit(api=api)
         self.assertEqual([], session.capsules())
