@@ -34,3 +34,4 @@ spell.*
 # robohydra
 node_modules
 robohydra.log
+robohydra/plugins/longaccessmock/tokens.js
