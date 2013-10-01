@@ -178,7 +178,6 @@ class MPUpload(object):
             if len(successfull) < self.source.chunks:
                 source = File(self.source.path,
                               self.source.chunkstart(len(successfull)))
-            raise Exception("lala")
             return (self.key, result.etag, source)
         else:
             raise UploadEmptyError()
