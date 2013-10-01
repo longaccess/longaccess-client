@@ -40,7 +40,7 @@ def run_console_script(context, entry):
     for p in pkg_resources.iter_entry_points(group='console_scripts'):
         if p.name == entry:
             e = p
-    assert e
+    assert e, "Console script has entry point in setup.py"
     module = e.module_name
     target = e.attrs[0]
 
