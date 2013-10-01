@@ -1,5 +1,3 @@
-import itertools
-
 from testtools import TestCase
 from mock import Mock
 
