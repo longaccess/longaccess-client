@@ -54,7 +54,6 @@ def setupLogging(level, logfile=None, queue=False):
             },
             'root': {
                 'level': level,
-                'handlers': ['console'],
             },
         })
     else:
@@ -93,12 +92,12 @@ def logToQueue(queue):
                 'handlers': ['queue']
             },
             'lacli': {
+                'level': 'DEBUG',
                 'handlers': ['queue']
             },
         },
         'root': {
             'level': 'DEBUG',
-            'handlers': ['queue']
         },
     })
 
