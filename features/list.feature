@@ -9,12 +9,12 @@ Feature: list capsules command
 
     Scenario: I list capsules
         Given I store my credentials in "{homedir}/.netrc"
-        And the command line arguments "-l"
-        When I run console script "laput"
+        And the command line arguments "list"
+        When I run console script "lacli"
         Then I see "Available capsules:"
 
     Scenario: I list capsules without netrc auth
-        Given the command line arguments "-l -u {username} -p {password}"
-        When I run console script "laput"
+        Given the command line arguments "list -u {username} -p {password}"
+        When I run console script "lacli"
         Then I see "Available capsules:"
 
