@@ -42,6 +42,8 @@ def main(args=sys.argv[1:]):
     if options['put']:
         for fname in options['<filename>']:
             cli.onecmd('put {}'.format(fname))
+    elif options['list']:
+        cli.onecmd('list')
     else:
         cli.cmdloop()
 

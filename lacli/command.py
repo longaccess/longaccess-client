@@ -58,5 +58,10 @@ class LaCommand(cmd.Cmd):
                         s.upload(fname, q, p)
                     print ''
 
+    def do_list(self, line):
+        """List capsules in LA
+        """
+        print "Available capsules:"
+
     def complete_put(self, text, line, begidx, endidx):
         return [os.path.basename(x) for x in glob.glob('{}*'.format(line[4:]))]
