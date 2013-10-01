@@ -58,13 +58,13 @@ class MPConnection(object):
 
 
 class File(object):
-    maxchunk = 5242880
+    minchunk = 5242880
 
     def __init__(self, path, skip=0):
         self.path = path
         self.skip = 0
         self.size = os.path.getsize(self.path)-self.skip
-        self.chunk = max(int(self.size/100), self.maxchunk)
+        self.chunk = max(int(self.size/100), self.minchunk)
         self.chunks = int(math.ceil(self.size/self.chunk))
         if self.chunks == 0:
             self.chunks = 1
