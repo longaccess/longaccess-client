@@ -26,3 +26,6 @@ class Session(object):
         while True:
             yield self.api.get_upload_token(uid=self.uid,
                                             secs=self.secs)
+
+    def capsules(self):
+        return []

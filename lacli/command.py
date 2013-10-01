@@ -66,7 +66,12 @@ class LaCommand(cmd.Cmd):
     def do_list(self, line):
         """List capsules in LA
         """
-        print "Available capsules:"
+        capsules = self.session.capsules()
+
+        if len(capsules):
+            print "Available capsules:"
+        else:
+            print "No available capsules."
 
     def complete_put(self, text, line, begidx, endidx):
         return [os.path.basename(x) for x in glob.glob('{}*'.format(line[4:]))]
