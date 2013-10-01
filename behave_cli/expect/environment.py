@@ -1,8 +1,18 @@
 from . import setup, teardown
 
 
+def expect_vars(context):
+    if hasattr(context, 'environ'):
+        if 'HOME' in context.environ:
+            return {'homedir': context.environ['HOME']}
+    return {'homedir': None}
+
+
 def before_all(context):
     setup(context)
+    if not hasattr(context, 'format_vars'):
+        context.format_vars = []
+    context.format_vars.append(expect_vars)
 
 
 def after_all(context):
