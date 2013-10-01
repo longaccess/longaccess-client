@@ -6,6 +6,11 @@ Feature: upload command
         And the environment variable "LA_API_URL" is "{api_url}path/to/api"
         And an S3 bucket named "lastage"
 
+    Scenario: I try an upload without files
+        Given the command line arguments "put"
+        When I run console script "lacli"
+        Then I see "Usage:"
+
     Scenario: I upload an empty file to an incorrect API url
         Given an empty file "foo"
         And the command line arguments "put {foo}"

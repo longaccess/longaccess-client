@@ -2,7 +2,7 @@
 """Upload a file to Long Access
 
 Usage: lacli put [-d <sec>] [-D <level>] [-u <user>] [-p <pass>]
-            [-b <bucket> ] [-n <np>] [<filename>...]
+            [-b <bucket> ] [-n <np>] <filename>...
        lacli list [-u <user>] [-p <pass>]
        lacli [-u <user>] [-p <pass>]
        lacli -h, --help
@@ -39,7 +39,7 @@ def main(args=sys.argv[1:]):
         debug=int(options['--debug']),
         nprocs=options['--procs'])
     cli = LaCommand(session, debug=int(options['--debug']))
-    if len(options['<filename>']) > 0:
+    if options['put']:
         for fname in options['<filename>']:
             cli.onecmd('put {}'.format(fname))
     else:
