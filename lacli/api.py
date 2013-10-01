@@ -15,9 +15,10 @@ class Api(BaseTvm):
 
     def __init__(self, url=None, session=None):
         if url is None:
-            self.url = os.getenv('LA_API_URL')
-        if self.url is None:
-            self.url = API_URL
+            url = os.getenv('LA_API_URL')
+        if url is None:
+            url = API_URL
+        self.url = url
         if session is None:
             self.session = requests.Session()
         else:
