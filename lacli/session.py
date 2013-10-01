@@ -28,4 +28,4 @@ class Session(object):
                                             secs=self.secs)
 
     def capsules(self):
-        return []
+        return self.api.get_capsules(uid=self.uid, pwd=self.pwd)

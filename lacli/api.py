@@ -49,3 +49,6 @@ class Api(BaseTvm):
             'capsule': '',
             'size': '',
         }))
+
+    def get_capsules(self, uid=None, pwd=None):
+        return []
