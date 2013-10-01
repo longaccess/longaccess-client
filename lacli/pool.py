@@ -7,6 +7,7 @@ import math
 from lacli.log import getLogger
 from boto import connect_s3
 from boto.utils import compute_md5
+from boto.s3.key import Key
 from filechunkio import FileChunkIO
 
 
@@ -41,6 +42,9 @@ class MPConnection(object):
 
     def getbucket(self):
         return self.getconnection().get_bucket(self.bucket)
+
+    def newkey(self, key):
+        return Key(self.getconnection().get_bucket(self.bucket), key)
 
     def timeout(self):
         """ return total number of seconds till
@@ -140,33 +144,42 @@ class MPUpload(object):
     def _getupload(self):
         bucket = self.connection.getbucket()
 
-        if self.upload_id is None:
-            return bucket.initiate_multipart_upload(self.key)
+        if self.source.chunks > 1:
+            if self.upload_id is None:
+                return bucket.initiate_multipart_upload(self.key)
 
-        for upload in bucket.get_all_multipart_uploads():
-            if self.upload_id == upload.id:
-                return upload
+            for upload in bucket.get_all_multipart_uploads():
+                if self.upload_id == upload.id:
+                    return upload
+        else:
+            return self.connection.newkey(self.key)
 
     def __enter__(self):
         self.upload = self._getupload()
-        self.upload_id = self.upload.id
-        getLogger().debug("processing upload with id: %s", self.upload_id)
+        if not hasattr(self.upload, 'set_contents_from_file'):
+            self.upload_id = self.upload.id
+            getLogger().debug("multipart upload with id: %s", self.upload_id)
         return self
 
     def __exit__(self, type, value, traceback):
+        if hasattr(self.upload, 'set_contents_from_file'):
+            return
         if len(self.results) == 0:
             self.upload.cancel_upload()
         # set key acl
 
     def combineparts(self, successfull):
         if len(successfull) > 0:
-            result = self.upload.complete_upload()
+            if hasattr(self.upload, 'complete_upload'):
+                result = self.upload.complete_upload()
+            else:
+                result = self.upload
             source = None
             if len(successfull) < self.source.chunks:
                 source = File(self.source.path,
                               self.source.chunkstart(len(successfull)))
-
-            return (result.key_name, result.etag, source)
+            raise Exception("lala")
+            return (self.key, result.etag, source)
         else:
             raise UploadEmptyError()
 
@@ -184,16 +197,24 @@ class MPUpload(object):
                         progress.queue.put({'part': seq,
                                             'tx': tx,
                                             'total': total})
-                    self.upload.upload_part_from_file(
-                        fp=part,
-                        part_num=seq+1,
-                        cb=cb,
-                        num_cb=100,
-                        size=part.bytes,
-                        # although not necessary, boto does it,
-                        # good to know how:
-                        md5=part.hash,
-                    )
+                    if hasattr(self.upload, 'upload_part_from_file'):
+                        self.upload.upload_part_from_file(
+                            fp=part,
+                            part_num=seq+1,
+                            cb=cb,
+                            num_cb=100,
+                            size=part.bytes,
+                            # although not necessary, boto does it,
+                            # good to know how:
+                            md5=part.hash,
+                        )
+                    else:
+                        self.upload.set_contents_from_file(
+                            fp=part,
+                            cb=cb,
+                            num_cb=100,
+                            md5=part.hash,
+                        )
                 except Exception as exc:
                     getLogger().debug("exception while uploading part %d",
                                       seq, exc_info=True)
