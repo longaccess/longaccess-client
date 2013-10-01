@@ -1,9 +1,11 @@
 #!/home/kouk/code/bototest/bin/python
 """Upload a file to Long Access
 
-Usage: laput.py [-d <sec>] [-D <level>] [-u <user>] [-p <pass>]
-            [-b <bucket> ] [-np <np>] [<filename>...]
-       laput.py -h, --help
+Usage: lacli put [-d <sec>] [-D <level>] [-u <user>] [-p <pass>]
+            [-b <bucket> ] [-n <np>] [<filename>...]
+       lacli list [-u <user>] [-p <pass>]
+       lacli [-u <user>] [-p <pass>]
+       lacli -h, --help
 
 Options:
     -u <user>, --user <user>       user name
@@ -11,7 +13,7 @@ Options:
     -d <sec>, --duration <sec>     duration of token in seconds [default: 3600]
     -D <level>, --debug <level>    debugging level, from 0 to 2 [default: 0]
     -b <bucket>, --bucket <bucket> bucket to upload to [default: lastage]
-    -np <np>, --procs <np>         number of processes [default: auto]
+    -n <np>, --procs <np>         number of processes [default: auto]
 
 """
 
