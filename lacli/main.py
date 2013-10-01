@@ -1,16 +1,17 @@
 #!/home/kouk/code/bototest/bin/python
 """Upload a file to Long Access
 
-Usage: laput.py [-d <sec>] [-D <level>] [-u <user>]
-            [-b <bucket> ] [-p <np>] [<filename>...]
+Usage: laput.py [-d <sec>] [-D <level>] [-u <user>] [-p <pass>]
+            [-b <bucket> ] [-np <np>] [<filename>...]
        laput.py -h, --help
 
 Options:
-    -u <user>, --user <user>       use a federated user token
+    -u <user>, --user <user>       user name
+    -p <pass>, --password <pass>   user password
     -d <sec>, --duration <sec>     duration of token in seconds [default: 3600]
     -D <level>, --debug <level>    debugging level, from 0 to 2 [default: 0]
     -b <bucket>, --bucket <bucket> bucket to upload to [default: lastage]
-    -p <np>, --procs <np>          number of processes [default: auto]
+    -np <np>, --procs <np>         number of processes [default: auto]
 
 """
 
@@ -30,6 +31,7 @@ def main(args=sys.argv[1:]):
     setupLogging(int(options['--debug']))
     session = Session(
         uid=options['--user'],
+        pwd=options['--pass'],
         secs=options['--duration'],
         bucket=options['--bucket'],
         debug=int(options['--debug']),

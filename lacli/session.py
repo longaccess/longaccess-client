@@ -7,10 +7,11 @@ class NoCredentialsException(Exception):
 
 class Session(object):
 
-    def __init__(self, uid=None, secs=3600, nprocs='auto',
+    def __init__(self, uid=None, pwd=None, secs=3600, nprocs='auto',
                  bucket='lastage', retries=0, debug=0,
                  api=None):
         self.uid = uid
+        self.pwd = pwd
         self.secs = 3600
         try:
             self.nprocs = int(nprocs)
