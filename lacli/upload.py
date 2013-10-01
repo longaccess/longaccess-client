@@ -82,6 +82,7 @@ class Upload(object):
                     if res[2] is None:
                         break
                     source = res[2]  # continue with remaining file
+                    seq += 1
                 except Exception:
                     getLogger().debug("couldn't upload to temporary key",
                                       exc_info=True)
