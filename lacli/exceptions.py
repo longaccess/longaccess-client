@@ -4,3 +4,7 @@ class ApiErrorException(Exception):
 
 class ApiUnavailableException(Exception):
     pass
+
+
+class ApiAuthException(Exception):
+    pass

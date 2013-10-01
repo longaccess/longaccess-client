@@ -1,5 +1,6 @@
 from testtools import TestCase
 from mock import Mock
+from nose.tools import raises
 import json
 
 
@@ -50,6 +51,14 @@ class ApiTest(TestCase):
         api = self._makeit(url="http://baz.com/", session=s)
         capsules = api.get_capsules()
         self.assertEqual(len(capsules), 2)
+
+    def test_unauthorized(self):
+        from requests.exceptions import HTTPError
+        exc = HTTPError(response=Mock(status_code=401))
+        s = self._makejson({}, side_effect=exc)
+        api = self._makeit(url="http://baz.com/", session=s)
+        from lacli.exceptions import ApiAuthException
+        self.assertRaises(ApiAuthException, api.get_capsules)
 
 
 LA_ENDPOINTS_RESPONSE = """{

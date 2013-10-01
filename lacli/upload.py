@@ -24,6 +24,8 @@ class UploadManager(object):
             print "error: server not found"
         elif type is ApiErrorException:
             print "error: the server couldn't fulfill your request"
+        elif type is ApiAuthException:
+            print "error: authentication failed"
         else:
             print "error: unknown"
         getLogger().debug("exception while uploading",

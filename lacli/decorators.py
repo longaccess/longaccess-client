@@ -1,6 +1,7 @@
 from functools import update_wrapper, wraps
 from requests.exceptions import ConnectionError, HTTPError
-from lacli.exceptions import ApiErrorException, ApiUnavailableException
+from lacli.exceptions import (ApiErrorException, ApiAuthException,
+                              ApiUnavailableException)
 
 
 class cached_property(object):
@@ -29,6 +30,8 @@ def with_api_response(f):
         except HTTPError as e:
             if e.response.status_code == 404:
                 raise ApiUnavailableException(e)
+            elif e.response.status_code == 401:
+                raise ApiAuthException(e)
             else:
                 raise ApiErrorException(e)
         except Exception as e:
