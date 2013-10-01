@@ -1,8 +1,6 @@
 from . import expected_text
 from behave import step
-from behave_cli.files.file import filename_vars
-from behave_cli.vars import format_vars
-from behave_cli.api import api_vars
+from behave_cli import format_vars
 from multiprocessing import Process
 from importlib import import_module
 
@@ -15,7 +13,7 @@ import shlex
 
 
 @step(u'the environment variable "{name}" is "{value}"')
-@format_vars(filename_vars, api_vars)
+@format_vars
 def env_var(context, name, value):
     context.environ[name] = value
 
@@ -27,7 +25,7 @@ def home_directory(context, dir):
 
 
 @step(u'the command line arguments "{args}"')
-@format_vars(filename_vars)
+@format_vars
 def cli_args(context, args):
     context.args = args
 
