@@ -13,7 +13,6 @@ setup(version=unicode(__version__),
       test_suite="lacli.t",
       entry_points="""
       [console_scripts]
-      laput = lacli.main:main
-      lacreds = latvm.main:main
+      lacli = lacli.main:main
       """
       )
