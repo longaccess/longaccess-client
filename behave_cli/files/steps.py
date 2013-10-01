@@ -10,3 +10,9 @@ def empty_file(context, name):
     context.file = context.files[name]
     assert os.path.exists(context.file.name), "Path exists"
     assert os.path.isfile(context.file.name), "Path is file"
+
+
+@step(u'a file "{name}" with contents')
+def file_with_content(context, name):
+    empty_file(context, name)
+    context.file.write(context.text)
