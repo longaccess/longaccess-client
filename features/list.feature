@@ -16,12 +16,12 @@ Feature: list capsules command
     Scenario: I list capsules
         Given I store my credentials in "{homedir}/.netrc"
         And the command line arguments "list"
-        And I have 1 capsules
+        And I have 1 capsule
         When I run console script "lacli"
         Then I see "Available capsules:"
 
     Scenario: I list capsules without netrc auth
         Given the command line arguments "list -u {username} -p {password}"
-        And I have 1 capsules
+        And I have 1 capsule
         When I run console script "lacli"
         Then I see "Available capsules:"
