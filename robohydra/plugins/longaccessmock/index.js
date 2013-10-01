@@ -1,6 +1,7 @@
 var heads               = require('robohydra').heads,
     RoboHydraHead       = require("robohydra").heads.RoboHydraHead,
     RoboHydraHeadStatic = heads.RoboHydraHeadStatic,
+    token               = require('./tokens.js').token,
     apiPrefix           = "/path/to/api";
 
 exports.getBodyParts = function(config, modules) {
@@ -38,7 +39,7 @@ exports.getBodyParts = function(config, modules) {
                     
                     date = new Date()
                     date.setTime(date.getTime()+(60*60*1000))
-                    res.write(JSON.stringify({
+                    ret = {
                         id: 1,
                         resource_uri: '/path/to/upload/1',
                         token_access_key: '123123',
@@ -48,7 +49,14 @@ exports.getBodyParts = function(config, modules) {
                         token_uid: '123123',
                         bucket: 'lastage',
                         prefix: 'foobar',
-                    }));
+                    }
+                    if (res.hasOwnProperty('token')) {
+                        for (var attr in res.token) { 
+                            ret[attr] = res.token[attr]; 
+
+                        }
+                    }
+                    res.write(JSON.stringify(ret));
                     res.end(); 
                 }
             })
@@ -59,13 +67,27 @@ exports.getBodyParts = function(config, modules) {
                 heads: [
                     new RoboHydraHead({
                         path: '/.*',
-                    handler: function(req, res) {
-                        res.statusCode = 500;
-                        res.send("500 - (Synthetic) Internal Server Error");
-                    }
+                        handler: function(req, res) {
+                            res.statusCode = 500;
+                            res.send("500 - (Synthetic) Internal Server Error");
+                        }
                     })
                 ]
-            }
+            },
+            realToken: {
+                instructions: "return real AWS token.",
+                heads: [
+                    new RoboHydraHead({
+                        path: '/.*',
+                        handler: function(req, res, next) {
+                            res.token = token;
+                            next(req, res);
+                        }
+                    })
+                ]
+            },
         }
+                        
+                        
     };
 };

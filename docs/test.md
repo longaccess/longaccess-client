@@ -32,4 +32,6 @@ Then you can run the feature tests:
 
     behave
 
+This will run the application under various scenarios, using a mock AWS API and a mock Long Access API. If you want to run the application using the mock Long Access API together with the real AWS API then you cannot simply call `behave`. You must first activate the [`realToken` test in robohydra](http://localhost:3000/robohydra-admin/tests/) and then run something like this:
 
+    env LA_API_URL=http://localhost:3000/path/to/api python -m lacli.main /tmp/file 
