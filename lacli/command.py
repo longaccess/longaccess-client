@@ -9,6 +9,8 @@ from lacli.upload import UploadManager
 
 class progressHandler(object):
     def __init__(self, fname, total):
+        if total == 0:
+            total = 1
         self.bar = ProgressBar(widgets=[
             fname, ' : ', Bar(),
             ' ', ETA(), ' ', FileTransferSpeed()], maxval=total)
@@ -18,8 +20,11 @@ class progressHandler(object):
     def handle(self, msg):
         if len(self.tx) == 0:
             self.bar.start()
-        self.tx[msg['part']] = int(msg['tx'])
-        self.bar.update(sum(self.tx.values()))
+        if hasattr(msg, 'part'):
+            self.tx[msg['part']] = int(msg['tx'])
+            self.bar.update(sum(self.tx.values()))
+        else:
+            self.bar.update(self.total)
 
 
 class LaCommand(cmd.Cmd):
