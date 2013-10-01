@@ -13,6 +13,11 @@ Feature: list capsules command
         When I run console script "lacli"
         Then I see "No available capsules."
 
+    Scenario: I try to list capsules with bad credentials
+        Given the command line arguments "list -u foo -p bar "
+        When I run console script "lacli"
+        Then I see "Authentication failed."
+
     Scenario: I list capsules
         Given I store my credentials in "{homedir}/.netrc"
         And the command line arguments "list"
