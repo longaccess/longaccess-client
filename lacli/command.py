@@ -55,7 +55,7 @@ class LaCommand(cmd.Cmd):
                 with queueOpened(progressHandler(fname,
                                                  os.path.getsize(fname))) as p:
                     with UploadManager(self.session) as s:
-                        s.upload(fname, {'logq': q, 'progq': p})
+                        s.upload(fname, q, p)
                     print ''
 
     def complete_put(self, text, line, begidx, endidx):

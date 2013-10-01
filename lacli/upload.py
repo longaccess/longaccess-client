@@ -65,9 +65,10 @@ class Upload(object):
         if self.poolsize is None:
             self.poolsize = max(mp.cpu_count()-1, 1)
 
-    def upload(self, fname, param={}):
+    def upload(self, fname, logq, progq):
         try:
-            pool = mp.Pool(self.poolsize, initworker, param)
+            initargs = (logq, progq)
+            pool = mp.Pool(self.poolsize, initworker, initargs)
             source = lacli.pool.File(fname)
             keys = []
             seq = 1
