@@ -13,12 +13,15 @@ API_URL = 'http://stage.longaccess.com/api/v1/'
 
 class Api(BaseTvm):
 
-    def __init__(self, url=None):
+    def __init__(self, url=None, session=None):
         if url is None:
             self.url = os.getenv('LA_API_URL')
         if self.url is None:
             self.url = API_URL
-        self.session = requests.Session()
+        if session is None:
+            self.session = requests.Session()
+        else:
+            self.session = session
 
     @cached_property
     def root(self):
