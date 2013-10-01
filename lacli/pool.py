@@ -1,6 +1,5 @@
 from __future__ import division
 import os
-import sys
 import dateutil.parser
 import dateutil.tz
 import datetime
@@ -205,14 +204,6 @@ class MPUpload(object):
                     getLogger().debug("succesfully uploaded %s part %d",
                                       self.source, seq)
                     return seq
-
-    def _progress(self, seq):
-        def cb(tx, total):
-            sys.stdout.write('.')
-            sys.stdout.flush()
-            if tx == total:
-                getLogger().debug("completed part %d", seq)
-        return cb
 
 
 def upload_part(args):
