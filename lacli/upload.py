@@ -17,6 +17,7 @@ class UploadManager(object):
     def __exit__(self, type, value, tb):
         if type is not None:
             return self._handle_error(type)
+        print "\ndone."
 
     def _handle_error(self, type):
         if type is ApiUnavailableException:
@@ -82,9 +83,9 @@ class Upload(object):
                         break
                     source = res[2]  # continue with remaining file
                 except Exception:
-                    getLogger().error("couldn't upload to temporary key",
+                    getLogger().debug("couldn't upload to temporary key",
                                       exc_info=True)
-                    break
+                    raise
             getLogger().debug("uploaded %d temp keys", len(keys))
             for key in keys:
                 getLogger().debug("key: %s (etag: %s)", key[0], key[1])
