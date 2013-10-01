@@ -1,2 +1,6 @@
 from behave import step
-from nose.tools import assert_in
+
+
+@step(u'I have 1 capsule')
+def one_capsule(context):
+    context.mock_api.test('oneCapsule')

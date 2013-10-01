@@ -5,6 +5,15 @@ var heads               = require('robohydra').heads,
     apiPrefix           = "/path/to/api";
 
 exports.getBodyParts = function(config, modules) {
+    function meta(n){
+        return {
+            limit: 20,
+            next: null,
+            offset: 0,
+            previous: null,
+            total_count: n
+        }
+    }
     return {
         heads: [
             new RoboHydraHeadStatic({
@@ -22,6 +31,13 @@ exports.getBodyParts = function(config, modules) {
                         list_endpoint: apiPrefix + "/user/",
                         schema: apiPrefix + "/user/schema/"
                     }
+                }
+            }),
+            new RoboHydraHeadStatic({
+                path: apiPrefix + '/capsule/',
+                content: {
+                    meta: meta(0),
+                    objects: []
                 }
             }),
             new RoboHydraHead({
@@ -86,8 +102,33 @@ exports.getBodyParts = function(config, modules) {
                     })
                 ]
             },
+            oneCapsule: {
+                instructions: "activate 1 capsule.",
+                heads: [
+                    new RoboHydraHeadStatic({
+                        path: apiPrefix + '/capsule/',
+                        content: {
+                            meta: meta(1),
+                            objects: [
+                                {
+                                    created: "2013-06-07T10:45:01",
+                                    id: 3,
+                                    resource_uri: "/api/v1/capsule/3/",
+                                    title: "Photos",
+                                    user: "/api/v1/user/3/"
+                                },
+                                {
+                                    created: "2013-06-07T10:44:38",
+                                    id: 2,
+                                    resource_uri: "/api/v1/capsule/2/",
+                                    title: "Stuff",
+                                    user: "/api/v1/user/2/"
+                                }
+                            ]
+                        }
+                    })
+                ]
+            },
         }
-                        
-                        
     };
 };
