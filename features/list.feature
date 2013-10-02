@@ -14,7 +14,9 @@ Feature: list capsules command
         Then I see "No available capsules."
 
     Scenario: I try to list capsules with bad credentials
-        Given the command line arguments "list -u foo -p bar "
+        Given I store my credentials in "{homedir}/.netrc"
+        And the API authentication is wrong
+        And the command line arguments "list"
         When I run console script "lacli"
         Then I see "Authentication failed."
 
