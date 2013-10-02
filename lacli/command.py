@@ -5,16 +5,17 @@ from progressbar import (ProgressBar, Bar,
                          ETA, FileTransferSpeed)
 from lacli.log import queueOpened, logHandler, getLogger, setupLogging
 from lacli.upload import Upload
+from sys import maxint
 
 
 class progressHandler(object):
-    def __init__(self, fname, total):
-        if total == 0:
-            total = 1
+    def __init__(self, fname):
+        self.total = maxint
+        if os.path.isfile(fname):
+            self.total = (os.path.getsize(fname) or 1)
         self.bar = ProgressBar(widgets=[
             fname, ' : ', Bar(),
-            ' ', ETA(), ' ', FileTransferSpeed()], maxval=total)
-        self.total = total
+            ' ', ETA(), ' ', FileTransferSpeed()], maxval=self.total)
         self.tx = {}
 
     def handle(self, msg):
@@ -58,8 +59,7 @@ class LaCommand(cmd.Cmd):
             print 'File {} not found.'.format(fname)
         else:
             with queueOpened(logHandler('lacli')) as q:
-                with queueOpened(progressHandler(fname,
-                                                 os.path.getsize(fname))) as p:
+                with queueOpened(progressHandler(fname)) as p:
                     try:
                         self.uploader.upload(fname, q, p)
                         print "\ndone."

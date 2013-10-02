@@ -9,6 +9,7 @@ from boto import connect_s3
 from boto.utils import compute_md5
 from boto.s3.key import Key
 from filechunkio import FileChunkIO
+from sys import maxint
 
 
 class Progress(object):
@@ -62,12 +63,17 @@ class MPConnection(object):
 
 class File(object):
     minchunk = 5242880
+    maxchunk = 104857600
 
     def __init__(self, path, skip=0):
         self.path = path
-        self.skip = 0
-        self.size = os.path.getsize(self.path)-self.skip
-        self.chunk = max(int(self.size/100), self.minchunk)
+        size = maxint
+        if os.path.isfile(path):
+            size = os.path.getsize(path)
+        assert size >= skip
+        self.skip = skip
+        self.size = size-skip
+        self.chunk = min(max(int(self.size/100), self.minchunk), self.maxchunk)
         self.chunks = int(math.ceil(self.size/self.chunk))
         if self.chunks == 0:
             self.chunks = 1
