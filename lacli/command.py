@@ -5,7 +5,7 @@ from progressbar import (ProgressBar, Bar,
                          ETA, FileTransferSpeed)
 from lacli.log import queueOpened, logHandler, getLogger, setupLogging
 from lacli.upload import Upload
-from sys import maxint
+from sys import maxint, stderr
 
 
 class progressHandler(object):
@@ -26,6 +26,7 @@ class progressHandler(object):
             self.bar.update(sum(self.tx.values()))
         else:
             self.bar.update(self.total)
+        stderr.flush()
 
 
 class LaCommand(cmd.Cmd):
