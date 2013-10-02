@@ -34,7 +34,7 @@ def initworker(logq, progq):
 
 class Upload(object):
     def __init__(self, session, prefs):
-        self.session = session
+        self.tokens = session.tokens()
         self.prefs = prefs
 
     def upload(self, fname, logq, progq):
@@ -44,25 +44,22 @@ class Upload(object):
             pool = mp.Pool((nprocs or max(mp.cpu_count()-1, 1)),
                            initworker, initargs)
             source = lacli.pool.File(fname)
-            keys = []
+            etags = {}
             seq = 1
-            for token in self.session.tokens():
+            while source is not None:
                 name = "archive-{}".format(seq)
-                conn = lacli.pool.MPConnection(token)
+                conn = lacli.pool.MPConnection(next(self.tokens))
                 try:
-                    res = upload_temp_key(pool.imap, source, conn, name=name)
-                    keys.append((res[0], res[1]))
-                    if res[2] is None:
-                        break
-                    source = res[2]  # continue with remaining file
+                    key, etags[key], source = upload_temp_key(
+                        pool.imap, source, conn, name=name)
                     seq += 1
                 except Exception:
                     getLogger().debug("couldn't upload to temporary key",
                                       exc_info=True)
                     raise
-            getLogger().debug("uploaded %d temp keys", len(keys))
-            for key in keys:
-                getLogger().debug("key: %s (etag: %s)", key[0], key[1])
+            getLogger().debug("uploaded %d temp keys", len(etags))
+            for key, etag in etags.iteritems():
+                getLogger().debug("key: %s (etag: %s)", key, etag)
             # TODO join keys into one key
         except Exception:
             getLogger().debug("exception", exc_info=True)
