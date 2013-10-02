@@ -1,10 +1,9 @@
 def setup(context):
-    context.file = None
     context.files = {}
+    context.dirs = {}
 
 
 def teardown(context):
-    for file in context.files.values():
-        file.close()
-    context.file = None
+    for f in context.files.values():
+        f.close()
     context.files = {}

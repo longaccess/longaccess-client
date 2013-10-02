@@ -5,14 +5,15 @@ from tempfile import NamedTemporaryFile
 
 @step(u'an empty file "{name}"')
 def empty_file(context, name):
-    if name not in context.files:
-        context.files[name] = NamedTemporaryFile()
-    context.file = context.files[name]
-    assert os.path.exists(context.file.name), "Path exists"
-    assert os.path.isfile(context.file.name), "Path is file"
+    assert name not in context.files
+    f = NamedTemporaryFile()
+    assert os.path.exists(f.name), "Path exists"
+    assert os.path.isfile(f.name), "Path is file"
+    context.files[name] = f
 
 
 @step(u'a file "{name}" with contents')
 def file_with_content(context, name):
+    assert name not in context.files
     empty_file(context, name)
-    context.file.write(context.text)
+    context.files[name].write(context.text)
