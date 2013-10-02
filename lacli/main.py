@@ -1,7 +1,7 @@
 #!/home/kouk/code/bototest/bin/python
 """Upload a file to Long Access
 
-Usage: lacli put [-d <sec>] [-D <level>] [-u <user>] [-p <pass>]
+Usage: lacli put [-d <level>] [-u <user>] [-p <pass>]
             [-b <bucket> ] [-n <np>] <filename>...
        lacli list [-u <user>] [-p <pass>]
        lacli [-u <user>] [-p <pass>]
@@ -10,8 +10,7 @@ Usage: lacli put [-d <sec>] [-D <level>] [-u <user>] [-p <pass>]
 Options:
     -u <user>, --user <user>       user name
     -p <pass>, --password <pass>   user password
-    -d <sec>, --duration <sec>     duration of token in seconds [default: 3600]
-    -D <level>, --debug <level>    debugging level, from 0 to 2 [default: 0]
+    -d <level>, --debug <level>    debugging level, from 0 to 2 [default: 0]
     -b <bucket>, --bucket <bucket> bucket to upload to [default: lastage]
     -n <np>, --procs <np>         number of processes [default: auto]
 
@@ -50,7 +49,6 @@ def settings(options):
             'url': os.getenv('LA_API_URL'),
         },
         'upload': {
-            'timeout': options['--duration'],
             'bucket': options['--bucket'],
             'nprocs': nprocs,
         },
