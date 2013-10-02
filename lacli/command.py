@@ -54,8 +54,8 @@ class LaCommand(cmd.Cmd):
             fname = raw_input('Filename: ').strip()
         if not fname:
             print "Argument required."
-        elif not os.path.isfile(fname):
-            print 'File {} not found or is not a regular file.'.format(fname)
+        elif not os.path.exists(fname):
+            print 'File {} not found.'.format(fname)
         else:
             with queueOpened(logHandler('lacli')) as q:
                 with queueOpened(progressHandler(fname,
