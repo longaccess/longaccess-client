@@ -53,6 +53,11 @@ def run_console_script(context, entry):
             mp_setup(ctx)
         except ImportError:
             pass
+        try:
+            from setproctitle import setproctitle
+            setproctitle("console script {}".format(entry))
+        except ImportError:
+            pass
         for name, value in ctx.environ.iteritems():
             os.environ[name] = value
         os.chdir(ctx.cwd)
