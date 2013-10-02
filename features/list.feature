@@ -18,7 +18,7 @@ Feature: list capsules command
         And the API authentication is wrong
         And the command line arguments "list"
         When I run console script "lacli"
-        Then I see "Authentication failed."
+        Then I see "error: authentication failed"
 
     Scenario: I list capsules
         Given I store my credentials in "{homedir}/.netrc"
