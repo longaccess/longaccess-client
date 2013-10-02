@@ -57,6 +57,7 @@ class Upload(object):
                     getLogger().debug("couldn't upload to temporary key",
                                       exc_info=True)
                     raise
+            progq.put({})  # make sure progress bar is 100%
             getLogger().debug("uploaded %d temp keys", len(etags))
             for key, etag in etags.iteritems():
                 getLogger().debug("key: %s (etag: %s)", key, etag)
