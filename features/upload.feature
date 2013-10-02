@@ -30,12 +30,12 @@ Feature: upload command
         When I run console script "lacli"
         Then I see "File /tmp/thisdoesnotexist not found."
 
-
     Scenario: I upload an empty file
         Given an empty file "foo"
         And the command line arguments "put {foo}"
         When I run console script "lacli"
-        Then I see "done"
+        Then I see "ETA:"
+        And I see "done"
 
     Scenario: I upload a small file
         Given a file "foo" with contents
@@ -44,4 +44,5 @@ Feature: upload command
         """
         And the command line arguments "put {foo}"
         When I run console script "lacli"
-        Then I see "done"
+        Then I see "ETA:"
+        And I see "done"
