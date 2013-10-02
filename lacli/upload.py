@@ -2,36 +2,6 @@ import lacli.pool
 import multiprocessing as mp
 from itertools import repeat
 from lacli.log import getLogger, logToQueue
-from lacli.exceptions import (ApiUnavailableException, ApiErrorException,
-                              ApiAuthException)
-
-
-class UploadManager(object):
-
-    def __init__(self, session):
-        self.session = session
-
-    def __enter__(self, **kwargs):
-        return Upload(self.session.tokens,
-                      poolsize=self.session.nprocs, **kwargs)
-
-    def __exit__(self, type, value, tb):
-        if type is not None:
-            return self._handle_error(type)
-        print "\ndone."
-
-    def _handle_error(self, type):
-        if type is ApiUnavailableException:
-            print "error: server not found"
-        elif type is ApiErrorException:
-            print "error: the server couldn't fulfill your request"
-        elif type is ApiAuthException:
-            print "error: authentication failed"
-        else:
-            print "error: unknown"
-        getLogger().debug("exception while uploading",
-                          exc_info=True)
-        return True
 
 
 def results(it, timeout):
@@ -63,20 +33,20 @@ def initworker(logq, progq):
 
 
 class Upload(object):
-    def __init__(self, tvm, poolsize=None):
-        self.tvm = tvm
-        self.poolsize = poolsize
-        if self.poolsize is None:
-            self.poolsize = max(mp.cpu_count()-1, 1)
+    def __init__(self, session, prefs):
+        self.session = session
+        self.prefs = prefs
 
     def upload(self, fname, logq, progq):
         try:
             initargs = (logq, progq)
-            pool = mp.Pool(self.poolsize, initworker, initargs)
+            nprocs = self.prefs['nprocs']
+            pool = mp.Pool((nprocs or max(mp.cpu_count()-1, 1)),
+                           initworker, initargs)
             source = lacli.pool.File(fname)
             keys = []
             seq = 1
-            for token in self.tvm():
+            for token in self.session.tokens():
                 name = "archive-{}".format(seq)
                 conn = lacli.pool.MPConnection(token)
                 try:

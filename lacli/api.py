@@ -3,26 +3,33 @@ from latvm.tvm import BaseTvm
 from lacli.log import getLogger
 from lacli.decorators import cached_property, with_api_response
 
-import os
-import requests
 import json
 
 
 API_URL = 'http://stage.longaccess.com/api/v1/'
 
 
+class RequestsFactory():
+
+    def __init__(self, prefs):
+        self.prefs = prefs
+
+    def new_session(self):
+        import requests
+        session = requests.Session()
+        session.auth = (self.prefs['user'], self.prefs['pass'])
+        return session
+
+
 class Api(BaseTvm):
 
-    def __init__(self, url=None, session=None):
-        if url is None:
-            url = os.getenv('LA_API_URL')
-        if url is None:
-            url = API_URL
-        self.url = url
-        if session is None:
-            self.session = requests.Session()
-        else:
-            self.session = session
+    def __init__(self, prefs, sessions=None):
+        self.url = prefs['url']
+        if self.url is None:
+            self.url = API_URL
+        if sessions is None:
+            sessions = RequestsFactory(prefs)
+        self.session = sessions.new_session()
 
     @cached_property
     def root(self):
@@ -54,6 +61,10 @@ class Api(BaseTvm):
             'size': '',
         }))
 
-    def get_capsules(self):
+    def tokens(self, secs=3600):
+        while True:
+            yield self.get_upload_token(secs=secs)
+
+    def capsules(self):
         capsules_url = self.endpoints['capsule']
         return self._get(capsules_url)['objects']

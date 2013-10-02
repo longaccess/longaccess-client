@@ -3,8 +3,8 @@ import cmd
 import glob
 from progressbar import (ProgressBar, Bar,
                          ETA, FileTransferSpeed)
-from lacli.log import queueOpened, logHandler
-from lacli.upload import UploadManager
+from lacli.log import queueOpened, logHandler, getLogger, setupLogging
+from lacli.upload import Upload
 from lacli.exceptions import ApiAuthException
 
 
@@ -32,10 +32,11 @@ class LaCommand(cmd.Cmd):
     """ Our LA command line interface"""
     prompt = 'lacli> '
 
-    def __init__(self, session, debug=0, *args, **kwargs):
+    def __init__(self, session, prefs, *args, **kwargs):
         cmd.Cmd.__init__(self, *args, **kwargs)
+        setupLogging(prefs['command']['debug'])
         self.session = session
-        self.debug = debug
+        self.uploader = Upload(session, prefs['upload'])
 
     def do_tvmconf(self, line):
         """tvmconf
@@ -60,9 +61,13 @@ class LaCommand(cmd.Cmd):
             with queueOpened(logHandler('lacli')) as q:
                 with queueOpened(progressHandler(fname,
                                                  os.path.getsize(fname))) as p:
-                    with UploadManager(self.session) as s:
-                        s.upload(fname, q, p)
-                    print ''
+                    try:
+                        self.uploader.upload(fname, q, p)
+                        print "\ndone."
+                    except Exception as e:
+                        getLogger().debug("exception while uploading",
+                                          exc_info=True)
+                        print "error: " + e
 
     def do_list(self, line):
         """List capsules in LA

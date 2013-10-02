@@ -1,10 +1,17 @@
-class ApiErrorException(Exception):
-    pass
+class BaseApiException(Exception):
+    msg = "error"
+
+    def __init__(self, *args, **kwargs):
+        super(BaseApiException, self).__init__(self.msg, *args, **kwargs)
 
 
-class ApiUnavailableException(Exception):
-    pass
+class ApiErrorException(BaseApiException):
+    msg = "server not found"
 
 
-class ApiAuthException(Exception):
-    pass
+class ApiUnavailableException(BaseApiException):
+    msg = "the server couldn't fulfill your request"
+
+
+class ApiAuthException(BaseApiException):
+    msg = "authentication failed"

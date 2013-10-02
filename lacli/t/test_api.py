@@ -1,12 +1,13 @@
 from testtools import TestCase
 from mock import Mock
-from nose.tools import raises
+from . import makeprefs
 import json
 
 
 class ApiTest(TestCase):
     def setUp(self):
         super(ApiTest, self).setUp()
+        self.prefs = makeprefs()['api']
 
     def tearDown(self):
         super(ApiTest, self).tearDown()
@@ -15,50 +16,77 @@ class ApiTest(TestCase):
         from lacli.api import Api
         return Api(*args, **kw)
 
-    def _makesession(self, rsp, method='get'):
-        mattr = {method+'.return_value': rsp}
-        return Mock(**mattr)
+    def _mocksessions(self, rsps):
+        return Mock(new_session=Mock(return_value=Mock(**rsps)))
 
-    def _makejson(self, json, **kwargs):
+    def _mockresponse(self, json, method='get', **kwargs):
         mattr = {
             'json.side_effect': json,
             'raise_for_status': Mock(**kwargs),
         }
-        return self._makesession(Mock(**mattr))
+        return Mock(**mattr)
 
     def test_api(self):
-        assert self._makeit()
+        assert self._makeit(self.prefs, Mock())
 
     def test_api_root(self):
         r = json.loads(LA_ENDPOINTS_RESPONSE)
-        s = self._makejson([r])
-        api = self._makeit(url="http://baz.com/", session=s)
+        s = self._mocksessions({'get.return_value': self._mockresponse([r])})
+        api = self._makeit(self.prefs, sessions=s)
         self.assertEqual(r, api.root)
-        s.get.assert_called_with("http://baz.com/")
 
     def test_no_capsules(self):
         caps = json.loads(LA_CAPSULES_RESPONSE)
         caps['objects'] = []
         caps['meta']['total_count'] = 0
-        s = self._makejson([json.loads(LA_ENDPOINTS_RESPONSE), caps])
-        api = self._makeit(url="http://baz.com/", session=s)
-        capsules = api.get_capsules()
+        r = self._mockresponse([json.loads(LA_ENDPOINTS_RESPONSE), caps])
+        s = self._mocksessions({'get.return_value': r})
+        api = self._makeit(self.prefs, sessions=s)
+        capsules = api.capsules()
         self.assertEqual(len(capsules), 0)
 
     def test_capsules(self):
-        r = map(json.loads, [LA_ENDPOINTS_RESPONSE, LA_CAPSULES_RESPONSE])
-        s = self._makejson(r)
-        api = self._makeit(url="http://baz.com/", session=s)
-        capsules = api.get_capsules()
+        j = map(json.loads, [LA_ENDPOINTS_RESPONSE, LA_CAPSULES_RESPONSE])
+        s = self._mocksessions({'get.return_value': self._mockresponse(j)})
+        api = self._makeit(self.prefs, sessions=s)
+        capsules = api.capsules()
         self.assertEqual(len(capsules), 2)
 
     def test_unauthorized(self):
         from requests.exceptions import HTTPError
         exc = HTTPError(response=Mock(status_code=401))
-        s = self._makejson({}, side_effect=exc)
-        api = self._makeit(url="http://baz.com/", session=s)
+        r = self._mockresponse({}, side_effect=exc)
+        s = self._mocksessions({'get.return_value': r})
+        api = self._makeit(self.prefs, sessions=s)
         from lacli.exceptions import ApiAuthException
-        self.assertRaises(ApiAuthException, api.get_capsules)
+        self.assertRaises(ApiAuthException, api.capsules)
+
+    def test_get_upload_token(self):
+        er = self._mockresponse([json.loads(LA_ENDPOINTS_RESPONSE)])
+        ur = self._mockresponse([json.loads(LA_UPLOAD_RESPONSE)])
+        s = self._mocksessions({'get.return_value': er,
+                               'post.return_value': ur})
+        api = self._makeit(self.prefs, sessions=s)
+        token = api.get_upload_token()
+        self.assertIn('token_access_key', token)
+
+
+LA_UPLOAD_RESPONSE = """{
+    "id": 1,
+    "capsule": "/api/v1/capsule/1/",
+    "title": "foo",
+    "description": "foo",
+    "resource_uri": "/api/v1/upload/1/",
+    "status": "pending",
+    "token_access_key": "XXXXXXXXXXXXXXXXXXXX",
+    "token_secret_key": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "token_session": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "token_expiration": "",
+    "token_uid": "arn:aws:iam::XXXXXXXXXXXX:user/sts-test-dummy",
+    "bucket": "lastage",
+    "prefix": "prefix"
+}
+"""
 
 
 LA_ENDPOINTS_RESPONSE = """{

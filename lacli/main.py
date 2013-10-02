@@ -19,26 +19,53 @@ Options:
 
 
 import sys
+import os
 from docopt import docopt
 from lacli.command import LaCommand
 from lacli import __version__
-from lacli.log import setupLogging
-from lacli.session import Session
+from lacli.api import Api
+
+
+def settings(options):
+    debug = 0
+    nprocs = None
+
+    try:
+        debug = int(options['--debug'])
+    except ValueError:
+        print "error: illegal value for 'debug' parameter."
+        raise
+
+    try:
+        if options['--procs'] != 'auto':
+            nprocs = int(options['--procs'])
+    except ValueError:
+        print "error: illegal value for 'procs' parameter."
+        raise
+
+    return {
+        'api': {
+            'user': options['--user'],
+            'pass': options['--password'],
+            'url': os.getenv('LA_API_URL'),
+        },
+        'upload': {
+            'timeout': options['--duration'],
+            'bucket': options['--bucket'],
+            'nprocs': nprocs,
+        },
+        'command': {
+            'debug': debug
+        },
+    }
 
 
 def main(args=sys.argv[1:]):
     """Main function called by `laput` command.
     """
     options = docopt(__doc__, version='laput {}'.format(__version__))
-    setupLogging(int(options['--debug']))
-    session = Session(
-        uid=options['--user'],
-        pwd=options['--password'],
-        secs=options['--duration'],
-        bucket=options['--bucket'],
-        debug=int(options['--debug']),
-        nprocs=options['--procs'])
-    cli = LaCommand(session, debug=int(options['--debug']))
+    prefs = settings(options)
+    cli = LaCommand(Api(prefs['api']), prefs)
     if options['put']:
         for fname in options['<filename>']:
             cli.onecmd('put {}'.format(fname))
