@@ -25,6 +25,12 @@ Feature: upload command
         When I run console script "lacli"
         Then I see "error: the server couldn't fulfill your request"
 
+    Scenario: I upload an non-existent file
+        Given the command line arguments "put /tmp/thisdoesnotexist"
+        When I run console script "lacli"
+        Then I see "File /tmp/thisdoesnotexist not found."
+
+
     Scenario: I upload an empty file
         Given an empty file "foo"
         And the command line arguments "put {foo}"
