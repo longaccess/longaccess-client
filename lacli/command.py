@@ -20,7 +20,7 @@ class progressHandler(object):
     def handle(self, msg):
         if len(self.tx) == 0:
             self.bar.start()
-        if hasattr(msg, 'part'):
+        if 'part' in msg:
             self.tx[msg['part']] = int(msg['tx'])
             self.bar.update(sum(self.tx.values()))
         else:
