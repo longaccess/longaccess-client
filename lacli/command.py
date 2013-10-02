@@ -5,7 +5,6 @@ from progressbar import (ProgressBar, Bar,
                          ETA, FileTransferSpeed)
 from lacli.log import queueOpened, logHandler, getLogger, setupLogging
 from lacli.upload import Upload
-from lacli.exceptions import ApiAuthException
 
 
 class progressHandler(object):
@@ -67,7 +66,7 @@ class LaCommand(cmd.Cmd):
                     except Exception as e:
                         getLogger().debug("exception while uploading",
                                           exc_info=True)
-                        print "error: " + e
+                        print "error: " + str(e)
 
     def do_list(self, line):
         """List capsules in LA
@@ -79,8 +78,8 @@ class LaCommand(cmd.Cmd):
                 print "Available capsules:"
             else:
                 print "No available capsules."
-        except ApiAuthException:
-            print "Authentication failed."
+        except Exception as e:
+            print "error: " + str(e)
 
     def complete_put(self, text, line, begidx, endidx):
         return [os.path.basename(x) for x in glob.glob('{}*'.format(line[4:]))]
