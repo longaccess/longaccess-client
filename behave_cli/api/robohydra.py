@@ -31,7 +31,7 @@ class RoboHydra(MockRestApi):
     def test(self, name):
         if name not in self.tests:
             self.tests[name] = RoboHydraTest(
-                self.name+"/"+name,
+                name,
                 self.url())
         self.tests[name].start()
 
