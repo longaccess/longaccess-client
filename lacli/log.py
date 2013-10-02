@@ -1,8 +1,8 @@
 import logging
-import logutils.queue
-from contextlib import contextmanager
 from multiprocessing import Queue
+from logutils.queue import QueueListener
 from boto import config as boto_config
+
 
 simplefmt = '%(name)-15s %(levelname)-8s %(processName)-10s %(message)s'
 
@@ -60,21 +60,23 @@ def setupLogging(level, logfile=None, queue=False):
         raise NotImplementedError("Log to file is not implemented yet")
 
 
-class logHandler(object):
+class queueHandler(object):
+    def __enter__(self):
+        q = Queue()
+        self.listener = QueueListener(q, self)
+        self.listener.start()
+        return q
+
+    def __exit__(self, type, value, traceback):
+        self.listener.stop()
+
+
+class LogHandler(queueHandler):
     def __init__(self, logger='lacli'):
         self.logger = getLogger(logger)
 
     def handle(self, msg):
         self.logger.handle(msg)
-
-
-@contextmanager
-def queueOpened(handler):
-    q = Queue()
-    listener = logutils.queue.QueueListener(q, handler)
-    listener.start()
-    yield q
-    listener.stop()
 
 
 def logToQueue(queue):

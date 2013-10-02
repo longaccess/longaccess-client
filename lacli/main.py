@@ -51,6 +51,7 @@ def settings(options):
         'upload': {
             'bucket': options['--bucket'],
             'nprocs': nprocs,
+            'retries': 4,
         },
         'command': {
             'debug': debug

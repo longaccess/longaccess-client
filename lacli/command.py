@@ -1,32 +1,8 @@
 import os
 import cmd
 import glob
-from progressbar import (ProgressBar, Bar,
-                         ETA, FileTransferSpeed)
-from lacli.log import queueOpened, logHandler, getLogger, setupLogging
+from lacli.log import getLogger, setupLogging
 from lacli.upload import Upload
-from sys import maxint, stderr
-
-
-class progressHandler(object):
-    def __init__(self, fname):
-        self.total = maxint
-        if os.path.isfile(fname):
-            self.total = (os.path.getsize(fname) or 1)
-        self.bar = ProgressBar(widgets=[
-            fname, ' : ', Bar(),
-            ' ', ETA(), ' ', FileTransferSpeed()], maxval=self.total)
-        self.tx = {}
-
-    def handle(self, msg):
-        if len(self.tx) == 0:
-            self.bar.start()
-        if 'part' in msg:
-            self.tx[msg['part']] = int(msg['tx'])
-            self.bar.update(sum(self.tx.values()))
-        else:
-            self.bar.update(self.total)
-        stderr.flush()
 
 
 class LaCommand(cmd.Cmd):
@@ -59,15 +35,13 @@ class LaCommand(cmd.Cmd):
         elif not os.path.exists(fname):
             print 'File {} not found.'.format(fname)
         else:
-            with queueOpened(logHandler('lacli')) as q:
-                with queueOpened(progressHandler(fname)) as p:
-                    try:
-                        self.uploader.upload(fname, q, p)
-                        print "\ndone."
-                    except Exception as e:
-                        getLogger().debug("exception while uploading",
-                                          exc_info=True)
-                        print "error: " + str(e)
+            try:
+                self.uploader.upload(fname)
+                print "\ndone."
+            except Exception as e:
+                getLogger().debug("exception while uploading",
+                                  exc_info=True)
+                print "error: " + str(e)
 
     def do_list(self, line):
         """List capsules in LA

@@ -1,7 +1,7 @@
 class BaseAppException(Exception):
     msg = "error"
 
-    def __init__(self, exc, *args, **kwargs):
+    def __init__(self, exc=None, *args, **kwargs):
         super(BaseAppException, self).__init__(self.msg, *args, **kwargs)
         self.exc = exc
 
@@ -19,3 +19,7 @@ class ApiUnavailableException(BaseAppException):
 
 class ApiAuthException(BaseAppException):
     msg = "authentication failed"
+
+
+class UploadEmptyError(BaseAppException):
+    msg = "upload failed"

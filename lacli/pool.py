@@ -4,20 +4,17 @@ import dateutil.parser
 import dateutil.tz
 import datetime
 import math
+from lacli.progress import make_progress, complete_progress
+from itertools import imap, repeat, izip
 from lacli.log import getLogger
+from lacli.exceptions import UploadEmptyError
 from boto import connect_s3
 from boto.utils import compute_md5
 from boto.s3.key import Key
 from filechunkio import FileChunkIO
 from sys import maxint
-
-
-class Progress(object):
-    def __init__(self):
-        self.queue = None
-
-
-progress = Progress()
+from tempfile import mkdtemp, mkstemp
+from multiprocessing import TimeoutError
 
 
 class MPConnection(object):
@@ -61,14 +58,15 @@ class MPConnection(object):
         return state
 
 
-class File(object):
+class MPFile(object):
     minchunk = 5242880
     maxchunk = 104857600
 
     def __init__(self, path, skip=0):
         self.path = path
+        self.isfile = os.path.isfile(path)
         size = maxint
-        if os.path.isfile(path):
+        if self.isfile:
             size = os.path.getsize(path)
         assert size >= skip
         self.skip = skip
@@ -77,6 +75,22 @@ class File(object):
         self.chunks = int(math.ceil(self.size/self.chunk))
         if self.chunks == 0:
             self.chunks = 1
+
+    def _savedchunks(self, tempdir):
+        # split file and save parts to disk
+        f = open(self.path, "rb")
+
+        def _save(seq):
+            b = f.read(self.chunk)
+            if b:
+                prefix = "part-{:>4}".format(seq)
+                fh, fn = mkstemp(dir=tempdir, prefix=prefix)
+                os.write(fh, b)
+                os.close(fh)
+                return fn
+            f.close()
+
+        return imap(_save, xrange(self.chunks))
 
     def chunkstart(self, num):
         return self.skip + num * self.chunk
@@ -88,6 +102,12 @@ class File(object):
             return self.size - start
         else:
             return self.chunk
+
+    def chunkfile(self, seq, fname):
+        if self.isfile:
+            return FilePart(self, seq)
+        else:
+            return SavedPart(self, seq, fname)
 
 
 class FileHash(object):
@@ -102,6 +122,14 @@ class FileHash(object):
             return (instance.md5, instance.b64md5)
 
 
+class SavedPart(file):
+    def __init__(self, source, num, *args, **kwargs):
+        super(SavedPart, self).__init__(*args, **kwargs)
+        self.bytes = source.chunksize(num)
+
+    hash = FileHash()
+
+
 class FilePart(FileChunkIO):
 
     def __init__(self, source, num, *args, **kwargs):
@@ -113,44 +141,32 @@ class FilePart(FileChunkIO):
     hash = FileHash()
 
 
-class UploadError(Exception):
-    pass
-
-
-class PartUploadError(UploadError):
-    def __init__(self, msg="", part=None, *args, **kwargs):
-        super(PartUploadError, self).__init__(
-            msg, *args, **kwargs)
-        self.part = part
-
-
-class UploadEmptyError(UploadError):
-    pass
-
-
 class MPUpload(object):
 
-    def __init__(self, connection, source,
-                 name="archive", prefix="upload", retries=4):
+    def __init__(self, connection, source, key, retries=4):
         self.connection = connection
         self.source = source
         self.retries = retries
-        self.name = name
-        self.folder = "{prefix}/{uid}".format(prefix=prefix,
-                                              uid=self.connection.uid)
-        self.key = "{folder}/temp-{name}".format(folder=self.folder, name=name)
+        self.key = key
         self.upload_id = None
-        self.results = []
         self.complete = None
+        self.tempdir = None
 
     def __str__(self):
         return "<MPUload key={} id={} source={}>".format(
             self.key, self.upload_id, self.source)
 
+    def iterargs(self):
+        partinfo = repeat(None)
+        if not self.source.isfile:
+            partinfo = self.source._savedchunks(self.tempdir)
+        for seq, info in izip(xrange(self.source.chunks), partinfo):
+            yield {'uploader': self, 'seq': seq, 'fname': info}
+
     def _getupload(self):
         bucket = self.connection.getbucket()
 
-        if self.source.chunks > 1:
+        if self.source.chunks > 1 and self.source.isfile:
             if self.upload_id is None:
                 return bucket.initiate_multipart_upload(self.key)
 
@@ -165,60 +181,78 @@ class MPUpload(object):
         if not hasattr(self.upload, 'set_contents_from_file'):
             self.upload_id = self.upload.id
             getLogger().debug("multipart upload with id: %s", self.upload_id)
+        if not self.source.isfile:
+            self.tempdir = mkdtemp()
         return self
 
     def __exit__(self, type, value, traceback):
-        if hasattr(self.upload, 'set_contents_from_file'):
-            return
-        if len(self.results) == 0:
-            self.upload.cancel_upload()
-        # set key acl
+        if value is not None:
+            if hasattr(self.upload, 'cancel_upload'):
+                self.upload.cancel_upload()
+        if self.tempdir is not None:
+            os.rmdir(self.tempdir)
 
-    def combineparts(self, successfull):
-        if len(successfull) > 0:
+    def submit_job(self, pool):
+        getLogger().debug("total of %d upload jobs for workers..",
+                          self.source.chunks)
+        return pool.imap(upload_part, self.iterargs())
+
+    def get_result(self, rs):
+        parts = 0
+        try:
+            while True:
+                rs.next(self.connection.timeout())
+                parts += 1
+        except StopIteration:
+            pass
+        except TimeoutError:
+            getLogger().debug("stopping before credentials expire.")
+
+        if parts > 0:
             if hasattr(self.upload, 'complete_upload'):
-                result = self.upload.complete_upload()
+                key = self.upload.complete_upload()
             else:
-                result = self.upload
-            source = None
-            if len(successfull) < self.source.chunks:
-                source = File(self.source.path,
-                              self.source.chunkstart(len(successfull)))
-            return (self.key, result.etag, source)
+                key = self.upload
+            newsource = None
+            if parts < self.source.chunks:
+                skip = self.source.chunkstart(parts)
+                newsource = MPFile(self.source.path, skip)
+            else:
+                complete_progress()
+            return (key.etag, newsource)
         else:
             raise UploadEmptyError()
 
-    def do_part(self, seq):
+    def do_part(self, seq, **kwargs):
         """ transfer a part. runs in a separate process. """
-        # reestablish the connection
+
         for attempt in range(self.retries):
             getLogger().debug("attempt %d/%d to transfer part %d",
                               attempt, self.retries, seq)
 
-            with FilePart(self.source, seq) as part:
+            with self.source.chunkfile(seq, **kwargs) as part:
                 try:
                     def cb(tx, total):
-                        # fetch progress queue from global scope
-                        progress.queue.put({'part': seq,
-                                            'tx': tx,
-                                            'total': total})
+                        make_progress({'part': seq,
+                                       'tx': tx,
+                                       'total': total})
                     if hasattr(self.upload, 'upload_part_from_file'):
                         self.upload.upload_part_from_file(
                             fp=part,
                             part_num=seq+1,
                             cb=cb,
                             num_cb=100,
-                            size=part.bytes,
+                            size=self.source.chunksize(seq),
                             # although not necessary, boto does it,
                             # good to know how:
-                            md5=part.hash,
+                            md5=part.hash
                         )
                     else:
                         self.upload.set_contents_from_file(
                             fp=part,
                             cb=cb,
                             num_cb=100,
-                            md5=part.hash,
+                            md5=part.hash
                         )
                 except Exception as exc:
                     getLogger().debug("exception while uploading part %d",
@@ -232,13 +266,10 @@ class MPUpload(object):
                     return seq
 
 
-def upload_part(args):
+def upload_part(kwargs):
     try:
-        chunk = args[0]
-        upload = args[1]
-        getLogger().debug("uploading chunk %d", chunk)
-        upload.do_part(chunk)
-    except Exception:
-        getLogger().debug("exception uploading chunk %d",
-                          args[0], exc_info=True)
+        seq = kwargs.pop('seq')
+        kwargs.pop('uploader').do_part(seq, **kwargs)
+    except Exception as e:
+        getLogger().debug("Error executing worker job: " + str(e))
         pass
