@@ -3,6 +3,7 @@
 
 Usage: lacli put [options] [-b <bucket> ] [-n <np>] <filename>...
        lacli list [options]
+       lacli archive [options]
        lacli [options]
        lacli -h, --help
 
@@ -70,6 +71,8 @@ def main(args=sys.argv[1:]):
             cli.onecmd('put {}'.format(fname))
     elif options['list']:
         cli.onecmd('list')
+    elif options['archive']:
+        cli.onecmd('archive')
     else:
         cli.cmdloop()
 
