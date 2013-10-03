@@ -1,34 +1,28 @@
 from lacli.pool import MPConnection, MPUpload, MPFile
 from contextlib import contextmanager
-from lacli.log import LogHandler, getLogger, logToQueue
-from lacli.progress import ProgressHandler, progressToQueue
+from lacli.log import LogHandler, getLogger
+from lacli.progress import ProgressHandler
+from lacli.worker import WorkerPool
 from multiprocessing import cpu_count, Pool
-
-
-def initworker(logq, progq):
-    """initializer that sets up logging and progress from sub procs """
-    logToQueue(logq)
-    progressToQueue(progq)
 
 
 class Upload(object):
     def __init__(self, session, prefs):
         self.tokens = session.tokens()
-        self.nprocs = prefs['nprocs'] or max(cpu_count()-1, 1)
+        self.prefs = prefs
         self.log = LogHandler()
         self.prefix = 'upload'
 
     @contextmanager
-    def _workers(self, initargs):
-        getLogger().debug("setting up pool of {} procs..".format(self.nprocs))
-        pool = Pool(self.nprocs, initworker, initargs)
-        yield pool
-        getLogger().debug("terminating all procs..")
-        pool.terminate()
+    def _workers(self, progq):
+        with self.log as logq:
+            pool = WorkerPool(self.prefs, logq, progq)
+            yield pool
+            pool.terminate()
 
     def upload(self, fname):
-        with self.log as log, ProgressHandler(fname) as prog:
-            with self._workers((log, prog)) as pool:
+        with ProgressHandler(fname) as progq:
+            with self._workers(progq) as pool:
                 etags = {}
                 source = MPFile(fname)
                 for token, key in self._nexttoken():
