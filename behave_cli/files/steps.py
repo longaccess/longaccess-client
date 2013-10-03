@@ -24,9 +24,17 @@ def file_with_content(context, name):
 
 @step(u'a file "{name}" with {mb} mb of zeroes')
 def file_zeroes(context, name, mb):
+    assert name not in context.files
+    empty_file(context, name)
+    context.files[name].truncate(int(mb) * 1024 * 1024)
+
+
+@step(u'a fifo "{name}" with {mb} mb of zeroes')
+def fifo_zeroes(context, name, mb):
     assert name not in context.dirs
     assert name not in context.fifo
-    fname = os.path.join(mkdtemp(), 'fifo')
+    dname = mkdtemp()
+    fname = os.path.join(dname, 'fifo')
     os.mkfifo(fname)
     mb = int(mb)
 
@@ -49,4 +57,5 @@ def file_zeroes(context, name, mb):
     proc = Process(target=run_fifo)
     proc.start()
     context.fifo[fname] = proc
+    context.dirs[name] = dname
     context.files[name] = open(fname, 'r')
