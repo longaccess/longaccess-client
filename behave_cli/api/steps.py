@@ -12,6 +12,11 @@ def api_auth_fail(context):
     context.mock_api.test('longaccessauth/authFails')
 
 
+@step(u'the API authenticates a test user')
+def api_auth_user(context):
+    context.mock_api.test('longaccessauth/authUser')
+
+
 @step(u'the mock API "{name}"')
 def robohydra_api(context, name):
     context.mock_api = RoboHydra(name=name)
