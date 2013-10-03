@@ -3,7 +3,6 @@ from contextlib import contextmanager
 from lacli.log import LogHandler, getLogger
 from lacli.progress import ProgressHandler
 from lacli.worker import WorkerPool
-from multiprocessing import cpu_count, Pool
 
 
 class Upload(object):
