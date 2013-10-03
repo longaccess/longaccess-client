@@ -96,7 +96,7 @@ class MPFile(object):
         return self.skip + num * self.chunk
 
     def chunksize(self, num):
-        start = self.chunkstart(num)
+        start = num * self.chunk
         if (start + self.chunk > self.size):
             # chunk end is EOF
             return self.size - start
