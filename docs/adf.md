@@ -128,6 +128,18 @@ Example container format names:
 * `[7z][]` - 7zip format, mostly Windows
 * `[xz][]` - XZ format, mostly Unix 
 
+#### A note on the ZIP format
+
+The ZIP format does not in it's historical form support files larger than 2 GB.
+Additionally it does not mandate Unicode filenames. Many clients support both
+large files and Unicode names as extensions. These however are not standard. We
+propose that archives that are created with these extensions specify a
+different container format than `zip` like for example: 
+
+* `[ziputf][]` - standard ZIP format with Unicode filenames, not so widely implemented
+* `[zip64][]` - standard ZIP format for large files, not so widely implemented
+* `[zip64utf][]` - standard ZIP format for large files with Unicode filenames, not so widely implemented
+
 ### Description
 
 This key, if it exists, contains any descriptive
