@@ -1,6 +1,7 @@
-from testtools import TestCase
+from testtools import TestCase, ExpectedException
 from mock import Mock
 from . import makeprefs
+from lacli.exceptions import ApiAuthException
 import json
 
 
@@ -42,14 +43,14 @@ class ApiTest(TestCase):
         r = self._mockresponse([json.loads(LA_ENDPOINTS_RESPONSE), caps])
         s = self._mocksessions({'get.return_value': r})
         api = self._makeit(self.prefs, sessions=s)
-        capsules = api.capsules()
+        capsules = list(api.capsules())
         self.assertEqual(len(capsules), 0)
 
     def test_capsules(self):
         j = map(json.loads, [LA_ENDPOINTS_RESPONSE, LA_CAPSULES_RESPONSE])
         s = self._mocksessions({'get.return_value': self._mockresponse(j)})
         api = self._makeit(self.prefs, sessions=s)
-        capsules = api.capsules()
+        capsules = list(api.capsules())
         self.assertEqual(len(capsules), 2)
 
     def test_unauthorized(self):
@@ -58,8 +59,8 @@ class ApiTest(TestCase):
         r = self._mockresponse({}, side_effect=exc)
         s = self._mocksessions({'get.return_value': r})
         api = self._makeit(self.prefs, sessions=s)
-        from lacli.exceptions import ApiAuthException
-        self.assertRaises(ApiAuthException, api.capsules)
+        with ExpectedException(ApiAuthException):
+            list(api.capsules())
 
     def test_get_upload_token(self):
         er = self._mockresponse([json.loads(LA_ENDPOINTS_RESPONSE)])
