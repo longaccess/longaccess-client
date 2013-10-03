@@ -1,101 +1,107 @@
 import logging
-import logutils.queue
-from contextlib import contextmanager
 from multiprocessing import Queue
+from logutils.queue import QueueListener
 from boto import config as boto_config
 
-simplefmt='%(name)-15s %(levelname)-8s %(processName)-10s %(message)s'
 
-def setupLogging(level,logfile=None, queue=False):
+simplefmt = '%(name)-15s %(levelname)-8s %(processName)-10s %(message)s'
+
+
+def setupLogging(level, logfile=None, queue=False):
     # this overrides any user debug setting in the boto configuration
     if not boto_config.has_section('Boto'):
         boto_config.add_section('Boto')
 
-    if level==0:
-        level='WARN'
+    if level == 0:
+        level = 'WARN'
         boto_config.set('Boto', 'debug', '0')
-    elif level==1:
-        level='INFO'
+    elif level == 1:
+        level = 'INFO'
         boto_config.set('Boto', 'debug', '0')
-    elif level==2:
-        level='DEBUG'
+    elif level == 2:
+        level = 'DEBUG'
         boto_config.set('Boto', 'debug', '1')
     else:
-        level='DEBUG'
+        level = 'DEBUG'
         boto_config.set('Boto', 'debug', '2')
 
     if logfile is None:
         logging.config.dictConfig({
-                'version': 1,
-                'formatters': {
-                    'simple': {
-                        'class': 'logging.Formatter',
-                        'format': simplefmt,
-                    }
-                },
-                'handlers': {
-                    'console': {
-                        'class': 'logging.StreamHandler',
-                        'level': level,
-                        'formatter': 'simple',
-                    },
-                },
-                'loggers': {
-                    'boto': {
-                        'handlers': ['console'],
-                    },
-                    'lacli': {
-                        'handlers': ['console']
-                    },
-                    'multiprocessing': {
-                        'handlers': ['console']
-                    },
-                },
-                'root': {
-                    'level': level,
-                    'handlers': ['console'],
-                },
-            })
-    else:
-        raise NotImplementedError("Log to file is not implemented yet")
-
-class logHandler(object):
-    def __init__(self, logger='lacli'):
-        self.logger=getLogger(logger)
-    def handle(self, msg):
-        self.logger.handle(msg)
-
-@contextmanager
-def queueOpened(handler):
-    q=Queue()
-    listener = logutils.queue.QueueListener(q, handler)
-    listener.start()
-    yield q
-    listener.stop()
-
-def logToQueue(queue):
-    logging.config.dictConfig({
             'version': 1,
-            'disable_existing_loggers': True,
+            'formatters': {
+                'simple': {
+                    'class': 'logging.Formatter',
+                    'format': simplefmt,
+                }
+            },
             'handlers': {
-                'queue': {
-                    'class': 'logutils.queue.QueueHandler',
-                    'queue': queue,
+                'console': {
+                    'class': 'logging.StreamHandler',
+                    'level': level,
+                    'formatter': 'simple',
                 },
             },
             'loggers': {
                 'boto': {
-                    'handlers': ['queue']
+                    'handlers': ['console'],
                 },
                 'lacli': {
-                    'handlers': ['queue']
+                    'handlers': ['console']
+                },
+                'multiprocessing': {
+                    'handlers': ['console']
                 },
             },
             'root': {
+                'level': level,
+            },
+        })
+    else:
+        raise NotImplementedError("Log to file is not implemented yet")
+
+
+class queueHandler(object):
+    def __enter__(self):
+        q = Queue()
+        self.listener = QueueListener(q, self)
+        self.listener.start()
+        return q
+
+    def __exit__(self, type, value, traceback):
+        self.listener.stop()
+
+
+class LogHandler(queueHandler):
+    def __init__(self, logger='lacli'):
+        self.logger = getLogger(logger)
+
+    def handle(self, msg):
+        self.logger.handle(msg)
+
+
+def logToQueue(queue):
+    logging.config.dictConfig({
+        'version': 1,
+        'disable_existing_loggers': True,
+        'handlers': {
+            'queue': {
+                'class': 'logutils.queue.QueueHandler',
+                'queue': queue,
+            },
+        },
+        'loggers': {
+            'boto': {
+                'handlers': ['queue']
+            },
+            'lacli': {
                 'level': 'DEBUG',
                 'handlers': ['queue']
             },
-        })
+        },
+        'root': {
+            'level': 'DEBUG',
+        },
+    })
 
 
 def getLogger(logger='lacli'):

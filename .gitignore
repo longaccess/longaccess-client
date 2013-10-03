@@ -1,4 +1,37 @@
-botofun/config.py
-*.pyc
-build/
-.DS_Store
+# Python
+*.py[cod]
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib
+lib64
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+.coverage
+.tox
+nosetests.xml
+lacli/cover
+
+# vim files 
+.vimrc_local
+tags
+spell.*
+*.swp
+
+# robohydra
+node_modules
+robohydra.log
+robohydra/plugins/longaccessmock/tokens.js
