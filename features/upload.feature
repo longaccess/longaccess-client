@@ -46,3 +46,11 @@ Feature: upload command
         When I run console script "lacli"
         Then I see "ETA:"
         And I see "done"
+
+    Scenario: I upload a 20mb file
+        Given a file "big" with 20 mb of zeroes
+        And the command line arguments "put -d 4 {big}"
+        When I run console script "lacli"
+        Then I see "ETA:"
+        And I wait until I don't see "ETA:" anymore
+        And I see "done"
