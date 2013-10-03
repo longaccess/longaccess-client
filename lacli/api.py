@@ -1,7 +1,8 @@
-from urlparse import urljoin
+from urlparse import urljoin, urlparse
 from latvm.tvm import BaseTvm
 from lacli.log import getLogger
 from lacli.decorators import cached_property, with_api_response
+from netrc import netrc
 
 import json
 
@@ -13,6 +14,8 @@ class RequestsFactory():
 
     def __init__(self, prefs):
         self.prefs = prefs
+        if self.prefs['user'] is None:
+            self.read_netrc(self.prefs['url'])
 
     def new_session(self):
         import requests
@@ -20,13 +23,20 @@ class RequestsFactory():
         session.auth = (self.prefs['user'], self.prefs['pass'])
         return session
 
+    def read_netrc(self, url):
+        hostname = urlparse(url).hostname
+        for host, creds in netrc().hosts.iteritems():
+            if host == hostname:
+                self.prefs['user'] = creds[0]
+                self.prefs['pass'] = creds[2]
+
 
 class Api(BaseTvm):
 
     def __init__(self, prefs, sessions=None):
         self.url = prefs['url']
         if self.url is None:
-            self.url = API_URL
+            prefs['url'] = self.url = API_URL
         if sessions is None:
             sessions = RequestsFactory(prefs)
         self.session = sessions.new_session()
