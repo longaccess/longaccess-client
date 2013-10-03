@@ -7,7 +7,7 @@ import math
 from lacli.progress import make_progress, complete_progress
 from itertools import imap, repeat, izip
 from lacli.log import getLogger
-from lacli.exceptions import UploadEmptyError
+from lacli.exceptions import UploadEmptyError, WorkerFailureError
 from boto import connect_s3
 from boto.utils import compute_md5
 from boto.s3.key import Key
@@ -151,6 +151,7 @@ class MPUpload(object):
         self.upload_id = None
         self.complete = None
         self.tempdir = None
+        self.bucket = None
 
     def __str__(self):
         return "<MPUload key={} id={} source={}>".format(
@@ -164,13 +165,14 @@ class MPUpload(object):
             yield {'uploader': self, 'seq': seq, 'fname': info}
 
     def _getupload(self):
-        bucket = self.connection.getbucket()
+        if self.bucket is None:
+            self.bucket = self.connection.getbucket()
 
         if self.source.chunks > 1 and self.source.isfile:
             if self.upload_id is None:
-                return bucket.initiate_multipart_upload(self.key)
+                return self.bucket.initiate_multipart_upload(self.key)
 
-            for upload in bucket.get_all_multipart_uploads():
+            for upload in self.bucket.get_all_multipart_uploads():
                 if self.upload_id == upload.id:
                     return upload
         else:
@@ -197,35 +199,54 @@ class MPUpload(object):
                           self.source.chunks)
         return pool.imap(upload_part, self.iterargs())
 
-    def get_result(self, rs):
-        parts = 0
-        try:
-            while True:
-                rs.next(self.connection.timeout())
-                parts += 1
-        except StopIteration:
-            pass
-        except TimeoutError:
-            getLogger().debug("stopping before credentials expire.")
+    def complete_multipart(self, etags):
+        xml = '<CompleteMultipartUpload>\n'
+        for seq, etag in enumerate(etags):
+            xml += '  <Part>\n'
+            xml += '    <PartNumber>{}</PartNumber>\n'.format(seq+1)
+            xml += '    <ETag>{}</ETag>\n'.format(etag)
+            xml += '  </Part>\n'
+        xml += '</CompleteMultipartUpload>'
+        return self.bucket.complete_multipart_upload(
+            self.upload.key_name, self.upload.id, xml)
 
-        if parts > 0:
-            if hasattr(self.upload, 'complete_upload'):
-                key = self.upload.complete_upload()
-            else:
-                key = self.upload
-            newsource = None
-            if parts < self.source.chunks:
-                skip = self.source.chunkstart(parts)
-                newsource = MPFile(self.source.path, skip)
-            else:
-                complete_progress()
-            return (key.etag, newsource)
-        else:
+    def get_result(self, rs):
+        etags = []
+        key = None
+        newsource = None
+        if rs is not None:
+            try:
+                while True:
+                    key = rs.next(self.connection.timeout())
+                    etags.append(key.etag)
+            except StopIteration:
+                pass
+            except WorkerFailureError:
+                getLogger().debug("error getting result.", exc_info=True)
+            except TimeoutError:
+                getLogger().debug("stopping before credentials expire.")
+
+        if not etags:
             raise UploadEmptyError()
+
+        if hasattr(self.upload, 'complete_upload'):
+            key = self.complete_multipart(etags)
+
+        uploaded = len(etags)
+        total = self.source.chunks
+        if uploaded < total:
+            for seq in xrange(uploaded, total):
+                make_progress({'part': seq, 'tx': 0})
+            skip = self.source.chunkstart(uploaded)
+            newsource = MPFile(self.source.path, skip)
+        else:
+            complete_progress()
+        return (key.etag, newsource)
 
     def do_part(self, seq, **kwargs):
         """ transfer a part. runs in a separate process. """
 
+        key = None
         for attempt in range(self.retries):
             getLogger().debug("attempt %d/%d to transfer part %d",
                               attempt, self.retries, seq)
@@ -236,8 +257,9 @@ class MPUpload(object):
                         make_progress({'part': seq,
                                        'tx': tx,
                                        'total': total})
+
                     if hasattr(self.upload, 'upload_part_from_file'):
-                        self.upload.upload_part_from_file(
+                        key = self.upload.upload_part_from_file(
                             fp=part,
                             part_num=seq+1,
                             cb=cb,
@@ -254,6 +276,7 @@ class MPUpload(object):
                             num_cb=100,
                             md5=part.hash
                         )
+                        key = self.upload
                 except Exception as exc:
                     getLogger().debug("exception while uploading part %d",
                                       seq, exc_info=True)
@@ -261,15 +284,15 @@ class MPUpload(object):
                     if attempt == self.retries-1:
                         raise exc
                 else:
-                    getLogger().debug("succesfully uploaded %s part %d",
-                                      self.source, seq)
-                    return seq
+                    getLogger().debug("succesfully uploaded %s part %d: %s",
+                                      self.source, seq, key)
+                    return key
 
 
 def upload_part(kwargs):
     try:
         seq = kwargs.pop('seq')
-        kwargs.pop('uploader').do_part(seq, **kwargs)
+        uploader = kwargs.pop('uploader')
+        return uploader.do_part(seq, **kwargs)
     except Exception as e:
-        getLogger().debug("Error executing worker job: " + str(e))
-        pass
+        raise WorkerFailureError(e)

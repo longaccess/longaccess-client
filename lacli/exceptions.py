@@ -1,3 +1,6 @@
+from multiprocessing import current_process
+
+
 class BaseAppException(Exception):
     msg = "error"
 
@@ -23,3 +26,11 @@ class ApiAuthException(BaseAppException):
 
 class UploadEmptyError(BaseAppException):
     msg = "upload failed"
+
+
+class WorkerFailureError(BaseAppException):
+    msg = "worker '{}' failed"
+
+    def __init__(self, *args, **kwargs):
+        super(BaseAppException, self).__init__(self.msg, *args, **kwargs)
+        self.msg.format(current_process())
