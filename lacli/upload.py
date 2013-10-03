@@ -30,6 +30,7 @@ class Upload(object):
                         etags[key], source = uploader.get_result(
                             uploader.submit_job(pool))
                         if source is None:
+                            progq.put({'complete': True})
                             break
                 getLogger().debug("uploaded %d temp keys", len(etags))
                 for key, tag in etags.iteritems():

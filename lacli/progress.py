@@ -14,22 +14,28 @@ class ProgressHandler(queueHandler):
             fname, ' : ', Bar(),
             ' ', ETA(), ' ', FileTransferSpeed()], maxval=self.total)
         self.tx = {}
+        self.previous = 0
 
     def handle(self, msg):
+        progress = self.previous
         if len(self.tx) == 0:
             self.bar.start()
-        if 'part' in msg:
+        if 'complete' in msg:
+            progress = self.total
+        elif 'part' in msg:
             self.tx[msg['part']] = int(msg['tx'])
-            self.bar.update(sum(self.tx.values()))
-        else:
-            self.bar.update(self.total)
+            progress += sum(self.tx.values())
+        elif 'save' in msg:
+            self.previous += sum(self.tx.values())
+            progress = self.previous
+            self.tx = {}
+        self.bar.update(progress)
         stderr.flush()
 
     def __enter__(self):
         q = super(ProgressHandler, self).__enter__()
         progressToQueue(q)
         return q
-
 
 progress = None
 
@@ -44,6 +50,6 @@ def make_progress(msg):
     progress.put(msg)
 
 
-def complete_progress():
+def save_progress():
     global progress
-    progress.put({})
+    progress.put({'save': True})

@@ -4,7 +4,7 @@ import dateutil.parser
 import dateutil.tz
 import datetime
 import math
-from lacli.progress import make_progress, complete_progress
+from lacli.progress import make_progress, save_progress
 from itertools import imap, repeat, izip
 from lacli.log import getLogger
 from lacli.exceptions import UploadEmptyError, WorkerFailureError
@@ -239,8 +239,7 @@ class MPUpload(object):
                 make_progress({'part': seq, 'tx': 0})
             skip = self.source.chunkstart(uploaded)
             newsource = MPFile(self.source.path, skip)
-        else:
-            complete_progress()
+        save_progress()
         return (key.etag, newsource)
 
     def do_part(self, seq, **kwargs):
