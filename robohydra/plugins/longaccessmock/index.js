@@ -116,6 +116,8 @@ exports.getBodyParts = function(config, modules) {
                                     resource_uri: "/api/v1/capsule/3/",
                                     title: "Photos",
                                     user: "/api/v1/user/3/"
+                                    remaining: 482,
+                                    size: 1024
                                 },
                                 {
                                     created: "2013-06-07T10:44:38",
@@ -123,6 +125,8 @@ exports.getBodyParts = function(config, modules) {
                                     resource_uri: "/api/v1/capsule/2/",
                                     title: "Stuff",
                                     user: "/api/v1/user/2/"
+                                    remaining: 482,
+                                    size: 1024
                                 }
                             ]
                         }

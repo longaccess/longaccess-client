@@ -47,10 +47,15 @@ class LaCommand(cmd.Cmd):
         """List capsules in LA
         """
         try:
-            capsules = self.session.capsules()
+            capsules = list(self.session.capsules())
 
             if len(capsules):
                 print "Available capsules:"
+                for capsule in capsules:
+                    print "{:<10}:{:>10}".format('title', capsule.pop('title'))
+                    for i, v in capsule.iteritems():
+                        print "{:<10}:{:>10}".format(i, v)
+                    print "\n"
             else:
                 print "No available capsules."
         except Exception as e:

@@ -66,5 +66,7 @@ class Api(BaseTvm):
             yield self.get_upload_token()
 
     def capsules(self):
-        capsules_url = self.endpoints['capsule']
-        return self._get(capsules_url)['objects']
+        url = self.endpoints['capsule']
+        keys = ['title', 'remaining', 'size']
+        for cs in self._get(url)['objects']:
+            yield dict([(k, cs.get(k, None)) for k in keys])

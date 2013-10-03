@@ -26,6 +26,9 @@ Feature: list capsules command
         And I have 1 capsule
         When I run console script "lacli"
         Then I see "Available capsules:"
+        And I see "title"
+        And I see "size"
+        And I see "remaining"
 
     Scenario: I list capsules without netrc auth
         Given the command line arguments "list -u {username} -p {password}"
