@@ -52,6 +52,7 @@ def settings(options):
             'bucket': options['--bucket'],
             'nprocs': nprocs,
             'retries': 4,
+            'debugworker': debug > 2
         },
         'command': {
             'debug': debug
