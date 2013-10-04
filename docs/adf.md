@@ -98,7 +98,7 @@ Example cipher names:
 
 Example MAC algorithms:
 
-* `HMAC-SHA512` - HMAC with SHA-512 digest
+* `HMAC-SHA512` - HMAC (RFC 2104) with SHA-512 digest
 * `GCM` - the GHASH value from the GCM cipher. Requires `cipher` to be `aes-256-gcm`.
 
 ### `format`
