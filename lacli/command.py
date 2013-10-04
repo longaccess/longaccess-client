@@ -9,10 +9,11 @@ class LaCommand(cmd.Cmd):
     """ Our LA command line interface"""
     prompt = 'lacli> '
 
-    def __init__(self, session, prefs, *args, **kwargs):
+    def __init__(self, session, cache, prefs, *args, **kwargs):
         cmd.Cmd.__init__(self, *args, **kwargs)
         setupLogging(prefs['command']['debug'])
         self.session = session
+        self.cache = cache
         self.uploader = Upload(session, prefs['upload'])
 
     def do_tvmconf(self, line):

@@ -15,3 +15,8 @@ Feature: upload command
         When I run console script "lacli"
         Then I see "Upload a file to Long Access"
 
+    Scenario: I run the command with a different home
+        Given the command line arguments "archive --home /tmp/whatevah"
+        And I have 1 prepared archive
+        When I run console script "lacli"
+        Then I see "No prepared archives."
