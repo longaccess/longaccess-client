@@ -64,7 +64,7 @@ class LaCommand(cmd.Cmd):
     def do_archive(self, line):
         """List or manage prepared archives"""
 
-        print "No prepared archives"
+        print "No prepared archives."
 
     def complete_put(self, text, line, begidx, endidx):
         return [os.path.basename(x) for x in glob.glob('{}*'.format(line[4:]))]
