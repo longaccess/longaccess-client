@@ -1,6 +1,6 @@
 import os
 
-from lacli.adf import make_adf
+from lacli.adf import make_adf, Archive
 from behave import step
 from tempfile import NamedTemporaryFile
 
@@ -11,4 +11,4 @@ def one_archive(context):
     if not os.path.isdir(d):
         os.makedirs(d)
     context.archive = NamedTemporaryFile(dir=d, suffix='.adf')
-    context.archive.write(make_adf())
+    context.archive.write(make_adf(Archive('foo', {})))
