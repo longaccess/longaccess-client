@@ -1,6 +1,6 @@
 import os
 
-from .adf import make_adf
+from lacli.adf import make_adf
 from behave import step
 from tempfile import NamedTemporaryFile
 

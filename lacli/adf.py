@@ -56,3 +56,7 @@ yaml.add_path_resolver(u'!key', ["keys", None], dict)
 
 def load_all(f):
     return yaml.load_all(f)
+
+
+def make_adf(archive=None):
+    return yaml.dump(archive)
