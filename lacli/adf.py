@@ -1,10 +1,15 @@
 import yaml
-import urlparse
 from lacli.cipher import modes as cipher_modes
 
 
 class Archive(yaml.YAMLObject):
     yaml_tag = u'!archive'
+
+    def __init__(self, title, meta, description=None, tags=[]):
+        self.title = title
+        self.description = description
+        self.tags = tags
+        self.meta = meta
 
 
 class Auth(yaml.YAMLObject):
@@ -58,5 +63,5 @@ def load_all(f):
     return yaml.load_all(f)
 
 
-def make_adf(archive=None):
-    return yaml.dump(archive)
+def make_adf(archive=None, canonical=False):
+    return yaml.dump(archive, default_flow_style=False, canonical=canonical)

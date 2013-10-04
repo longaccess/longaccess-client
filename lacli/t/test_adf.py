@@ -9,6 +9,10 @@ class AdfTest(TestCase):
     def tearDown(self):
         super(AdfTest, self).tearDown()
 
+    def test_archive(self):
+        from lacli.adf import Archive, make_adf
+        self.assertEqual(make_adf(Archive('foo', {}), True), ADF_TEST_DATA_1)
+
     def test_minimal(self):
         from lacli.adf import load_all
 
@@ -28,3 +32,17 @@ class AdfTest(TestCase):
             self.assertEqual(b[0], 1911376514)
             b = unpack("<LLLLLLLL", certificate.keys[1].input)
             self.assertEqual(b[0], 1911376514)
+
+
+ADF_TEST_DATA_1 = """---
+!archive {
+  ? !!str "description"
+  : !!null "null",
+  ? !!str "meta"
+  : !!map {},
+  ? !!str "tags"
+  : !!seq [],
+  ? !!str "title"
+  : !!str "foo",
+}
+"""
