@@ -19,7 +19,7 @@ meta:
     key: 1
     input: !!binary "gkrtcb10xlbta9qhnyozj67dgk1f1uluhbf6xcbavhi="
 --- !auth
-checksum: !!binary "gkrtcb10xlbta9qhnyozj67dgk1f1uluhbf6xcbavhi="
+sha512: !!binary "gkrtcb10xlbta9qhnyozj67dgk1f1uluhbf6xcbavhi="
 mac:
   mode: HMAC-MD5
   key: 2
