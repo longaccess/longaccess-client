@@ -16,6 +16,10 @@ class Auth(yaml.YAMLObject):
     yaml_tag = u'!auth'
 
 
+class Meta(yaml.YAMLObject):
+    yaml_tag = u'!meta'
+
+
 class Format(yaml.YAMLObject):
     yaml_tag = u'!format'
 
@@ -54,6 +58,7 @@ class Signature(yaml.YAMLObject):
 
 yaml.add_path_resolver(u'!format', ["meta", "format"], dict)
 yaml.add_path_resolver(u'!cipher', ["meta", "cipher"], dict)
+yaml.add_path_resolver(u'!meta', ["meta"], dict)
 yaml.add_path_resolver(u'!mac', ["mac"], dict)
 yaml.add_path_resolver(u'!signature', ["signature"], dict)
 yaml.add_path_resolver(u'!key', ["keys", None], dict)
