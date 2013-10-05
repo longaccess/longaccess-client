@@ -70,11 +70,13 @@ class LaCommand(cmd.Cmd):
 
             if len(archives):
                 print "Prepared archives:"
-                for archive in archives:
-                    print "{:<10}:{:>10}".format('title', archive.pop('title'))
-                    for i, v in archive.iteritems():
-                        print "{:<10}:{:>10}".format(i, v)
-                    print "\n"
+                for n, archive in enumerate(archives):
+                    lines = (('desc:', archive.description),
+                             ('tags:', ", ".join(archive.tags)),
+                             ('type:', archive.meta.format))
+                    print "{}) {}".format(n+1, archive.title)
+                    for line in lines:
+                        print "{:<7}{:<30}".format(line[0], line[1])
             else:
                 print "No prepared archives."
         except Exception as e:
