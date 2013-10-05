@@ -7,7 +7,7 @@ from tempfile import NamedTemporaryFile
 
 @step(u'I have 1 prepared archive')
 def one_archive(context):
-    context.execute_steps(u'Given I have 1 prepared archive titled ""')
+    context.execute_steps(u'Given I have 1 prepared archive titled "foo"')
 
 
 @step(u'I have 1 prepared archive titled "{title}"')
