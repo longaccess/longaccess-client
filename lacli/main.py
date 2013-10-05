@@ -61,7 +61,7 @@ def settings(options):
                 'debug': debug
             },
         },
-        Cache(options['--home']))
+        Cache(os.path.expanduser(options['--home'])))
 
 
 def main(args=sys.argv[1:]):
