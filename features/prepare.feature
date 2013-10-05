@@ -10,8 +10,7 @@ Feature: prepare archive command
 
     Scenario: I list prepared archives
         Given the command line arguments "archive"
-        And I have 1 prepared archive
+        And I have 1 prepared archive titled "foo"
         When I run console script "lacli"
         Then I see "Prepared archives:"
-        And I see "title"
-        And I see "size"
+        And I see "1) foo"
