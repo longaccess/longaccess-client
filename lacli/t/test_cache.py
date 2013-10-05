@@ -1,3 +1,5 @@
+import os
+
 from testtools import TestCase
 from . import makeprefs
 
@@ -6,6 +8,7 @@ class CacheTest(TestCase):
     def setUp(self):
         super(CacheTest, self).setUp()
         self.prefs = makeprefs()
+        self.home = os.path.join('t', 'data', 'home')
 
     def tearDown(self):
         super(CacheTest, self).tearDown()
@@ -17,5 +20,10 @@ class CacheTest(TestCase):
     def test_cache(self):
         assert self._makeit("")
 
+    def test_archives_empty(self):
+        self.assertEqual(self._makeit("doesnotexist").archives(), [])
+
     def test_archives(self):
-        self.assertEqual(self._makeit("").archives(), [])
+        archives = self._makeit(self.home).archives()
+        self.assertEqual(len(archives), 1)
+        self.assertEqual(archives[0].title, 'milos 2013')

@@ -89,5 +89,11 @@ def load_all(f):
     return yaml.load_all(f, Loader=PrettySafeLoader)
 
 
+def load_archive(f):
+    for o in load_all(f):
+        if hasattr(o, 'meta'):
+            return o
+
+
 def make_adf(archive=None, canonical=False):
     return yaml.dump(archive, default_flow_style=False, canonical=canonical)
