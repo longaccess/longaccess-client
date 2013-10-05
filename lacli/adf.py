@@ -4,16 +4,24 @@ from lacli.cipher import modes as cipher_modes
 
 try:
     from yaml import CSafeLoader as SafeLoader
+    from yaml import CSafeDumper as SafeDumper
 except ImportError:
-    from yaml import SafeLoader as SafeLoader
+    from yaml import SafeLoader
+    from yaml import SafeDumper
 
 
 class PrettySafeLoader(SafeLoader):
-    pass
+    def construct_yaml_str(self, node):
+        return self.construct_scalar(node)
 
 
 class BaseYAMLObject(yaml.YAMLObject):
     yaml_loader = PrettySafeLoader
+    yaml_dumper = SafeDumper
+
+    @classmethod
+    def to_yaml(cls, dumper, data):
+        return dumper.represent_mapping(cls.yaml_tag, data.__dict__)
 
 
 class Archive(BaseYAMLObject):
