@@ -104,4 +104,4 @@ def load_archive(f):
 
 
 def make_adf(archive=None, canonical=False):
-    return yaml.dump(archive, default_flow_style=False, canonical=canonical)
+    return yaml.safe_dump(archive, canonical=canonical)
