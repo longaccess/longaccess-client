@@ -2,6 +2,12 @@ import yaml
 from lacli.cipher import modes as cipher_modes
 
 
+try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader
+
+
 class Archive(yaml.YAMLObject):
     yaml_tag = u'!archive'
 
@@ -65,7 +71,7 @@ yaml.add_path_resolver(u'!key', ["keys", None], dict)
 
 
 def load_all(f):
-    return yaml.load_all(f)
+    return yaml.load_all(f, Loader=Loader)
 
 
 def make_adf(archive=None, canonical=False):
