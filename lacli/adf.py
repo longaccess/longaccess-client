@@ -3,12 +3,20 @@ from lacli.cipher import modes as cipher_modes
 
 
 try:
-    from yaml import CLoader as Loader
+    from yaml import CSafeLoader as SafeLoader
 except ImportError:
-    from yaml import Loader
+    from yaml import SafeLoader as SafeLoader
 
 
-class Archive(yaml.YAMLObject):
+class PrettySafeLoader(SafeLoader):
+    pass
+
+
+class BaseYAMLObject(yaml.YAMLObject):
+    yaml_loader = PrettySafeLoader
+
+
+class Archive(BaseYAMLObject):
     yaml_tag = u'!archive'
 
     def __init__(self, title, meta, description=None, tags=[]):
@@ -18,11 +26,11 @@ class Archive(yaml.YAMLObject):
         self.meta = meta
 
 
-class Auth(yaml.YAMLObject):
+class Auth(BaseYAMLObject):
     yaml_tag = u'!auth'
 
 
-class Meta(yaml.YAMLObject):
+class Meta(BaseYAMLObject):
     yaml_tag = u'!meta'
 
     def __init__(self, format, cipher):
@@ -30,15 +38,15 @@ class Meta(yaml.YAMLObject):
         self.cipher = cipher
 
 
-class Format(yaml.YAMLObject):
+class Format(BaseYAMLObject):
     yaml_tag = u'!format'
 
 
-class Links(yaml.YAMLObject):
+class Links(BaseYAMLObject):
     yaml_tag = u'!links'
 
 
-class Cipher(yaml.YAMLObject):
+class Cipher(BaseYAMLObject):
     yaml_tag = u'!cipher'
 
     modes = {
@@ -50,32 +58,35 @@ class Cipher(yaml.YAMLObject):
         self.__dict__.update(d)
 
 
-class DerivedKey(yaml.YAMLObject):
+class DerivedKey(BaseYAMLObject):
     yaml_tag = u'!key'
 
 
-class Certificate(yaml.YAMLObject):
+class Certificate(BaseYAMLObject):
     yaml_tag = u'!certificate'
 
 
-class MAC(yaml.YAMLObject):
+class MAC(BaseYAMLObject):
     yaml_tag = u'!mac'
 
 
-class Signature(yaml.YAMLObject):
+class Signature(BaseYAMLObject):
     yaml_tag = u'!signature'
 
 
-yaml.add_path_resolver(u'!format', ["meta", "format"], dict)
-yaml.add_path_resolver(u'!cipher', ["meta", "cipher"], dict)
-yaml.add_path_resolver(u'!meta', ["meta"], dict)
-yaml.add_path_resolver(u'!mac', ["mac"], dict)
-yaml.add_path_resolver(u'!signature', ["signature"], dict)
-yaml.add_path_resolver(u'!key', ["keys", None], dict)
+def add_path_resolver(tag, keys):
+    yaml.add_path_resolver(tag, keys, dict, Loader=PrettySafeLoader)
+
+add_path_resolver(u'!format', ["meta", "format"])
+add_path_resolver(u'!cipher', ["meta", "cipher"])
+add_path_resolver(u'!meta', ["meta"])
+add_path_resolver(u'!mac', ["mac"])
+add_path_resolver(u'!signature', ["signature"])
+add_path_resolver(u'!key', ["keys", None])
 
 
 def load_all(f):
-    return yaml.load_all(f, Loader=Loader)
+    return yaml.load_all(f, Loader=PrettySafeLoader)
 
 
 def make_adf(archive=None, canonical=False):
