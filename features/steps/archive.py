@@ -12,3 +12,4 @@ def one_archive(context):
         os.makedirs(d)
     context.archive = NamedTemporaryFile(dir=d, suffix='.adf')
     context.archive.write(make_adf(Archive('foo', {})))
+    context.archive.flush()
