@@ -13,6 +13,10 @@ class AdfTest(TestCase):
         from lacli.adf import Archive, make_adf
         self.assertEqual(make_adf(Archive('foo', {}), True), ADF_TEST_DATA_1)
 
+    def test_unicode(self):
+        from lacli.adf import Archive, make_adf
+        self.assertEqual(make_adf(Archive(u'foo', {}), True), ADF_TEST_DATA_1)
+
     def test_meta(self):
         from lacli.adf import Meta, make_adf
         meta = make_adf(Meta(format='zip', cipher='aes-256-ctr'), True)
