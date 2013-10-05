@@ -25,6 +25,10 @@ class Auth(yaml.YAMLObject):
 class Meta(yaml.YAMLObject):
     yaml_tag = u'!meta'
 
+    def __init__(self, format, cipher):
+        self.format = format
+        self.cipher = cipher
+
 
 class Format(yaml.YAMLObject):
     yaml_tag = u'!format'

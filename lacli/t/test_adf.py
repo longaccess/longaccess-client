@@ -13,6 +13,11 @@ class AdfTest(TestCase):
         from lacli.adf import Archive, make_adf
         self.assertEqual(make_adf(Archive('foo', {}), True), ADF_TEST_DATA_1)
 
+    def test_meta(self):
+        from lacli.adf import Meta, make_adf
+        meta = make_adf(Meta(format='zip', cipher='aes-256-ctr'), True)
+        self.assertEqual(meta, ADF_TEST_DATA_2)
+
     def test_minimal(self):
         from lacli.adf import load_all
 
@@ -44,5 +49,14 @@ ADF_TEST_DATA_1 = """---
   : !!seq [],
   ? !!str "title"
   : !!str "foo",
+}
+"""
+
+ADF_TEST_DATA_2 = """---
+!meta {
+  ? !!str "cipher"
+  : !!str "aes-256-ctr",
+  ? !!str "format"
+  : !!str "zip",
 }
 """
