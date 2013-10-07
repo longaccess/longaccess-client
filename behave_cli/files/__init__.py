@@ -1,4 +1,14 @@
 import os
+from shutil import rmtree
+
+try:
+    from behave_cli import logger as logging
+except ImportError:
+    import logging
+
+
+def ferror(f, p, x):
+    logging.error("{}: {}".format(p, x[1].strerror))
 
 
 def setup(context):
@@ -15,5 +25,5 @@ def teardown(context):
         if os.path.exists(f):
             os.remove(f)
             context.fifo[f].join()
-        os.rmdir(d)
+        rmtree(d, onerror=ferror)
     context.files = {}
