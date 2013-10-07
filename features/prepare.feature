@@ -31,3 +31,11 @@ Feature: prepare archive command
         And the command line arguments "archive {foo}"
         When I run console script "lacli"
         Then I see "archive prepared"
+
+    Scenario: I prepare a new archive with an empty directory and title
+        Given an empty folder "foo"
+        And the command line arguments "archive -t foo {foo}"
+        When I run console script "lacli"
+        Then I see "archive prepared"
+        And I have a prepared archive titled "foo"
+
