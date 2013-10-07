@@ -1,14 +1,15 @@
 import os
 from behave import step
+from behave_cli import format_vars
 from tempfile import NamedTemporaryFile, mkdtemp
 from errno import EPIPE
 from multiprocessing import Process
 
 
 @step(u'an empty file "{name}"')
-def empty_file(context, name):
+def empty_file(context, name, directory=None):
     assert name not in context.files
-    f = NamedTemporaryFile()
+    f = NamedTemporaryFile(dir=directory)
     assert os.path.exists(f.name), "Path exists"
     assert os.path.isfile(f.name), "Path is file"
     context.files[name] = f
@@ -20,6 +21,12 @@ def empty_dir(context, name):
     dname = mkdtemp()
     assert os.path.isdir(dname), "Path is directory"
     context.dirs[name] = dname
+
+
+@step(u'under "{directory}" an empty file "{name}"')
+@format_vars
+def file_under_dir(context, directory, name):
+    empty_file(context, name, directory)
 
 
 @step(u'a file "{name}" with contents')
