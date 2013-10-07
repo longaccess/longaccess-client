@@ -1,3 +1,6 @@
+import os
+import shutil
+
 from behave_cli import environment as clienv
 
 
@@ -26,3 +29,6 @@ def after_scenario(context, scenario):
     clienv.after_scenario(context, scenario)
     if context.archive is not None:
         context.archive.close()
+    d = os.path.join(context.environ['HOME'], ".longaccess")
+    if os.path.isdir(d):
+        shutil.rmtree(d)
