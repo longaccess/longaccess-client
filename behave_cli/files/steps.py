@@ -29,6 +29,35 @@ def file_under_dir(context, directory, name):
     empty_file(context, name, directory)
 
 
+@step(u'file "{path}" is unreadable')
+@format_vars
+def file_unreadable(context, path):
+    assert os.path.exists(path), "Path exists"
+    os.chmod(path, 0)
+    opened = False
+    try:
+        with open(path):
+            opened = True
+    except IOError:
+        pass
+    assert not opened
+
+
+@step(u'directory "{path}" is unwritable')
+@format_vars
+def dir_unwritable(context, path):
+    assert os.path.exists(path), "Path exists"
+    assert os.path.isdir(path), "Is directory"
+    os.chmod(path, 0)
+    written = False
+    try:
+        NamedTemporaryFile(dir=path)
+        written = True
+    except OSError:
+        pass
+    assert not written
+
+
 @step(u'a file "{name}" with contents')
 def file_with_content(context, name):
     assert name not in context.files
