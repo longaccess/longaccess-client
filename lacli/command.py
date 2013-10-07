@@ -70,6 +70,7 @@ class LaCommand(cmd.Cmd):
             if not os.path.isdir(d):
                 print "The specified folder does not exist."
                 return
+            print "archive prepared"
         try:
             archives = self.cache.archives()
 
