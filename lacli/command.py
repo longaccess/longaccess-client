@@ -3,6 +3,7 @@ import cmd
 import glob
 from lacli.log import getLogger, setupLogging
 from lacli.upload import Upload
+from contextlib import contextmanager
 
 
 class LaCommand(cmd.Cmd):
@@ -15,6 +16,8 @@ class LaCommand(cmd.Cmd):
         self.session = session
         self.cache = cache
         self.uploader = Upload(session, prefs['upload'])
+        self._var = {}
+        self._default_var = {}
 
     def do_tvmconf(self, line):
         """tvmconf
@@ -90,3 +93,23 @@ class LaCommand(cmd.Cmd):
 
     def complete_put(self, text, line, begidx, endidx):
         return [os.path.basename(x) for x in glob.glob('{}*'.format(line[4:]))]
+
+    @contextmanager
+    def temp_var(self, **kwargs):
+        """ replace vars with the values from kwargs and
+            restore original condition after """
+        old = {}
+        for k, v in kwargs.iteritems():
+            if k in self._var:
+                old[k] = self._var.pop(k)
+            if not v and k in self._default_var:
+                if hasattr(self._default_var[k], '__call__'):
+                    v = self._default_var[k]()
+                else:
+                    v = self._default_var[k]
+            self._var[k] = v
+        yield self
+        for k, v in kwargs.iteritems():
+            if k in self._var:
+                del self._var[k]
+        self._var.update(old)
