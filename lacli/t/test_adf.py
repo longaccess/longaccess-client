@@ -9,13 +9,19 @@ class AdfTest(TestCase):
     def tearDown(self):
         super(AdfTest, self).tearDown()
 
+    def _archive(self, title='', format='', cipher=''):
+        from lacli.adf import Archive, Meta
+        return Archive(title, Meta(format, cipher))
+
     def test_archive(self):
-        from lacli.adf import Archive, make_adf
-        self.assertEqual(make_adf(Archive('foo', {}), True), ADF_TEST_DATA_1)
+        from lacli.adf import make_adf
+        self.assertEqual(ADF_TEST_DATA_1,
+                         make_adf(self._archive('foo'), True))
 
     def test_unicode(self):
-        from lacli.adf import Archive, make_adf
-        self.assertEqual(make_adf(Archive(u'foo', {}), True), ADF_TEST_DATA_1)
+        from lacli.adf import make_adf
+        self.assertEqual(ADF_TEST_DATA_1,
+                         make_adf(self._archive('foo'), True))
 
     def test_meta(self):
         from lacli.adf import Meta, make_adf
@@ -48,7 +54,12 @@ ADF_TEST_DATA_1 = """---
   ? !!str "description"
   : !!null "null",
   ? !!str "meta"
-  : !!map {},
+  : !meta {
+    ? !!str "cipher"
+    : !!str "",
+    ? !!str "format"
+    : !!str "",
+  },
   ? !!str "tags"
   : !!seq [],
   ? !!str "title"
