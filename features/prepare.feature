@@ -38,3 +38,19 @@ Feature: prepare archive command
         When I run console script "lacli"
         Then I see "archive prepared"
         And there is a prepared archive titled "foo"
+
+    Scenario: I prepare a new archive but it fails due to unreadable files
+        Given an empty folder "foo"
+        And under "{foo}" an empty file "bar"
+        And file "{bar}" is unreadable
+        And the command line arguments "archive -t foo {foo}"
+        When I run console script "lacli"
+        Then I see "error: "
+
+    Scenario: I prepare a new archive but it fails due to unwritable files
+        Given an empty folder "foo"
+        And an empty folder "bar"
+        And directory "{bar}" is unwritable
+        And the command line arguments "archive --home {bar} -t foo {foo}"
+        When I run console script "lacli"
+        Then I see "error: "
