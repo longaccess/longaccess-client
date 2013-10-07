@@ -105,5 +105,5 @@ def load_archive(f):
             return o
 
 
-def make_adf(archive=None, canonical=False):
-    return yaml.safe_dump(archive, canonical=canonical)
+def make_adf(archive=None, canonical=False, out=None):
+    return yaml.safe_dump(archive, out, canonical=canonical)
