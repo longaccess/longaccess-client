@@ -26,3 +26,8 @@ Feature: prepare archive command
         When I run console script "lacli"
         Then I see "The specified folder does not exist"
 
+    Scenario: I prepare a new archive with an empty directory
+        Given an empty folder "foo"
+        And the command line arguments "archive {foo}"
+        When I run console script "lacli"
+        Then I see "archive prepared"
