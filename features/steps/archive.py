@@ -18,3 +18,12 @@ def one_archive_titled(context, title):
     context.archive = NamedTemporaryFile(dir=d, suffix='.adf')
     context.archive.write(make_adf(Archive(title, Meta('zip', 'aes'))))
     context.archive.flush()
+
+
+@step(u'there is a prepared archive titled "{title}"')
+def exists_archive_titled(context, title):
+    context.execute_steps(u"""
+        Given the command line arguments "archive"
+        When I run console script "lacli"
+        Then I see ") {}"
+        """.format(title))

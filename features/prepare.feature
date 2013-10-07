@@ -37,5 +37,4 @@ Feature: prepare archive command
         And the command line arguments "archive -t foo {foo}"
         When I run console script "lacli"
         Then I see "archive prepared"
-        And I have a prepared archive titled "foo"
-
+        And there is a prepared archive titled "foo"
