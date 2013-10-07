@@ -20,3 +20,6 @@ class Cache(object):
                 "ADF file '{}' didn't contain archive description!".format(fn))
         fs = iglob(os.path.join(self.home, 'archives', '*.adf'))
         return filter(None, imap(getit, fs))
+
+    def prepare(self, title):
+        pass

@@ -3,7 +3,7 @@
 
 Usage: lacli put [options] [-b <bucket> ] [-n <np>] <filename>...
        lacli list [options]
-       lacli archive [options] [<dirname>]
+       lacli archive [options] [-t <title>] [<dirname>]
        lacli [options]
        lacli -h, --help
 
@@ -14,6 +14,7 @@ Options:
     -b <bucket>, --bucket <bucket> bucket to upload to [default: lastage]
     -n <np>, --procs <np>          number of processes [default: auto]
     --home <home>                  conf/cache dir [default: ~/.longaccess]
+    -t <title>, --title <title>    title for prepared archive
 
 """
 
@@ -78,7 +79,8 @@ def main(args=sys.argv[1:]):
     elif options['archive']:
         d = options['<dirname>']
         if d:
-            cli.onecmd('archive {}'.format(d))
+            with cli.temp_var(archive_title=options['--title']):
+                cli.onecmd('archive {}'.format(d))
         else:
             cli.onecmd('archive')
     else:

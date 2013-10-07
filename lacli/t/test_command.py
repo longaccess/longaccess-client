@@ -1,8 +1,11 @@
 import os
+import time
 
 from testtools import TestCase
+from testtools.matchers import Contains
 from . import makeprefs
-from mock import Mock
+from mock import Mock, patch
+from StringIO import StringIO
 
 
 class CommandTest(TestCase):
@@ -35,3 +38,32 @@ class CommandTest(TestCase):
         assert 'bar' not in cli._var
         assert 'none' not in cli._var
         assert 'acid' not in cli._var
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_do_archive_no_title(self, mock_stdout):
+        cache = Mock(prepare=Mock(return_value='True'))
+        cli = self._makeit(Mock(), cache, self.prefs)
+        with cli.temp_var(archive_title=None):
+            cli.onecmd('archive ' + self.home)
+        cache.prepare.assert_called_with(time.strftime("%x archive"))
+        self.assertThat(mock_stdout.getvalue(),
+                        Contains('archive prepared'))
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_do_archive_with_title(self, mock_stdout):
+        cache = Mock(prepare=Mock(return_value='True'))
+        cli = self._makeit(Mock(), cache, self.prefs)
+        with cli.temp_var(archive_title='baz'):
+            cli.onecmd('archive ' + self.home)
+        cache.prepare.assert_called_with("baz")
+        self.assertThat(mock_stdout.getvalue(),
+                        Contains('archive prepared'))
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_do_archive_exception(self, mock_stdout):
+        cache = Mock(prepare=Mock(side_effect=Exception("foo")))
+        cli = self._makeit(Mock(), cache, self.prefs)
+        with cli.temp_var(archive_title='bar'):
+            cli.onecmd('archive ' + self.home)
+        self.assertThat(mock_stdout.getvalue(),
+                        Contains('error: foo'))

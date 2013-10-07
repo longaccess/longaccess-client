@@ -3,6 +3,7 @@ import cmd
 import glob
 from lacli.log import getLogger, setupLogging
 from lacli.upload import Upload
+from time import strftime
 from contextlib import contextmanager
 
 
@@ -17,7 +18,7 @@ class LaCommand(cmd.Cmd):
         self.cache = cache
         self.uploader = Upload(session, prefs['upload'])
         self._var = {}
-        self._default_var = {}
+        self._default_var = {'archive_title': lambda: strftime("%x archive")}
 
     def do_tvmconf(self, line):
         """tvmconf
@@ -73,7 +74,14 @@ class LaCommand(cmd.Cmd):
             if not os.path.isdir(d):
                 print "The specified folder does not exist."
                 return
-            print "archive prepared"
+            title = None
+            if 'archive_title' in self._var:
+                title = self._var["archive_title"]
+            try:
+                self.cache.prepare(title)
+                print "archive prepared"
+            except Exception as e:
+                print "error: " + str(e)
         try:
             archives = self.cache.archives()
 
