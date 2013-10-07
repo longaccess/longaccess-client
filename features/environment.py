@@ -19,7 +19,10 @@ def after_feature(context, feature):
 
 def before_scenario(context, scenario):
     clienv.before_scenario(context, scenario)
+    context.archive = None
 
 
 def after_scenario(context, scenario):
     clienv.after_scenario(context, scenario)
+    if context.archive is not None:
+        context.archive.close()
