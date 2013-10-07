@@ -32,7 +32,7 @@ class Archive(BaseYAMLObject):
         self.description = description
         self.tags = tags
         if not hasattr(meta, 'format'):
-            raise ValueError("invalid meta: "+ str(meta))
+            raise ValueError("invalid meta: " + str(meta))
         self.meta = meta
 
 
