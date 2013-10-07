@@ -1,9 +1,8 @@
 import os
 from behave import step
-from tempfile import NamedTemporaryFile
+from tempfile import NamedTemporaryFile, mkdtemp
 from errno import EPIPE
 from multiprocessing import Process
-from tempfile import mkdtemp
 
 
 @step(u'an empty file "{name}"')
@@ -13,6 +12,14 @@ def empty_file(context, name):
     assert os.path.exists(f.name), "Path exists"
     assert os.path.isfile(f.name), "Path is file"
     context.files[name] = f
+
+
+@step(u'an empty folder "{name}"')
+def empty_dir(context, name):
+    assert name not in context.dirs
+    dname = mkdtemp()
+    assert os.path.isdir(dname), "Path is directory"
+    context.dirs[name] = dname
 
 
 @step(u'a file "{name}" with contents')
