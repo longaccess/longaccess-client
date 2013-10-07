@@ -65,6 +65,11 @@ class LaCommand(cmd.Cmd):
     def do_archive(self, line):
         """List or manage prepared archives"""
 
+        d = line.strip()
+        if d:
+            if not os.path.isdir(d):
+                print "The specified folder does not exist."
+                return
         try:
             archives = self.cache.archives()
 
