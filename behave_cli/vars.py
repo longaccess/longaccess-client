@@ -1,4 +1,5 @@
 from functools import wraps
+from .log import logger
 
 
 def format_vars(f):
@@ -11,7 +12,10 @@ def format_vars(f):
         if ctx.text is not None:
             ctx.text = ctx.text.format(**vs)
         args = [a.format(**vs) for a in args]
-        kwargs = dict(((k, v.format(**vs))
-                       for k, v in kwargs.items()))
+        try:
+            kwargs = dict(((k, v.format(**vs))
+                           for k, v in kwargs.items()))
+        except KeyError as e:
+            logger.error("var {} not found".format(e.message))
         return f(ctx, *args, **kwargs)
     return w
