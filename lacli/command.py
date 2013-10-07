@@ -70,32 +70,30 @@ class LaCommand(cmd.Cmd):
         """List or manage prepared archives"""
 
         d = line.strip()
-        if d:
-            if not os.path.isdir(d):
-                print "The specified folder does not exist."
-                return
-            title = None
-            if 'archive_title' in self._var:
-                title = self._var["archive_title"]
-            try:
-                self.cache.prepare(title)
-                print "archive prepared"
-            except Exception as e:
-                print "error: " + str(e)
         try:
-            archives = self.cache.archives()
-
-            if len(archives):
-                print "Prepared archives:"
-                for n, archive in enumerate(archives):
-                    lines = (('desc:', archive.description),
-                             ('tags:', ", ".join(archive.tags)),
-                             ('type:', archive.meta.format))
-                    print "{}) {}".format(n+1, archive.title)
-                    for line in lines:
-                        print "{:<7}{:<30}".format(line[0], line[1])
+            if d:
+                if not os.path.isdir(d):
+                    print "The specified folder does not exist."
+                    return
+                title = None
+                if 'archive_title' in self._var:
+                    title = self._var["archive_title"]
+                    self.cache.prepare(title)
+                    print "archive prepared"
             else:
-                print "No prepared archives."
+                archives = self.cache.archives()
+
+                if len(archives):
+                    print "Prepared archives:"
+                    for n, archive in enumerate(archives):
+                        lines = (('desc:', archive.description),
+                                 ('tags:', ", ".join(archive.tags)),
+                                 ('type:', archive.meta.format))
+                        print "{}) {}".format(n+1, archive.title)
+                        for line in lines:
+                            print "{:<7}{:<30}".format(line[0], line[1])
+                else:
+                    print "No prepared archives."
         except Exception as e:
             print "error: " + str(e)
 
