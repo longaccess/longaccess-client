@@ -13,4 +13,10 @@ Feature: prepare archive command
         And I have 1 prepared archive titled "foo"
         When I run console script "lacli"
         Then I see "Prepared archives:"
+
+    Scenario: I list prepared archives with title
+        Given the command line arguments "archive"
+        And I have 1 prepared archive titled "foo"
+        When I run console script "lacli"
+        Then I see "Prepared archives:"
         And I see "1) foo"
