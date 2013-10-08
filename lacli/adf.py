@@ -4,9 +4,11 @@ from lacli.cipher import modes as cipher_modes
 
 try:
     from yaml import CSafeLoader as SafeLoader
-    from yaml import CSafeDumper as SafeDumper
 except ImportError:
     from yaml import SafeLoader
+try:
+    from yaml import CSafeDumper as SafeDumper
+except ImportError:
     from yaml import SafeDumper
 
 
