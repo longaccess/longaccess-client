@@ -4,7 +4,8 @@ import re
 from urlparse import urlunparse
 from glob import iglob
 from itertools import imap
-from lacli.adf import load_archive, Archive, Meta, Links, make_adf
+from lacli.adf import (load_archive, Certificate, Archive,
+                       Meta, Links, make_adf, Cipher)
 from lacli.log import getLogger
 from unidecode import unidecode
 from datetime import date
@@ -53,7 +54,8 @@ class Cache(object):
             ).strip().lower())
 
     def prepare(self, title, folder, fmt='zip'):
-        archive = Archive(title, Meta(fmt, ''))
+        cipher = Cipher('aes-256-ctr', 1)
+        archive = Archive(title, Meta(fmt, cipher))
         for f in self._dump(archive, folder):
             print "Added ", f
 
@@ -65,7 +67,7 @@ class Cache(object):
             ('file', os.path.join(self._cache_dir('data'), name + ".zip"),
              '', '', '', '')))
         with self._archive_open(name + ".adf", 'w') as f:
-            make_adf([archive, link], out=f)
+            make_adf([archive, Certificate(), link], out=f)
             files = (os.path.join(root, f)
                      for root, _, fs in os.walk(folder)
                      for f in fs)
