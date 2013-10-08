@@ -11,8 +11,7 @@ except ImportError:
 
 
 class PrettySafeLoader(SafeLoader):
-    def construct_yaml_str(self, node):
-        return self.construct_scalar(node)
+    pass
 
 
 class BaseYAMLObject(yaml.YAMLObject):
