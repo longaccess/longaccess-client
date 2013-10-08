@@ -48,6 +48,14 @@ class ApiTest(TestCase):
     def test_api(self):
         assert self._makeit(self.prefs, Mock())
 
+    def test_api_no_prefs(self):
+        import lacli.api
+        mock_netrc = Mock(hosts={'stage.longaccess.com': ('a', 'b', 'c')})
+        mock_construct = Mock(return_value=mock_netrc)
+        with patch.object(lacli.api, 'netrc', mock_construct, create=True):
+            self._makeit({})
+            self._makeit({}, self._factory({}))
+
     def test_api_root(self):
         r = json.loads(LA_ENDPOINTS_RESPONSE)
         s = self._mocksessions({'get.return_value': self._mockresponse([r])})
