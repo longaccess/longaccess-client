@@ -36,7 +36,7 @@ class RequestsFactory():
 class Api(BaseTvm):
 
     def __init__(self, prefs, sessions=None):
-        self.url = prefs['url']
+        self.url = prefs.get('url')
         if self.url is None:
             prefs['url'] = self.url = API_URL
         if sessions is None:
