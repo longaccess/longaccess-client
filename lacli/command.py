@@ -95,6 +95,8 @@ class LaCommand(cmd.Cmd):
                 else:
                     print "No prepared archives."
         except Exception as e:
+            getLogger().debug("exception while preparing",
+                              exc_info=True)
             print "error: " + str(e)
 
     def complete_put(self, text, line, begidx, endidx):
