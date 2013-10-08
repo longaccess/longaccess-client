@@ -3,7 +3,7 @@
 
 Usage: lacli put [options] [-b <bucket> ] [-n <np>] <filename>...
        lacli list [options]
-       lacli archive [options]
+       lacli archive [options] [-t <title>] [<dirname>]
        lacli [options]
        lacli -h, --help
 
@@ -13,6 +13,8 @@ Options:
     -d <level>, --debug <level>    debugging level, from 0 to 2 [default: 0]
     -b <bucket>, --bucket <bucket> bucket to upload to [default: lastage]
     -n <np>, --procs <np>          number of processes [default: auto]
+    --home <home>                  conf/cache dir [default: ~/.longaccess]
+    -t <title>, --title <title>    title for prepared archive
 
 """
 
@@ -23,6 +25,7 @@ from docopt import docopt
 from lacli.command import LaCommand
 from lacli import __version__
 from lacli.api import Api
+from lacli.cache import Cache
 
 
 def settings(options):
@@ -42,37 +45,44 @@ def settings(options):
         print "error: illegal value for 'procs' parameter."
         raise
 
-    return {
-        'api': {
-            'user': options['--user'],
-            'pass': options['--password'],
-            'url': os.getenv('LA_API_URL'),
+    return (
+        {
+            'api': {
+                'user': options['--user'],
+                'pass': options['--password'],
+                'url': os.getenv('LA_API_URL'),
+            },
+            'upload': {
+                'bucket': options['--bucket'],
+                'nprocs': nprocs,
+                'retries': 4,
+                'debugworker': debug > 2
+            },
+            'command': {
+                'debug': debug
+            },
         },
-        'upload': {
-            'bucket': options['--bucket'],
-            'nprocs': nprocs,
-            'retries': 4,
-            'debugworker': debug > 2
-        },
-        'command': {
-            'debug': debug
-        },
-    }
+        Cache(os.path.expanduser(options['--home'])))
 
 
 def main(args=sys.argv[1:]):
     """Main function called by `laput` command.
     """
     options = docopt(__doc__, version='laput {}'.format(__version__))
-    prefs = settings(options)
-    cli = LaCommand(Api(prefs['api']), prefs)
+    prefs, cache = settings(options)
+    cli = LaCommand(Api(prefs['api']), cache, prefs)
     if options['put']:
         for fname in options['<filename>']:
             cli.onecmd('put {}'.format(fname))
     elif options['list']:
         cli.onecmd('list')
     elif options['archive']:
-        cli.onecmd('archive')
+        d = options['<dirname>']
+        if d:
+            with cli.temp_var(archive_title=options['--title']):
+                cli.onecmd('archive {}'.format(d))
+        else:
+            cli.onecmd('archive')
     else:
         cli.cmdloop()
 

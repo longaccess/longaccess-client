@@ -14,8 +14,8 @@ class RequestsFactory():
 
     def __init__(self, prefs):
         self.prefs = prefs
-        if self.prefs['user'] is None:
-            self.read_netrc(self.prefs['url'])
+        if self.prefs.get('user') is None:
+            self.read_netrc(self.prefs.get('url', API_URL))
 
     def new_session(self):
         import requests
@@ -24,6 +24,8 @@ class RequestsFactory():
         return session
 
     def read_netrc(self, url):
+        if not url:
+            return
         hostname = urlparse(url).hostname
         for host, creds in netrc().hosts.iteritems():
             if host == hostname:
@@ -34,7 +36,7 @@ class RequestsFactory():
 class Api(BaseTvm):
 
     def __init__(self, prefs, sessions=None):
-        self.url = prefs['url']
+        self.url = prefs.get('url')
         if self.url is None:
             prefs['url'] = self.url = API_URL
         if sessions is None:

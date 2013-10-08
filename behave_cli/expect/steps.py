@@ -94,10 +94,11 @@ def run_named_command(context, command, name):
 
 @step(u'I see "{text}"')
 def i_see_text(context, text):
-    assert expected_text(context.child, text), "Expected '{}'".format(text)
+    txt = "Expected '{}'".format(text)
+    assert expected_text(context.child, text, context.timeout), txt
 
 
 @step(u'I wait until I don\'t see "{text}" anymore')
 def wait_for_text(context, text):
-    while expected_text(context.child, text):
+    while expected_text(context.child, text, context.timeout):
         pass

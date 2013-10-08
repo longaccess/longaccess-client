@@ -1,5 +1,6 @@
 from testtools import TestCase, ExpectedException
-from mock import Mock
+from mock import Mock, patch
+from itertools import repeat, izip
 from . import makeprefs
 from lacli.exceptions import ApiAuthException
 import json
@@ -17,6 +18,10 @@ class ApiTest(TestCase):
         from lacli.api import Api
         return Api(*args, **kw)
 
+    def _factory(self, prefs):
+        from lacli.api import RequestsFactory
+        return RequestsFactory(prefs)
+
     def _mocksessions(self, rsps):
         return Mock(new_session=Mock(return_value=Mock(**rsps)))
 
@@ -27,8 +32,30 @@ class ApiTest(TestCase):
         }
         return Mock(**mattr)
 
+    def test_factory(self):
+        import lacli.api
+        mock_netrc = Mock(hosts={'bla.com': ('a', 'b', 'c')})
+        mock_construct = Mock(return_value=mock_netrc)
+        with patch.object(lacli.api, 'netrc', mock_construct, create=True):
+            self._factory(self.prefs)
+            self._factory({})
+            self._factory({'url': None})
+            f = self._factory({'url': 'http://bla.com'})
+            self.assertEqual(f.prefs['user'], 'a')
+            self.assertEqual(f.prefs['pass'], 'c')
+            s = f.new_session()
+            self.assertEqual(s.auth, ('a', 'c'))
+
     def test_api(self):
         assert self._makeit(self.prefs, Mock())
+
+    def test_api_no_prefs(self):
+        import lacli.api
+        mock_netrc = Mock(hosts={'stage.longaccess.com': ('a', 'b', 'c')})
+        mock_construct = Mock(return_value=mock_netrc)
+        with patch.object(lacli.api, 'netrc', mock_construct, create=True):
+            self._makeit({})
+            self._makeit({}, self._factory({}))
 
     def test_api_root(self):
         r = json.loads(LA_ENDPOINTS_RESPONSE)
@@ -61,6 +88,15 @@ class ApiTest(TestCase):
         api = self._makeit(self.prefs, sessions=s)
         with ExpectedException(ApiAuthException):
             list(api.capsules())
+
+    def test_tokens(self):
+        er = self._mockresponse([json.loads(LA_ENDPOINTS_RESPONSE)])
+        ur = self._mockresponse(repeat(json.loads(LA_UPLOAD_RESPONSE)))
+        s = self._mocksessions({'get.return_value': er,
+                               'post.return_value': ur})
+        api = self._makeit(self.prefs, sessions=s)
+        for seq, token in izip(xrange(15), api.tokens()):
+            self.assertIn('token_access_key', token)
 
     def test_get_upload_token(self):
         er = self._mockresponse([json.loads(LA_ENDPOINTS_RESPONSE)])

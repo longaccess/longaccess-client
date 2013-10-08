@@ -1,5 +1,5 @@
 from . import setup, teardown
-from .file import filename_vars
+from .file import filename_vars, dirname_vars
 
 
 def before_all(context):
@@ -7,6 +7,7 @@ def before_all(context):
     if not hasattr(context, 'format_vars'):
         context.format_vars = []
     context.format_vars.append(filename_vars)
+    context.format_vars.append(dirname_vars)
 
 
 def after_all(context):

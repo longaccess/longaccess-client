@@ -3,10 +3,8 @@ from pexpect import EOF, TIMEOUT
 import os
 
 
-def expected_text(child, text):
-    index = child.expect_exact([text, TIMEOUT, EOF], timeout=10)
-
-    return index == 0
+def expected_text(child, text, timeout):
+    return 0 == child.expect_exact([text, TIMEOUT, EOF], timeout)
 
 
 def setup(context):
@@ -15,6 +13,7 @@ def setup(context):
     context.children = {}
     context.cwd = os.getcwd()
     context.args = None
+    context.timeout = 2
 
 
 def teardown(context):
