@@ -35,6 +35,11 @@ class AdfTest(TestCase):
         meta = make_adf(Meta(format='zip', cipher='aes-256-ctr'), True)
         self.assertEqual(meta, ADF_TEST_DATA_2)
 
+    def test_links(self):
+        from lacli.adf import Links, make_adf
+        links = make_adf(Links(download='foo', local='bar'), True)
+        self.assertEqual(ADF_TEST_DATA_3, links)
+
     def test_minimal(self):
         from lacli.adf import load_all
 
@@ -80,5 +85,14 @@ ADF_TEST_DATA_2 = """---
   : !!str "aes-256-ctr",
   ? !!str "format"
   : !!str "zip",
+}
+"""
+
+ADF_TEST_DATA_3 = """---
+!links {
+  ? !!str "download"
+  : !!str "foo",
+  ? !!str "local"
+  : !!str "bar",
 }
 """

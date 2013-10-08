@@ -56,6 +56,12 @@ class Format(BaseYAMLObject):
 class Links(BaseYAMLObject):
     yaml_tag = u'!links'
 
+    def __init__(self, download=None, local=None):
+        if download:
+            self.download = download
+        if local:
+            self.local = local
+
 
 class Cipher(BaseYAMLObject):
     yaml_tag = u'!cipher'
