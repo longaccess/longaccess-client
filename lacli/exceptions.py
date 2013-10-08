@@ -29,8 +29,6 @@ class UploadEmptyError(BaseAppException):
 
 
 class WorkerFailureError(BaseAppException):
-    msg = "worker '{}' failed"
-
     def __init__(self, *args, **kwargs):
         super(BaseAppException, self).__init__(self.msg, *args, **kwargs)
-        self.msg.format(current_process())
+        self.msg = "worker '{}' failed".format(current_process())
