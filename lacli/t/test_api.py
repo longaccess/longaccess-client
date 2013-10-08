@@ -1,5 +1,6 @@
 from testtools import TestCase, ExpectedException
 from mock import Mock, patch
+from itertools import repeat, izip
 from . import makeprefs
 from lacli.exceptions import ApiAuthException
 import json
@@ -87,6 +88,15 @@ class ApiTest(TestCase):
         api = self._makeit(self.prefs, sessions=s)
         with ExpectedException(ApiAuthException):
             list(api.capsules())
+
+    def test_tokens(self):
+        er = self._mockresponse([json.loads(LA_ENDPOINTS_RESPONSE)])
+        ur = self._mockresponse(repeat(json.loads(LA_UPLOAD_RESPONSE)))
+        s = self._mocksessions({'get.return_value': er,
+                               'post.return_value': ur})
+        api = self._makeit(self.prefs, sessions=s)
+        for seq, token in izip(xrange(15), api.tokens()):
+            self.assertIn('token_access_key', token)
 
     def test_get_upload_token(self):
         er = self._mockresponse([json.loads(LA_ENDPOINTS_RESPONSE)])

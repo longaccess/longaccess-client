@@ -78,7 +78,7 @@ class LaCommand(cmd.Cmd):
                 title = None
                 if 'archive_title' in self._var:
                     title = self._var["archive_title"]
-                    self.cache.prepare(title)
+                    self.cache.prepare(title, d)
                     print "archive prepared"
             else:
                 archives = self.cache.archives()

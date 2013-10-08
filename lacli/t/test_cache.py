@@ -47,7 +47,7 @@ class CacheTest(TestCase):
     def test_prepare(self):
         with self._temp_home() as home:
             cache = self._makeit(home)
-            cache.prepare('foo')
+            cache.prepare('foo', os.path.join('t', 'data', 'arc1'))
             archives = cache.archives()
             self.assertEqual(len(archives), 1)
             self.assertEqual(archives[0].title, 'foo')

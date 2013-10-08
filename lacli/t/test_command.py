@@ -45,7 +45,8 @@ class CommandTest(TestCase):
         cli = self._makeit(Mock(), cache, self.prefs)
         with cli.temp_var(archive_title=None):
             cli.onecmd('archive ' + self.home)
-        cache.prepare.assert_called_with(time.strftime("%x archive"))
+        cache.prepare.assert_called_with(
+            time.strftime("%x archive"), self.home)
         self.assertThat(mock_stdout.getvalue(),
                         Contains('archive prepared'))
 
@@ -55,7 +56,7 @@ class CommandTest(TestCase):
         cli = self._makeit(Mock(), cache, self.prefs)
         with cli.temp_var(archive_title='baz'):
             cli.onecmd('archive ' + self.home)
-        cache.prepare.assert_called_with("baz")
+        cache.prepare.assert_called_with("baz", self.home)
         self.assertThat(mock_stdout.getvalue(),
                         Contains('archive prepared'))
 

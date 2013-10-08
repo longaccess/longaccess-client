@@ -113,4 +113,6 @@ def load_archive(f):
 
 
 def make_adf(archive=None, canonical=False, out=None):
-    return yaml.safe_dump(archive, out, canonical=canonical)
+    if not hasattr(archive, '__getitem__'):
+        archive = [archive]
+    return yaml.safe_dump_all(archive, out, canonical=canonical)

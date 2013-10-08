@@ -1,12 +1,14 @@
 import os
 import re
 
+from urlparse import urlunparse
 from glob import iglob
 from itertools import imap
-from lacli.adf import load_archive, Archive, Meta, make_adf
+from lacli.adf import load_archive, Archive, Meta, Links, make_adf
 from lacli.log import getLogger
 from unidecode import unidecode
 from datetime import date
+from lacli.zip import zip_writer
 
 
 class Cache(object):
@@ -50,9 +52,21 @@ class Cache(object):
             '-', cls._slugify_strip_re.sub('', unidecode(value))
             ).strip().lower())
 
-    def prepare(self, title):
-        adfname = "{}-{}.adf".format(
+    def prepare(self, title, folder, fmt='zip'):
+        archive = Archive(title, Meta(fmt, ''))
+        for f in self._dump(archive, folder):
+            print "Added ", f
+
+    def _dump(self, archive, folder):
+        name = "{}-{}".format(
             date.today().isoformat(),
-            Cache._slugify(title))
-        with self._archive_open(adfname, 'w') as f:
-            make_adf(Archive(title, Meta('', '')), out=f)
+            Cache._slugify(archive.title))
+        link = Links(local=urlunparse(
+            ('file', os.path.join(self._cache_dir('data'), name + ".zip"),
+             '', '', '', '')))
+        with self._archive_open(name + ".adf", 'w') as f:
+            make_adf([archive, link], out=f)
+            files = (os.path.join(root, f)
+                     for root, _, fs in os.walk(folder)
+                     for f in fs)
+            return zip_writer(name + ".zip", files, self)
