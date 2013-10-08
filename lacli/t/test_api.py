@@ -1,5 +1,5 @@
 from testtools import TestCase, ExpectedException
-from mock import Mock
+from mock import Mock, patch
 from . import makeprefs
 from lacli.exceptions import ApiAuthException
 import json
@@ -17,6 +17,10 @@ class ApiTest(TestCase):
         from lacli.api import Api
         return Api(*args, **kw)
 
+    def _factory(self, prefs):
+        from lacli.api import RequestsFactory
+        return RequestsFactory(prefs)
+
     def _mocksessions(self, rsps):
         return Mock(new_session=Mock(return_value=Mock(**rsps)))
 
@@ -26,6 +30,20 @@ class ApiTest(TestCase):
             'raise_for_status': Mock(**kwargs),
         }
         return Mock(**mattr)
+
+    def test_factory(self):
+        import lacli.api
+        mock_netrc = Mock(hosts={'bla.com': ('a', 'b', 'c')})
+        mock_construct = Mock(return_value=mock_netrc)
+        with patch.object(lacli.api, 'netrc', mock_construct, create=True):
+            self._factory(self.prefs)
+            self._factory({})
+            self._factory({'url': None})
+            f = self._factory({'url': 'http://bla.com'})
+            self.assertEqual(f.prefs['user'], 'a')
+            self.assertEqual(f.prefs['pass'], 'c')
+            s = f.new_session()
+            self.assertEqual(s.auth, ('a', 'c'))
 
     def test_api(self):
         assert self._makeit(self.prefs, Mock())
