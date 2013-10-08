@@ -14,7 +14,7 @@ class RequestsFactory():
 
     def __init__(self, prefs):
         self.prefs = prefs
-        if self.prefs['user'] is None:
+        if 'user' in self.prefs and self.prefs['user'] is None:
             self.read_netrc(self.prefs['url'])
 
     def new_session(self):
