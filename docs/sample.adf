@@ -1,0 +1,43 @@
+--- !archive
+title: My 2013 vacation
+description: |
+  This archive contains pictures from my
+  vacation in 2013, organized by location.
+tags:
+  - Corfu
+  - Kefalonia
+  - Zakynthos
+meta:
+  platform: Windows XP
+  creator: Konstantinos Koukopoulos (Long Access Client v0.7)
+  created: 2013-06-07T10:45:01Z
+  format:
+    type: tar
+    compression: bz2
+  cipher:
+    mode: aes-256-ctr
+    key: 1
+    input: !!binary "gkrtcb10xlbta9qhnyozj67dgk1f1uluhbf6xcbavhi="
+--- !auth
+checksum: !!binary "gkrtcb10xlbta9qhnyozj67dgk1f1uluhbf6xcbavhi="
+mac:
+  mode: HMAC-MD5
+  key: 2
+  output: !!binary "gkrtcb10xlbta9qhnyozj67dgk1f1uluhbf6xcbavhi="
+--- !certificate
+signature:
+  originator: |
+    The Long Access Company
+    Athinas 36, 10551
+    Athens, Greece
+  data: !!binary "gkrtcb10xlbta9qhnyozj67dgk1f1uluhbf6xcbavhi="
+  type: S/MIME
+keys:
+  - !!binary "gkrtcb10xlbta9qhnyozj67dgk1f1uluhbf6xcbavhi="
+  - key: 1
+    method: pbkdf2
+    input: !!binary "gkrtcb10xlbta9qhnyozj67dgk1f1uluhbf6xcbavhi="
+--- !links
+download: http://download.longaccess.com/x0fs8907494875
+local: file:///path/to/archive
+# vi:ft=yaml

@@ -1,10 +1,10 @@
 #!/home/kouk/code/bototest/bin/python
 """Upload a file to Long Access
 
-Usage: lacli put [-d <level>] [-u <user>] [-p <pass>]
-            [-b <bucket> ] [-n <np>] <filename>...
-       lacli list [-u <user>] [-p <pass>]
-       lacli [-u <user>] [-p <pass>]
+Usage: lacli put [options] [-b <bucket> ] [-n <np>] <filename>...
+       lacli list [options]
+       lacli archive [options]
+       lacli [options]
        lacli -h, --help
 
 Options:
@@ -12,7 +12,7 @@ Options:
     -p <pass>, --password <pass>   user password
     -d <level>, --debug <level>    debugging level, from 0 to 2 [default: 0]
     -b <bucket>, --bucket <bucket> bucket to upload to [default: lastage]
-    -n <np>, --procs <np>         number of processes [default: auto]
+    -n <np>, --procs <np>          number of processes [default: auto]
 
 """
 
@@ -71,6 +71,8 @@ def main(args=sys.argv[1:]):
             cli.onecmd('put {}'.format(fname))
     elif options['list']:
         cli.onecmd('list')
+    elif options['archive']:
+        cli.onecmd('archive')
     else:
         cli.cmdloop()
 

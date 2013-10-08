@@ -1,0 +1,11 @@
+--- !archive
+title: milos 2013
+description: My 2013 vacation in Milos
+meta:
+  format: zip
+  cipher: aes-256-ctr
+--- !certificate
+key: !!binary "gkrtcb10xlbta9qhnyozj67dgk1f1uluhbf6xcbavhi="
+--- !links
+download: http://download.longaccess.com/x0fs8907494875
+# vi:ft=yaml

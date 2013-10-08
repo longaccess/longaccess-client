@@ -78,5 +78,6 @@ class Api(BaseTvm):
     def capsules(self):
         url = self.endpoints['capsule']
         keys = ['title', 'remaining', 'size']
+        getLogger().debug("requesting capsules from {}".format(url))
         for cs in self._get(url)['objects']:
             yield dict([(k, cs.get(k, None)) for k in keys])
