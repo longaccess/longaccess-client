@@ -43,7 +43,7 @@ class AdfTest(TestCase):
     def test_minimal(self):
         from lacli.adf import load_all
 
-        with open('../docs/minimal.adf') as f:
+        with open('t/data/home/archives/minimal.adf') as f:
             archive, certificate, _ = load_all(f)
             self.assertEqual(archive.meta.cipher, 'aes-256-ctr')
             b = unpack("<LLLLLLLL", certificate.key)
@@ -52,7 +52,7 @@ class AdfTest(TestCase):
     def test_sample(self):
         from lacli.adf import load_all
 
-        with open('../docs/sample.adf') as f:
+        with open('t/data/home/archives/sample.adf') as f:
             archive, _, certificate, _ = load_all(f)
             self.assertEqual(archive.meta.cipher.mode, 'aes-256-ctr')
             b = unpack("<LLLLLLLL", archive.meta.cipher.input)
