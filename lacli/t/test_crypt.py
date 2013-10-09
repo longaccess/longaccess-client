@@ -15,15 +15,28 @@ class CryptIOTest(TestCase):
         from lacli.crypt import CryptIO
         return CryptIO(*args, **kwargs)
 
-    def _mockfile(self):
-        return Mock(mode='wb', write=Mock())
+    def _mockfile(self, mode='rb', read=None):
+        return Mock(mode=mode, write=Mock(), read=(read or Mock()))
+
+    def _makecipher(self):
+        return Mock(encipher=lambda x: x,
+                    decipher=lambda x: x,
+                    flush=lambda: '')
 
     def test_cryptio(self):
         self.assertRaises(ValueError, self._makeit, None, None)
+        self.assertRaises(ValueError, self._makeit, None, None, mode='w')
         self.assertRaises(ValueError, self._makeit, None, Mock())
-        self.assertRaises(ValueError, self._makeit, self._mockfile(), None)
-        obj = self._makeit(self._mockfile(), Mock())
+        mockf = self._mockfile(mode='wb')
+        self.assertRaises(ValueError, self._makeit, mockf, None)
+        obj = self._makeit(mockf, Mock())
         self.assertTrue(obj.writable())
+        obj = self._makeit(self._mockfile(), Mock(), mode='rU')
+        self.assertTrue(obj.readable())
+        dec = Mock()
+        del dec.decipher
+        mockf = self._mockfile()
+        self.assertRaises(ValueError, self._makeit, mockf, dec)
 
     def test_cryptio_nomode(self):
         f = self._mockfile()
@@ -31,17 +44,47 @@ class CryptIOTest(TestCase):
         self._makeit(f, Mock())
 
     def test_cryptio_badmode(self):
-        self.assertRaises(IOError, self._makeit, Mock(mode='r'), Mock())
+        self.assertRaises(IOError, self._makeit, Mock(mode='foo'), Mock())
+
+    def test_write_to_read(self):
+        f = self._makeit(self._mockfile(), Mock())
+        self.assertRaises(IOError, f.write, "")
+
+    def test_read_from_write(self):
+        f = self._makeit(self._mockfile('wb'), Mock())
+        self.assertRaises(IOError, f.read)
 
     @raises(ValueError)
     def test_cryptio_write_closed(self):
-        f = self._mockfile()
+        f = self._mockfile(mode='wb')
         c = self._makeit(f, Mock())
         c.close()
         c.close()
         c.write("FOO")
 
-    def test_cryptio_memoryview(self):
+    @raises(ValueError)
+    def test_cryptio_read_closed(self):
         f = self._mockfile()
         c = self._makeit(f, Mock())
+        c.close()
+        c.read()
+
+    def test_cryptio_memoryview(self):
+        f = self._mockfile(mode='wb')
+        c = self._makeit(f, Mock())
         c.write(memoryview("FOO"))
+
+    def test_read(self):
+        fdata = ['0'*1024 for _ in range(5)]
+        fdata.append('')
+        fdata.append(EOFError)
+        f = self._mockfile(read=Mock(side_effect=fdata))
+        c = self._makeit(f, self._makecipher())
+        out = c.read(500)
+        self.assertEqual(500, len(out))
+        out += c.read(524)
+        self.assertEqual(1024, len(out))
+        out += c.read()
+        self.assertEqual(5*1024, len(out))
+        out += c.read()
+        self.assertEqual(5*1024, len(out))
