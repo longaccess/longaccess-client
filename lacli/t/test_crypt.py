@@ -21,6 +21,7 @@ class CryptIOTest(TestCase):
     def _makecipher(self):
         return Mock(encipher=lambda x: x,
                     decipher=lambda x: x,
+                    BLOCKSIZE=32,
                     flush=lambda: '')
 
     def test_cryptio(self):
@@ -88,3 +89,13 @@ class CryptIOTest(TestCase):
         self.assertEqual(5*1024, len(out))
         out += c.read()
         self.assertEqual(5*1024, len(out))
+
+    def test_write(self):
+        import StringIO
+        f = StringIO.StringIO()
+        c = self._makeit(f, self._makecipher(), mode='wb')
+        d = '0' * 100
+        for _ in range(5):
+            c.write(d)
+        c.flush()
+        self.assertEqual(500, len(f.getvalue()))

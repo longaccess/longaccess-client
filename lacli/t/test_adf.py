@@ -1,6 +1,7 @@
 from testtools import TestCase
 from struct import unpack
 from nose.tools import raises
+from mock import Mock
 
 
 class AdfTest(TestCase):
@@ -63,6 +64,8 @@ class AdfTest(TestCase):
         from lacli.adf import Cipher
         self.assertRaises(ValueError, Cipher, 'foo', 1)
         self.assertRaises(ValueError, Cipher, 'aes-256-ctr', 'f')
+        Cipher('xor', key=1)
+        Cipher('xor', key=2, input=Mock())
 
 ADF_TEST_DATA_1 = """---
 !archive {

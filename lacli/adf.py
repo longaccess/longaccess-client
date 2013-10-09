@@ -67,13 +67,16 @@ class Links(BaseYAMLObject):
 class Cipher(BaseYAMLObject):
     yaml_tag = u'!cipher'
 
-    def __init__(self, mode, key):
+    def __init__(self, mode, key=1, input=None):
         if mode not in cipher_modes():
             raise ValueError("{} not recognized".format(mode))
         if not isinstance(key, int):
             raise ValueError("key must be integer")
         self.mode = mode
-        self.key = key
+        if key > 1:
+            self.key = key
+        if input:
+            self.input = input
 
     def __setstate__(self, d):
         assert d['mode'] in cipher_modes()

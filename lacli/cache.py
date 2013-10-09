@@ -71,7 +71,7 @@ class Cache(object):
             ('file', os.path.join(self._cache_dir('data'), name + ".zip"),
              '', '', '', '')))
         cert = Certificate()
-        cipher = get_cipher(archive, cert)
+        cipher = get_cipher(archive, cert, archive.meta.cipher)
         with self._archive_open(name + ".adf", 'w') as f:
             make_adf([archive, cert, link], out=f)
             files = (os.path.join(root, f)
