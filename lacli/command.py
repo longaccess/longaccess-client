@@ -20,12 +20,6 @@ class LaCommand(cmd.Cmd):
         self._var = {}
         self._default_var = {'archive_title': lambda: strftime("%x archive")}
 
-    def do_tvmconf(self, line):
-        """tvmconf
-        reset TVM access configuration (key, token, etc)"""
-
-        return True
-
     def do_EOF(self, line):
         return True
 
