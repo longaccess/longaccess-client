@@ -4,7 +4,7 @@ from urlparse import urlparse
 
 @step(u'I have 1 capsule')
 def one_capsule(context):
-    context.mock_api.test('longaccessmock/oneCapsule')
+    context.mock_api.test('oneCapsule', 'longaccessmock')
 
 
 @step(u'I store my credentials in "{file}"')

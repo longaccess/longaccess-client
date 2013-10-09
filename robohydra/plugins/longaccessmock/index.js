@@ -77,7 +77,7 @@ exports.getBodyParts = function(config, modules) {
                 }
             })
         ],
-        tests: {
+        scenarios: {
             serverProblems: {
                 instructions: "Try to upload a file. The client should show some error messaging stating the server couldn't fulfill the request or the API wasn't available",
                 heads: [
