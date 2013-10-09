@@ -16,6 +16,7 @@ class LaCommand(cmd.Cmd):
         setupLogging(prefs['command']['debug'])
         self.session = session
         self.cache = cache
+        # we should do dep injection here
         self.uploader = Upload(session, prefs['upload'])
         self._var = {}
         self._default_var = {'archive_title': lambda: strftime("%x archive")}
@@ -27,8 +28,6 @@ class LaCommand(cmd.Cmd):
         """Upload a file to LA [filename]
         """
         fname = f.strip()
-        if not fname:
-            fname = raw_input('Filename: ').strip()
         if not fname:
             print "Argument required."
         elif not os.path.exists(fname):
