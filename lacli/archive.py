@@ -62,4 +62,6 @@ def _zip(name, files, tmpdir, enc=None):
                 zpf.write(f)
                 yield f
         if enc:
+            zf.flush()
+            zf.seek(0)
             enc(zf)
