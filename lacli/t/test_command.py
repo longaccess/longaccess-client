@@ -136,15 +136,22 @@ class CommandTest(TestCase):
             cli.onecmd('restore 1')
             self.assertThat(out.getvalue(), Contains('No such archive'))
 
-    def test_do_restore(self):
+    @patch('lacli.command.restore_archive')
+    def test_do_restore(self, restore_archive):
         with patch('sys.stdout', new_callable=StringIO) as out:
             cache = Mock(archives=Mock(return_value=[Mock(title='foo')]),
-                         certs=Mock(return_value={}))
+                         certs=Mock(return_value={}),
+                         links=Mock(return_value={}))
             cli = self._makeit(Mock(), cache, self.prefs, Mock())
             cli.onecmd('restore')
             self.assertThat(out.getvalue(),
                             Contains('no matching certificate found'))
+        with patch('sys.stdout', new_callable=StringIO) as out:
             cache.certs.return_value = {'foo': 'cert'}
+            cli.onecmd('restore')
+            self.assertThat(out.getvalue(), Contains('no local copy exists'))
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            cache.links.return_value = {'foo': Mock(local="file:///path")}
             cli.onecmd('restore')
             self.assertThat(out.getvalue(), Contains('archive restored'))
 

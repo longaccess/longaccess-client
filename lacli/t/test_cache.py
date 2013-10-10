@@ -79,15 +79,15 @@ class CacheTest(TestCase):
                 open_mock.assert_called_with(fname, 'w')
                 self.assertTrue(os.path.isdir(dname))
 
-    def test_title_cert(self):
-        cache = self._makeit(self.home)
-        ds = Mock(keys=[], title='foo', key='bar')
-        self.assertEqual(('foo', ['bar']), cache._title_cert([ds]))
-        del ds.key
-        del ds.keys
-        self.assertEqual(('foo', []), cache._title_cert([ds]))
-        del ds.title
-        self.assertFalse(cache._title_cert([ds]))
+#    def test_title_cert(self):
+#        cache = self._makeit(self.home)
+#        ds = Mock(keys=[], title='foo', key='bar')
+#        self.assertEqual(('foo', ['bar']), cache._title_cert([ds]))
+#        del ds.key
+#        del ds.keys
+#        self.assertEqual(('foo', []), cache._title_cert([ds]))
+#        del ds.title
+#        self.assertFalse(cache._title_cert([ds]))
 
     def test_certs(self):
         cache = self._makeit(self.home)
@@ -100,13 +100,13 @@ class CacheTest(TestCase):
             certs = cache.certs()
             self.assertEqual(1, len(certs))
             self.assertTrue('milos 2013' in certs)
-            self.assertEqual(dummykey, certs['milos 2013'][0])
+            self.assertEqual(dummykey, certs['milos 2013'].key)
             copy(os.path.join(self.home, 'archives', 'sample.adf'), cdir)
             certs = cache.certs()
             self.assertEqual(2, len(certs))
             self.assertTrue('milos 2013' in certs)
             self.assertTrue('My 2013 vacation' in certs)
-            c = certs['My 2013 vacation'][1]
+            c = certs['My 2013 vacation'].keys[1]
             self.assertTrue(hasattr(c, 'key'))
             self.assertTrue(hasattr(c, 'method'))
             self.assertTrue(hasattr(c, 'input'))

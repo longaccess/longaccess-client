@@ -30,8 +30,8 @@ class CipherAESTest(TestCase):
         self.assertRaises(ValueError, self._makeit, None, None)
 
     def test_encipher(self):
-        cipher = self._makeit(Mock(key=a2b_hex(KEY)),
-                              Mock(input=a2b_hex(IV)))
+        cipher = self._makeit(a2b_hex(KEY),
+                              a2b_hex(IV))
         for p, c in VECTORS:
             if len(a2b_hex(p)) < cipher.BLOCKSIZE:
                 self.assertEqual(c, b2a_hex(cipher.encipher(a2b_hex(p))) +
@@ -40,30 +40,30 @@ class CipherAESTest(TestCase):
                 self.assertEqual(c, b2a_hex(cipher.encipher(a2b_hex(p))))
 
     def test_encipher_all(self):
-        cipher = self._makeit(Mock(key=a2b_hex(KEY)),
-                              Mock(input=a2b_hex(IV)))
+        cipher = self._makeit(a2b_hex(KEY),
+                              a2b_hex(IV))
         pt = "".join([v[0] for v in VECTORS])
         ct = "".join([v[1] for v in VECTORS])
         self.assertEqual(ct, b2a_hex(cipher.encipher(a2b_hex(pt))) +
                          b2a_hex(cipher.flush()))
 
     def test_encipher_flush(self):
-        cipher = self._makeit(Mock(key=a2b_hex(KEY)),
-                              Mock(input=a2b_hex(IV)))
+        cipher = self._makeit(a2b_hex(KEY),
+                              a2b_hex(IV))
         pt = VECTORS[0][0]
         ct = VECTORS[0][1]
         self.assertEqual(ct, b2a_hex(cipher.encipher(a2b_hex(pt))))
 
     def test_flush(self):
-        cipher = self._makeit(Mock(key="0"*32))
+        cipher = self._makeit("0"*32)
         # padding = a2b_hex("10"*16)
         # ct = b2a_hex(self._makeit(Mock(key="0"*32)).encipher_block(padding))
         ct = '2b9cf21e2f5611a68ab213aa44972cf0'
         self.assertEqual(ct, b2a_hex(cipher.flush()))
 
     def test_decipher(self):
-        cipher = self._makeit(Mock(key=a2b_hex(KEY)),
-                              Mock(input=a2b_hex(IV)))
+        cipher = self._makeit(a2b_hex(KEY),
+                              a2b_hex(IV))
         for i in range(len(VECTORS)+1):
             p = c = ''
             last = i == len(VECTORS)
@@ -74,8 +74,8 @@ class CipherAESTest(TestCase):
             self.assertEqual(p, b2a_hex(cipher.decipher(a2b_hex(c), last)))
 
     def test_decipher_all(self):
-        cipher = self._makeit(Mock(key=a2b_hex(KEY)),
-                              Mock(input=a2b_hex(IV)))
+        cipher = self._makeit(a2b_hex(KEY),
+                              a2b_hex(IV))
         pt = "".join([v[0] for v in VECTORS])
         ct = "".join([v[1] for v in VECTORS])
         self.assertEqual(pt, b2a_hex(cipher.decipher(a2b_hex(ct), True)))
