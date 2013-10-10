@@ -33,6 +33,19 @@ Feature: restore command
         When I run console script "lacli"
         Then I see "no matching certificate found"
 
+    Scenario: I restore an archive with no local copy
+        Given I have 1 prepared archive titled "foo"
+        And the command line arguments "restore"
+        When I run console script "lacli"
+        Then I see "no local copy exists"
+
+    Scenario: I restore an archive
+        Given I have 1 prepared archive titled "foo"
+        And the archive has a link to a local copy
+        And the command line arguments "restore"
+        When I run console script "lacli"
+        Then I see "archive restored"
+
     Scenario: I restore an empty archive with one file in it
         Given an empty folder "foo"
         And under "{foo}" an empty file "test"

@@ -1,6 +1,6 @@
 import os
 
-from lacli.adf import make_adf, Archive, Meta
+from lacli.adf import make_adf, Archive, Meta, Links
 from behave import step
 from tempfile import NamedTemporaryFile
 
@@ -18,6 +18,14 @@ def one_archive_titled(context, title):
     context.archive = NamedTemporaryFile(dir=d, suffix='.adf')
     context.archive.write(make_adf(Archive(title, Meta('zip', 'aes'))))
     context.archive.flush()
+
+
+@step(u'the archive has a link to a local copy')
+def archive_copy(context):
+    assert context.archive
+    context.archive.write(make_adf(
+        Links(local='file://' + os.path.join(context.environ['HOME'],
+                                             ".longaccess/data"))))
 
 
 @step(u'there is a prepared archive titled "{title}"')
