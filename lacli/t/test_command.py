@@ -5,7 +5,6 @@ from testtools import TestCase
 from testtools.matchers import Contains
 from . import makeprefs
 from mock import Mock, patch
-from contextlib import nested
 from StringIO import StringIO
 
 
@@ -73,6 +72,29 @@ class CommandTest(TestCase):
         self.assertThat(mock_stdout.getvalue(),
                         Contains('error: foo'))
 
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_do_archive_unexist(self, mock_stdout):
+        cli = self._makeit(Mock(), Mock(), self.prefs)
+        cli.onecmd('archive /tmp/doesnotexistisay')
+        self.assertEqual('The specified folder does not exist.\n',
+                         mock_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_do_archive_list_none(self, out):
+        cache = Mock(archives=Mock(return_value=[]))
+        cli = self._makeit(Mock(), cache, self.prefs)
+        cli.onecmd('archive')
+        self.assertEqual('No prepared archives.\n', out.getvalue())
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_do_archive_list_some(self, out):  # NOQA
+        cache = Mock(archives=Mock(return_value=[
+            Mock(title="foo", description='', tags=[], meta=Mock(format=''))]))
+        cli = self._makeit(Mock(), cache, self.prefs)
+        cli.onecmd('archive')
+        self.assertThat(out.getvalue(),
+                        Contains('Prepared archives:\n1) foo\n'))
+
     @patch('sys.stdin', new_callable=StringIO)
     def test_loop_none(self, mock_stdin):
         cli = self._makeit(Mock(), Mock, self.prefs)
@@ -112,3 +134,31 @@ class CommandTest(TestCase):
             self.assertThat(out.getvalue(), Contains('No available archive'))
             cli.onecmd('restore 1')
             self.assertThat(out.getvalue(), Contains('No such archive'))
+
+    def test_do_list_exception(self):
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            s = Mock(capsules=Mock(side_effect=Exception("foo")))
+            cli = self._makeit(s, Mock(), self.prefs, Mock())
+            cli.onecmd('list')
+            self.assertEqual("error: foo\n", out.getvalue())
+
+    def test_list_capsules(self):
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            s = Mock(capsules=Mock(return_value=()))
+            cli = self._makeit(s, Mock(), self.prefs, Mock())
+            cli.onecmd('list')
+            self.assertEqual("No available capsules.\n", out.getvalue())
+
+    def test_list_capsules_some(self):
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            s = Mock(capsules=Mock(return_value=({'title': 'foo', 'a': 'b'},)))
+            cli = self._makeit(s, Mock(), self.prefs, Mock())
+            cli.onecmd('list')
+            r = '''\
+Available capsules:
+title     :       foo
+a         :         b
+
+
+'''
+            self.assertEqual(r, out.getvalue())
