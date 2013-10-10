@@ -101,7 +101,7 @@ class LaCommand(cmd.Cmd):
         else:
             print "No available archive to restore"
 
-    def complete_put(self, text, line, begidx, endidx):
+    def complete_put(self, text, line, begidx, endidx):  # pragma: no cover
         return [os.path.basename(x) for x in glob.glob('{}*'.format(line[4:]))]
 
     @contextmanager
