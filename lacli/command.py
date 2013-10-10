@@ -97,6 +97,8 @@ class LaCommand(cmd.Cmd):
     def do_restore(self, line):
         a = line.strip()
         archives = self.cache.archives()
+        if not a:
+            a = 1
         if a > len(archives):
             print "No such archive."
         else:
