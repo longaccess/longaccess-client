@@ -57,10 +57,11 @@ class CipherBase(object):
 
     def decipher(self, data, last=False):
         ret = self._reduce(self.decipher_block, self._buffer(data, True))
-        if last:
+        if last and len(self._extra) > 0:
             if len(self._extra) != self.BLOCKSIZE:
                 raise ValueError("Total input not a multiple of blocksize")
             ret += self._unpad(self.decipher_block(self._extra))
+            self._extra = ''
         return ret
 
     @abstractmethod
