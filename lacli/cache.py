@@ -4,7 +4,7 @@ import re
 from urlparse import urlunparse
 from glob import iglob
 from itertools import imap
-from lacli.adf import (load_archive, Certificate, Archive,
+from lacli.adf import (load_archive, load_all, Certificate, Archive,
                        Meta, Links, make_adf, Cipher)
 from lacli.log import getLogger
 from unidecode import unidecode
@@ -92,3 +92,25 @@ class Cache(object):
             with NamedTemporaryFile(suffix=".crypt", **kwargs) as dst:
                 copyfileobj(zf, CryptIO(dst, cipher))
                 os.rename(dst.name, os.path.join(datadir, name))
+
+    def certs(self):
+        return dict(imap(self._get_cert,
+                         iglob(os.path.join(self._cache_dir('certs'),
+                               '*.adf'))))
+
+    def _get_cert(self, f):
+        with open(f) as fh:
+            return self._title_cert(load_all(fh))
+
+    def _title_cert(self, ds):
+        cs = []
+        t = None
+        for d in ds:
+            if hasattr(d, 'key'):
+                cs.append(d.key)
+            if hasattr(d, 'keys'):
+                cs.extend(d.keys)
+            if hasattr(d, 'title'):
+                t = d.title
+        if t:
+            return (t, cs)

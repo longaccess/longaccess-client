@@ -3,10 +3,14 @@ import os
 
 from testtools import TestCase
 from . import makeprefs
-from shutil import rmtree
+from shutil import rmtree, copy
 from contextlib import contextmanager
 from tempfile import mkdtemp
 from mock import patch, Mock
+from binascii import a2b_hex
+
+dummykey = a2b_hex(
+    '824aed71bd74c656ed6bdaa19f2a338faedd824d5fd6e96e85b7fac5c6dabe18')
 
 
 class CacheTest(TestCase):
@@ -72,3 +76,38 @@ class CacheTest(TestCase):
                 cache._archive_open('foo', 'w')
                 open_mock.assert_called_with(fname, 'w')
                 self.assertTrue(os.path.isdir(dname))
+
+    def test_title_cert(self):
+        cache = self._makeit(self.home)
+        ds = Mock(keys=[], title='foo', key='bar')
+        self.assertEqual(('foo', ['bar']), cache._title_cert([ds]))
+        del ds.key
+        del ds.keys
+        self.assertEqual(('foo', []), cache._title_cert([ds]))
+        del ds.title
+        self.assertFalse(cache._title_cert([ds]))
+
+    def test_certs(self):
+        cache = self._makeit(self.home)
+        self.assertEqual({}, cache.certs())
+        with self._temp_home() as home:
+            cache = self._makeit(home)
+            cdir = os.path.join(home, 'certs')
+            os.makedirs(cdir)
+            copy(os.path.join(self.home, 'archives', 'minimal.adf'), cdir)
+            certs = cache.certs()
+            self.assertEqual(1, len(certs))
+            self.assertTrue('milos 2013' in certs)
+            self.assertEqual(dummykey, certs['milos 2013'][0])
+            copy(os.path.join(self.home, 'archives', 'sample.adf'), cdir)
+            certs = cache.certs()
+            self.assertEqual(2, len(certs))
+            self.assertTrue('milos 2013' in certs)
+            self.assertTrue('My 2013 vacation' in certs)
+            c = certs['My 2013 vacation'][1]
+            self.assertTrue(hasattr(c, 'key'))
+            self.assertTrue(hasattr(c, 'method'))
+            self.assertTrue(hasattr(c, 'input'))
+            self.assertEqual(dummykey, c.input)
+            self.assertEqual(1, c.key)
+            self.assertEqual('pbkdf2', c.method)
