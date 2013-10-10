@@ -96,10 +96,11 @@ class LaCommand(cmd.Cmd):
 
     def do_restore(self, line):
         a = line.strip()
-        if a:
+        archives = self.cache.archives()
+        if a > len(archives):
             print "No such archive."
         else:
-            print "No available archive to restore"
+            print "archive restored."
 
     def complete_put(self, text, line, begidx, endidx):  # pragma: no cover
         return [os.path.basename(x) for x in glob.glob('{}*'.format(line[4:]))]
