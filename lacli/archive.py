@@ -33,7 +33,7 @@ def dump_archive(archive, folder, cert, cb, tmpdir):
     files = (os.path.join(root, f)
              for root, _, fs in os.walk(folder)
              for f in fs)
-    cipher = get_cipher(archive, cert, archive.meta.cipher)
+    cipher = get_cipher(archive, cert)
     path, writer = _writer(name, files, cipher, tmpdir)
     map(cb, writer)
     return (name, path)

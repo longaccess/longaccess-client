@@ -14,8 +14,16 @@ def new_key(nbit):
     return Random.new().read(32)
 
 
-def get_cipher(archive, *args, **kwargs):
-    return cipher_modes()[archive.meta.cipher.mode](*args, **kwargs)
+def get_cipher(archive, cert):
+    input = None
+    key = None
+    if hasattr(archive.meta.cipher, 'input'):
+        input = archive.meta.cipher.input
+    if hasattr(cert, 'key'):
+        key = cert.key
+    elif hasattr(cert, 'keys'):
+        key = cert.keys[0]
+    return cipher_modes()[archive.meta.cipher.mode](key, input)
 
 
 class CipherBase(object):
