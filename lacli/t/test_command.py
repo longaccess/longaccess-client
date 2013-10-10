@@ -138,8 +138,13 @@ class CommandTest(TestCase):
 
     def test_do_restore(self):
         with patch('sys.stdout', new_callable=StringIO) as out:
-            cache = Mock(archives=Mock(return_value=['']))
+            cache = Mock(archives=Mock(return_value=[Mock(title='foo')]),
+                         certs=Mock(return_value={}))
             cli = self._makeit(Mock(), cache, self.prefs, Mock())
+            cli.onecmd('restore')
+            self.assertThat(out.getvalue(),
+                            Contains('no matching certificate found'))
+            cache.certs.return_value = {'foo': 'cert'}
             cli.onecmd('restore')
             self.assertThat(out.getvalue(), Contains('archive restored'))
 

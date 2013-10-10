@@ -102,7 +102,12 @@ class LaCommand(cmd.Cmd):
         if a > len(archives):
             print "No such archive."
         else:
-            print "archive restored."
+            archive = archives[a-1]
+            cert = self.cache.certs().get(archive.title)
+            if cert:
+                print "archive restored."
+            else:
+                print "no matching certificate found"
 
     def complete_put(self, text, line, begidx, endidx):  # pragma: no cover
         return [os.path.basename(x) for x in glob.glob('{}*'.format(line[4:]))]
