@@ -35,13 +35,15 @@ Feature: restore command
 
     Scenario: I restore an archive with no local copy
         Given I have 1 prepared archive titled "foo"
+        And I have a certificate for the archive with title "foo"
         And the command line arguments "restore"
         When I run console script "lacli"
         Then I see "no local copy exists"
 
     Scenario: I restore an archive
         Given I have 1 prepared archive titled "foo"
-        And the archive has a link to a local copy
+        And I have a certificate for the archive with title "foo"
+        And the archive titled "foo" has a link to a local copy
         And the command line arguments "restore"
         When I run console script "lacli"
         Then I see "archive restored"

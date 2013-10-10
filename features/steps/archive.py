@@ -1,6 +1,6 @@
 import os
 
-from lacli.adf import make_adf, Archive, Meta, Links
+from lacli.adf import make_adf, Archive, Meta, Links, Certificate
 from behave import step
 from tempfile import NamedTemporaryFile
 
@@ -20,12 +20,27 @@ def one_archive_titled(context, title):
     context.archive.flush()
 
 
-@step(u'the archive has a link to a local copy')
-def archive_copy(context):
+@step(u'the archive titled "{title}" has a link to a local copy')
+def archive_copy(context, title):
     assert context.archive
-    context.archive.write(make_adf(
+    context.archive.seek(0)
+    context.archive.write(make_adf([
+        Archive(title, Meta('zip', 'aes')),
         Links(local='file://' + os.path.join(context.environ['HOME'],
-                                             ".longaccess/data"))))
+                                             ".longaccess/data"))]))
+    context.archive.flush()
+
+
+@step(u'I have a certificate for the archive with title "{title}"')
+def archive_cert(context, title):
+    assert context.archive
+    d = os.path.join(context.environ['HOME'], ".longaccess/certs")
+    if not os.path.isdir(d):
+        os.makedirs(d)
+    context.cert = NamedTemporaryFile(dir=d, suffix='.adf')
+    context.cert.write(make_adf([Archive(title, Meta('zip', 'aes')),
+                                 Certificate()]))
+    context.cert.flush()
 
 
 @step(u'there is a prepared archive titled "{title}"')
