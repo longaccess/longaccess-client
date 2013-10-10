@@ -33,8 +33,6 @@ def file_under_dir(context, directory, name):
 @format_vars
 def is_file_under_dir(context, path, directory):
     assert os.path.isdir(directory)
-    import time
-    time.sleep(4000)
     assert os.path.exists(os.path.join(directory, path))
 
 
