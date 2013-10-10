@@ -9,7 +9,7 @@ class CipherAES(CipherBase):
     BLOCKSIZE = 16
 
     def __init__(self, key, input=None):
-        if len(key) != self.BLOCKSIZE * 2:
+        if not key or len(key) != self.BLOCKSIZE * 2:
             raise ValueError("Invalid key")
 
         prefix = ''
