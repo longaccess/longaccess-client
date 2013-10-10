@@ -1,19 +1,12 @@
 import os
-import re
 
-from urlparse import urlunparse
 from glob import iglob
 from itertools import imap
-from lacli.adf import (load_archive, load_all, Certificate, Archive,
-                       Meta, Links, make_adf, Cipher)
+from lacli.adf import (load_archive, make_adf, load_all, Certificate, Archive,
+                       Meta, Links, Cipher)
 from lacli.log import getLogger
-from unidecode import unidecode
-from datetime import date
-from lacli.zip import zip_writer
-from tempfile import NamedTemporaryFile
-from lacli.crypt import CryptIO
-from lacli.cipher import get_cipher
-from shutil import copyfileobj
+from lacli.archive import dump_archive
+from urlparse import urlunparse
 
 
 class Cache(object):
@@ -45,61 +38,18 @@ class Cache(object):
         fs = iglob(os.path.join(self._cache_dir('archives'), '*.adf'))
         return filter(None, imap(getit, fs))
 
-    _slugify_strip_re = re.compile(r'[^\w\s-]')
-    _slugify_hyphenate_re = re.compile(r'[-\s]+')
-
-    @classmethod
-    def _slugify(cls, value):
-        """
-        Normalizes string, converts to lowercase, removes non-alpha characters,
-        and converts spaces to hyphens.
-        From Django's "django/template/defaultfilters.py".
-        """
-        if not isinstance(value, unicode):
-            value = unicode(value)
-        return unicode(cls._slugify_hyphenate_re.sub(
-            '-', cls._slugify_strip_re.sub('', unidecode(value))
-            ).strip().lower())
-
     def prepare(self, title, folder, fmt='zip', cb=lambda x: x):
         archive = Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)))
         cert = Certificate()
-        name = "{}-{}".format(date.today().isoformat(),
-                              Cache._slugify(archive.title))
-        files = (os.path.join(root, f)
-                 for root, _, fs in os.walk(folder)
-                 for f in fs)
-        cipher = get_cipher(archive, cert, archive.meta.cipher)
-        path, writer = self._writer(name, files, cipher)
-        map(cb, writer)
+        tmpdir = self._cache_dir('tmp', write=True)
+        name, tmppath = dump_archive(archive, folder, cert, cb, tmpdir)
+        path = os.path.join(self._cache_dir('data', write=True), name)
+        os.rename(tmppath, path)
         link = Links(local=urlunparse(('file', path, '', '', '', '')))
         with self._archive_open(name + ".adf", 'w') as f:
             make_adf([archive, link], out=f)
         with self._cert_open(name + ".adf", 'w') as f:
             make_adf([archive, cert], out=f)
-
-    def _writer(self, name, files, cipher):
-        path = os.path.join(self._cache_dir('data', write=True), name+".zip")
-
-        def _enc(zf):
-            print "Encrypting.."
-            tmpargs = {'delete': False,
-                       'dir': self._cache_dir('tmp', write=True)}
-            with NamedTemporaryFile(suffix=".crypt", **tmpargs) as dst:
-                copyfileobj(zf, CryptIO(dst, cipher))
-                os.rename(dst.name, path)
-        return (path, self._zip(name, files, _enc))
-
-    def _zip(self, name, files, enc=None):
-        tmpargs = {'prefix': name,
-                   'dir': self._cache_dir('tmp', write=True)}
-        # do it in two passes now as zip can't easily handle streaming
-        with NamedTemporaryFile(**tmpargs) as zf:
-            for f in zip_writer(zf, files, self):
-                yield f
-            # do it in two passes now as zip can't easily handle streaming
-            if enc:
-                enc(zf)
 
     def certs(self):
         return dict(imap(self._get_cert,

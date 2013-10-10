@@ -44,9 +44,9 @@ class CacheTest(TestCase):
         self.assertEqual(archives[0].title, 'milos 2013')
 
     def test_slugify(self):
-        from lacli.cache import Cache
-        self.assertEqual(Cache._slugify("This is a test"), "this-is-a-test")
-        self.assertEqual(Cache._slugify(u"γειά σου ρε"), "geia-sou-re")
+        from lacli.archive import _slugify
+        self.assertEqual(_slugify("This is a test"), "this-is-a-test")
+        self.assertEqual(_slugify(u"γειά σου ρε"), "geia-sou-re")
 
     def test_prepare(self):
         with self._temp_home() as home:
