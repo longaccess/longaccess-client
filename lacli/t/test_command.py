@@ -127,13 +127,21 @@ class CommandTest(TestCase):
             self.assertThat(out.getvalue(),
                             Contains('error:'))
 
-    def test_do_restore(self):
+    def test_do_restore_none(self):
         with patch('sys.stdout', new_callable=StringIO) as out:
-            cli = self._makeit(Mock(), Mock(), self.prefs, Mock())
+            cache = Mock(archives=Mock(return_value=[]))
+            cli = self._makeit(Mock(), cache, self.prefs, Mock())
             cli.onecmd('restore')
-            self.assertThat(out.getvalue(), Contains('No available archive'))
+            self.assertThat(out.getvalue(), Contains('No such archive'))
             cli.onecmd('restore 1')
             self.assertThat(out.getvalue(), Contains('No such archive'))
+
+    def test_do_restore(self):
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            cache = Mock(archives=Mock(return_value=['']))
+            cli = self._makeit(Mock(), cache, self.prefs, Mock())
+            cli.onecmd('restore')
+            self.assertThat(out.getvalue(), Contains('archive restored'))
 
     def test_do_list_exception(self):
         with patch('sys.stdout', new_callable=StringIO) as out:
