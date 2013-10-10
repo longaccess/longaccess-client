@@ -15,6 +15,9 @@ class CipherXOR(CipherBase):
     def encipher_block(self, block):
         return self.obj.encrypt(block)
 
+    def decipher_block(self, block):
+        return self.obj.encrypt(block)
+
     def flush(self):
         last = super(CipherXOR, self).flush()
         return self.obj.encrypt(last)

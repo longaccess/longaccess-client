@@ -20,7 +20,7 @@ class CryptIOTest(TestCase):
 
     def _makecipher(self):
         return Mock(encipher=lambda x: x,
-                    decipher=lambda x: x,
+                    decipher=lambda x, y=None: x,
                     BLOCKSIZE=32,
                     flush=lambda: '')
 

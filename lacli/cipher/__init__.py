@@ -29,10 +29,12 @@ class CipherBase(object):
         """ this must be called at the end of the encryption process """
         return self._pad(self._extra)
 
-    def _buffer(self, data):
+    def _buffer(self, data, last=False):
         data = self._extra + data
         total = len(data)
         nblocks = total // self.BLOCKSIZE
+        if last:
+            nblocks -= 1
         pos = 0
         for i in range(nblocks):
             yield data[pos:pos + self.BLOCKSIZE]
@@ -45,8 +47,20 @@ class CipherBase(object):
     def encipher(self, data):
         return self._reduce(self.encipher_block, self._buffer(data))
 
+    def decipher(self, data, last=False):
+        ret = self._reduce(self.decipher_block, self._buffer(data, True))
+        if last:
+            if len(self._extra) != self.BLOCKSIZE:
+                raise ValueError("Total input not a multiple of blocksize")
+            ret += self._unpad(self.decipher_block(self._extra))
+        return ret
+
     @abstractmethod
     def encipher_block(self, block):
+        """ pipe a block of data through the cipher """
+
+    @abstractmethod
+    def decipher_block(self, block):
         """ pipe a block of data through the cipher """
 
     def _pad(self, s, bs=None):

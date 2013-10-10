@@ -92,7 +92,7 @@ class CryptIO(BufferedIOBase):
             if len(buf) > 0:
                 _add(self.cipher.decipher(buf))
             else:  # EOF
-                _add(self.cipher.flush())
+                _add(self.cipher.decipher('', True))
                 if not _finished():
                     size = self.extrasize
                 break

@@ -34,6 +34,9 @@ class CipherTest(TestCase):
 
             def encipher_block(self, block):
                 return block
+
+            def decipher_block(self, block):
+                return block
         return Foo(*args, **kwargs)
 
     def test_cipher(self):
@@ -41,6 +44,19 @@ class CipherTest(TestCase):
         self.assertFalse(cipher.encipher("0"*8))
         self.assertEqual("0"*16, cipher.encipher("0"*20))
         self.assertEqual("0"*16, cipher.encipher("0000"))
+
+    def test_decipher(self):
+        c1 = self._makeit()
+        c2 = self._makeit()
+        self.assertFalse(c2.decipher(c1.encipher("0"*8)))
+        self.assertFalse(c2.decipher(c1.encipher("0"*20)))
+        self.assertEqual("0"*32, c2.decipher(c1.encipher("0"*24)))
+        self.assertEqual("0"*20, c2.decipher(c1.flush(), True))
+
+    def test_decipher_remaining(self):
+        cipher = self._makeit()
+        self.assertFalse(cipher.decipher("0"*28))
+        self.assertRaises(ValueError, cipher.decipher, "000000", True)
 
     def test_xor(self):
         from lacli.cipher.xor import CipherXOR
@@ -50,6 +66,14 @@ class CipherTest(TestCase):
             cipher.encipher(a2b_hex('a5a5a5a5a5a5a5a5'*2))+cipher.flush()))
         self.assertEqual("fb04fb04fb04fb04", b2a_hex(cipher.encipher(
             a2b_hex('04040404'))+cipher.flush()))
+
+    def test_xor_dec(self):
+        from lacli.cipher.xor import CipherXOR
+        c1 = CipherXOR(Mock(key=a2b_hex('ff00ff00ff00ff00')))
+        c2 = CipherXOR(Mock(key=a2b_hex('ff00ff00ff00ff00')))
+        self.assertFalse(c2.decipher(c1.encipher("a5a5")))  # 4
+        self.assertEqual("a5"*8, c2.decipher(c1.encipher("a5"*12)))  # 24
+        self.assertEqual("a5"*6, c2.decipher(c1.flush(), True))
 
     def test_pad(self):
         cipher = self._makeit()

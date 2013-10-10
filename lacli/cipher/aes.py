@@ -28,6 +28,11 @@ class CipherAES(CipherBase):
         # faster
         return self.obj.encrypt(block)
 
+    def decipher_block(self, block):
+        # TODO we should let pycrypto do the block handling, it would be way
+        # faster
+        return self.obj.decrypt(block)
+
     def flush(self):
         last = super(CipherAES, self).flush()
         return self.obj.encrypt(last)
