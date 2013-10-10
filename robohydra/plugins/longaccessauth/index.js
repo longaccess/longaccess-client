@@ -28,7 +28,7 @@ exports.getBodyParts = function(config, modules) {
                 }
             })
         ],
-        tests: {
+        scenarios: {
             authFails: {
                 instructions: "Authentication will fail",
                 heads: [

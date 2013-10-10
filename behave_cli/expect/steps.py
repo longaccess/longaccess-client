@@ -3,6 +3,7 @@ from behave import step
 from behave_cli import format_vars
 from multiprocessing import Process
 from importlib import import_module
+from shutil import rmtree
 
 import os
 import pexpect
@@ -18,10 +19,18 @@ def env_var(context, name, value):
     context.environ[name] = value
 
 
-@step(u'the home directory is "{dir}"')
-def home_directory(context, dir):
-    context.environ['HOME'] = dir
-    assert os.path.isdir(dir), "Home directory exists"
+@step(u'the home directory is "{directory}"')
+def home_directory(context, directory):
+    context.environ['HOME'] = directory
+    if os.path.exists(directory):
+        if not os.path.isdir(directory):
+            os.remove(directory)
+        else:
+            rmtree(directory)
+        os.mkdir(directory)
+    else:
+        os.makedir(directory)
+    assert os.path.isdir(directory), "Home directory doesn't exist"
 
 
 @step(u'the command line arguments "{args}"')

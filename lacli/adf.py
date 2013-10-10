@@ -1,5 +1,6 @@
 import yaml
-from lacli.cipher import modes as cipher_modes
+
+from lacli.cipher import cipher_modes, new_key
 
 
 try:
@@ -66,12 +67,19 @@ class Links(BaseYAMLObject):
 class Cipher(BaseYAMLObject):
     yaml_tag = u'!cipher'
 
-    modes = {
-        'aes-256-ctr': None
-    }
+    def __init__(self, mode, key=1, input=None):
+        if mode not in cipher_modes():
+            raise ValueError("{} not recognized".format(mode))
+        if not isinstance(key, int):
+            raise ValueError("key must be integer")
+        self.mode = mode
+        if key > 1:
+            self.key = key
+        if input:
+            self.input = input
 
     def __setstate__(self, d):
-        assert d['mode'] in cipher_modes
+        assert d['mode'] in cipher_modes()
         self.__dict__.update(d)
 
 
@@ -81,6 +89,9 @@ class DerivedKey(BaseYAMLObject):
 
 class Certificate(BaseYAMLObject):
     yaml_tag = u'!certificate'
+
+    def __init__(self):
+        self.key = new_key(256)
 
 
 class MAC(BaseYAMLObject):

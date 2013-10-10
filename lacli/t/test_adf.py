@@ -1,7 +1,7 @@
 from testtools import TestCase
 from struct import unpack
 from nose.tools import raises
-from mock import patch, Mock
+from mock import Mock
 
 
 class AdfTest(TestCase):
@@ -43,7 +43,7 @@ class AdfTest(TestCase):
     def test_minimal(self):
         from lacli.adf import load_all
 
-        with open('../docs/minimal.adf') as f:
+        with open('t/data/home/archives/minimal.adf') as f:
             archive, certificate, _ = load_all(f)
             self.assertEqual(archive.meta.cipher, 'aes-256-ctr')
             b = unpack("<LLLLLLLL", certificate.key)
@@ -52,7 +52,7 @@ class AdfTest(TestCase):
     def test_sample(self):
         from lacli.adf import load_all
 
-        with open('../docs/sample.adf') as f:
+        with open('t/data/home/archives/sample.adf') as f:
             archive, _, certificate, _ = load_all(f)
             self.assertEqual(archive.meta.cipher.mode, 'aes-256-ctr')
             b = unpack("<LLLLLLLL", archive.meta.cipher.input)
@@ -60,6 +60,12 @@ class AdfTest(TestCase):
             b = unpack("<LLLLLLLL", certificate.keys[1].input)
             self.assertEqual(b[0], 1911376514)
 
+    def test_cipher(self):
+        from lacli.adf import Cipher
+        self.assertRaises(ValueError, Cipher, 'foo', 1)
+        self.assertRaises(ValueError, Cipher, 'aes-256-ctr', 'f')
+        Cipher('xor', key=1)
+        Cipher('xor', key=2, input=Mock())
 
 ADF_TEST_DATA_1 = """---
 !archive {

@@ -12,7 +12,7 @@ Requirements
 ------------
 
 1. Python requirements: run `pip install -r requirements-test.txt`
-2. Node.js requirements (for mock API): npm install robohydra
+2. Node.js requirements (for mock API): run `npm install robohydra/robohydra`
 
 Unit testing
 ------------
@@ -24,7 +24,11 @@ You can run unit tests separately via `nose`:
 Feature testing
 ---------------
 
-In order to run the feature tests you need the mock API server. Run it like this:
+In order to run the feature tests you need the mock API server. It is available on github and you can install it locally like this:
+
+    npm install robohydra/robohydra
+
+Run it like this:
 
     ./node_modules/.bin/robohydra mockapi.conf
 

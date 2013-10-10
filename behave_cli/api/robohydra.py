@@ -4,9 +4,11 @@ import requests
 
 class RoboHydraTest(object):
 
-    def __init__(self, name, base):
+    def __init__(self, name, base, plugin):
+        self.plugin = plugin
         self.name = name
-        self.base = base + "robohydra-admin/tests/"
+        self.url = "{}robohydra-admin/scenarios/{}/{}".format(
+            base, plugin, name)
         self.session = requests.Session()
 
     def start(self):
@@ -16,9 +18,7 @@ class RoboHydraTest(object):
         self.action('stop')
 
     def action(self, act):
-        url = self.base + self.name
-
-        self.session.post(url, data={'action': act})
+        self.session.post(self.url, data={'action': act})
 
 
 class RoboHydra(MockRestApi):
@@ -28,15 +28,16 @@ class RoboHydra(MockRestApi):
         self.session = requests.Session()
         super(RoboHydra, self).__init__(*args, **kwargs)
 
-    def test(self, name):
+    def test(self, name, plugin):
         if name not in self.tests:
             self.tests[name] = RoboHydraTest(
                 name,
-                self.url())
+                self.url(),
+                plugin)
         self.tests[name].start()
 
     def results(self):
-        url = self.url() + "robohydra-admin/tests/results.json"
+        url = self.url() + "robohydra-admin/rest/test-results/"
         result = self.session.get(url)
         return result.json()
 

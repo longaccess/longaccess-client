@@ -4,11 +4,16 @@ import re
 from urlparse import urlunparse
 from glob import iglob
 from itertools import imap
-from lacli.adf import load_archive, Archive, Meta, Links, make_adf
+from lacli.adf import (load_archive, Certificate, Archive,
+                       Meta, Links, make_adf, Cipher)
 from lacli.log import getLogger
 from unidecode import unidecode
 from datetime import date
 from lacli.zip import zip_writer
+from tempfile import NamedTemporaryFile
+from lacli.crypt import CryptIO
+from lacli.cipher import get_cipher
+from shutil import copyfileobj
 
 
 class Cache(object):
@@ -53,7 +58,8 @@ class Cache(object):
             ).strip().lower())
 
     def prepare(self, title, folder, fmt='zip'):
-        archive = Archive(title, Meta(fmt, ''))
+        cipher = Cipher('aes-256-ctr', 1)
+        archive = Archive(title, Meta(fmt, cipher))
         for f in self._dump(archive, folder):
             print "Added ", f
 
@@ -64,9 +70,25 @@ class Cache(object):
         link = Links(local=urlunparse(
             ('file', os.path.join(self._cache_dir('data'), name + ".zip"),
              '', '', '', '')))
+        cert = Certificate()
+        cipher = get_cipher(archive, cert, archive.meta.cipher)
         with self._archive_open(name + ".adf", 'w') as f:
-            make_adf([archive, link], out=f)
+            make_adf([archive, cert, link], out=f)
             files = (os.path.join(root, f)
                      for root, _, fs in os.walk(folder)
                      for f in fs)
-            return zip_writer(name + ".zip", files, self)
+            return self._writer(name, files, cipher)
+
+    def _writer(self, name, files, cipher):
+        tmpdir = self._cache_dir('tmp', write=True)
+        datadir = self._cache_dir('data', write=True)
+        # do it in two passes now as zip can't easily handle streaming
+        kwargs = {'prefix': name, 'dir': tmpdir, 'delete': True}
+        with NamedTemporaryFile(suffix=".zip", **kwargs) as zf:
+            for f in zip_writer(zf, files, self):
+                yield f
+            print "Encrypting.."
+            kwargs['delete'] = False
+            with NamedTemporaryFile(suffix=".crypt", **kwargs) as dst:
+                copyfileobj(zf, CryptIO(dst, cipher))
+                os.rename(dst.name, os.path.join(datadir, name))

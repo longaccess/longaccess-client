@@ -4,17 +4,17 @@ from behave import step
 
 @step(u'the API is failing')
 def api_failing(context):
-    context.mock_api.test('longaccessmock/serverProblems')
+    context.mock_api.test('serverProblems', 'longaccessmock')
 
 
 @step(u'the API authentication is wrong')
 def api_auth_fail(context):
-    context.mock_api.test('longaccessauth/authFails')
+    context.mock_api.test('authFails', 'longaccessauth')
 
 
 @step(u'the API authenticates a test user')
 def api_auth_user(context):
-    context.mock_api.test('longaccessauth/authUser')
+    context.mock_api.test('authUser', 'longaccessauth')
 
 
 @step(u'the mock API "{name}"')

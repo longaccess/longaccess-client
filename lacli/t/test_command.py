@@ -5,6 +5,7 @@ from testtools import TestCase
 from testtools.matchers import Contains
 from . import makeprefs
 from mock import Mock, patch
+from contextlib import nested
 from StringIO import StringIO
 
 
@@ -20,6 +21,9 @@ class CommandTest(TestCase):
     def _makeit(self, *args, **kwargs):
         from lacli.command import LaCommand
         return LaCommand(*args, **kwargs)
+
+    def _makeupload(self, *args, **kwargs):
+        return Mock(upload=Mock(**kwargs))
 
     def test_command(self):
         assert self._makeit(Mock(), Mock(), self.prefs)
@@ -68,3 +72,41 @@ class CommandTest(TestCase):
             cli.onecmd('archive ' + self.home)
         self.assertThat(mock_stdout.getvalue(),
                         Contains('error: foo'))
+
+    @patch('sys.stdin', new_callable=StringIO)
+    def test_loop_none(self, mock_stdin):
+        cli = self._makeit(Mock(), Mock, self.prefs)
+        cli.cmdloop()
+
+    def test_do_put_error(self):
+        # cache = Mock(prepare=Mock(side_effect=Exception("foo")))
+        cli = self._makeit(Mock(), Mock(), self.prefs)
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            cli.onecmd('put')
+            self.assertThat(out.getvalue(),
+                            Contains('Argument required'))
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            cli.onecmd('put /tmp/doesnotexistisaid')
+            self.assertThat(out.getvalue(),
+                            Contains('File /tmp/doesnotexistisaid not found.'))
+
+    def test_do_put_done(self):
+        with nested(
+                patch('sys.stdout', new_callable=StringIO),
+                patch('lacli.command.Upload')
+                ) as (out, upload):
+            cli = self._makeit(Mock(), Mock(), self.prefs)
+            cli.onecmd('put t/data/arc1')
+            self.assertThat(out.getvalue(),
+                            Contains('done'))
+
+    def test_do_put_exception(self):
+        with nested(
+                patch('sys.stdout', new_callable=StringIO),
+                patch('lacli.command.Upload')
+                ) as (out, upload):
+            upload.return_value = self._makeupload(side_effect=Exception)
+            cli = self._makeit(Mock(), Mock(), self.prefs)
+            cli.onecmd('put t/data/arc1')
+            self.assertThat(out.getvalue(),
+                            Contains('error:'))
