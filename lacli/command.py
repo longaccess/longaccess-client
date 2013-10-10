@@ -11,13 +11,15 @@ class LaCommand(cmd.Cmd):
     """ Our LA command line interface"""
     prompt = 'lacli> '
 
-    def __init__(self, session, cache, prefs, *args, **kwargs):
+    def __init__(self, session, cache, prefs, uploader=None, *args, **kwargs):
         cmd.Cmd.__init__(self, *args, **kwargs)
         setupLogging(prefs['command']['debug'])
         self.session = session
         self.cache = cache
-        # we should do dep injection here
-        self.uploader = Upload(session, prefs['upload'])
+        if not uploader:
+            self.uploader = Upload(session, prefs['upload'])
+        else:
+            self.uploader = uploader
         self._var = {}
         self._default_var = {'archive_title': lambda: strftime("%x archive")}
 

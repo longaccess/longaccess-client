@@ -91,22 +91,24 @@ class CommandTest(TestCase):
                             Contains('File /tmp/doesnotexistisaid not found.'))
 
     def test_do_put_done(self):
-        with nested(
-                patch('sys.stdout', new_callable=StringIO),
-                patch('lacli.command.Upload')
-                ) as (out, upload):
-            cli = self._makeit(Mock(), Mock(), self.prefs)
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            cli = self._makeit(Mock(), Mock(), self.prefs, Mock())
             cli.onecmd('put t/data/arc1')
             self.assertThat(out.getvalue(),
                             Contains('done'))
 
     def test_do_put_exception(self):
-        with nested(
-                patch('sys.stdout', new_callable=StringIO),
-                patch('lacli.command.Upload')
-                ) as (out, upload):
-            upload.return_value = self._makeupload(side_effect=Exception)
-            cli = self._makeit(Mock(), Mock(), self.prefs)
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            cli = self._makeit(Mock(), Mock(), self.prefs,
+                               self._makeupload(side_effect=Exception))
             cli.onecmd('put t/data/arc1')
             self.assertThat(out.getvalue(),
                             Contains('error:'))
+
+    def test_do_restore(self):
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            cli = self._makeit(Mock(), Mock(), self.prefs, Mock())
+            cli.onecmd('restore')
+            self.assertThat(out.getvalue(), Contains('No available archive'))
+            cli.onecmd('restore 1')
+            self.assertThat(out.getvalue(), Contains('No such archive'))
