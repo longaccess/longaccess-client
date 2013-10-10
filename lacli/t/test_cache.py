@@ -12,6 +12,8 @@ from binascii import a2b_hex
 dummykey = a2b_hex(
     '824aed71bd74c656ed6bdaa19f2a338faedd824d5fd6e96e85b7fac5c6dabe18')
 
+dummyurl = 'http://download.longaccess.com/x0fs8907494875'
+
 
 class CacheTest(TestCase):
     def setUp(self):
@@ -111,3 +113,23 @@ class CacheTest(TestCase):
             self.assertEqual(dummykey, c.input)
             self.assertEqual(1, c.key)
             self.assertEqual('pbkdf2', c.method)
+
+    def test_links(self):
+        with self._temp_home() as home:
+            cache = self._makeit(home)
+            cdir = os.path.join(home, 'archives')
+            os.makedirs(cdir)
+            copy(os.path.join(self.home, 'archives', 'minimal.adf'), cdir)
+            links = cache.links()
+            self.assertEqual(1, len(links))
+            self.assertTrue('milos 2013' in links)
+            self.assertEqual(dummyurl, links['milos 2013'].download)
+            copy(os.path.join(self.home, 'archives', 'sample.adf'), cdir)
+            links = cache.links()
+            self.assertEqual(2, len(links))
+            self.assertTrue('milos 2013' in links)
+            self.assertTrue('My 2013 vacation' in links)
+            self.assertEqual(dummyurl, links['milos 2013'].download)
+            self.assertEqual(dummyurl, links['My 2013 vacation'].download)
+            self.assertEqual("file:///path/to/archive",
+                             links['My 2013 vacation'].local)
