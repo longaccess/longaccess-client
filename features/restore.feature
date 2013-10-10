@@ -12,3 +12,8 @@ Feature: restore command
         Given the command line arguments "restore -o /tmp"
         When I run console script "lacli"
         Then I see "No available archive to restore"
+
+    Scenario: I restore a non existent
+        Given the command line arguments "restore 1"
+        When I run console script "lacli"
+        Then I see "No such archive."

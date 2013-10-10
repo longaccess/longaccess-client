@@ -92,6 +92,13 @@ class LaCommand(cmd.Cmd):
                               exc_info=True)
             print "error: " + str(e)
 
+    def do_restore(self, line):
+        a = line.strip()
+        if a:
+            print "No such archive."
+        else:
+            print "No available archive to restore"
+
     def complete_put(self, text, line, begidx, endidx):
         return [os.path.basename(x) for x in glob.glob('{}*'.format(line[4:]))]
 

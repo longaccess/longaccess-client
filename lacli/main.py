@@ -86,7 +86,10 @@ def main(args=sys.argv[1:]):
         else:
             cli.onecmd('archive')
     elif options['restore']:
-        print "No available archive to restore"
+        cmd = 'restore '
+        if options['<archive>']:
+            cmd += options['<archive>']
+        cli.onecmd(cmd)
     else:
         cli.cmdloop()
 
