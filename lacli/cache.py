@@ -57,41 +57,43 @@ class Cache(object):
             '-', cls._slugify_strip_re.sub('', unidecode(value))
             ).strip().lower())
 
-    def prepare(self, title, folder, fmt='zip'):
-        cipher = Cipher('aes-256-ctr', 1)
-        archive = Archive(title, Meta(fmt, cipher))
-        for f in self._dump(archive, folder):
-            print "Added ", f
-
-    def _dump(self, archive, folder):
-        name = "{}-{}".format(
-            date.today().isoformat(),
-            Cache._slugify(archive.title))
-        link = Links(local=urlunparse(
-            ('file', os.path.join(self._cache_dir('data'), name + ".zip"),
-             '', '', '', '')))
+    def prepare(self, title, folder, fmt='zip', cb=lambda x: x):
+        archive = Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)))
         cert = Certificate()
+        name = "{}-{}".format(date.today().isoformat(),
+                              Cache._slugify(archive.title))
+        files = (os.path.join(root, f)
+                 for root, _, fs in os.walk(folder)
+                 for f in fs)
         cipher = get_cipher(archive, cert, archive.meta.cipher)
+        path, writer = self._writer(name, files, cipher)
+        map(cb, writer)
+        link = Links(local=urlunparse(('file', path, '', '', '', '')))
         with self._archive_open(name + ".adf", 'w') as f:
             make_adf([archive, cert, link], out=f)
-            files = (os.path.join(root, f)
-                     for root, _, fs in os.walk(folder)
-                     for f in fs)
-            return self._writer(name, files, cipher)
 
     def _writer(self, name, files, cipher):
-        tmpdir = self._cache_dir('tmp', write=True)
-        datadir = self._cache_dir('data', write=True)
+        path = os.path.join(self._cache_dir('data', write=True), name+".zip")
+
+        def _enc(zf):
+            print "Encrypting.."
+            tmpargs = {'delete': False,
+                       'dir': self._cache_dir('tmp', write=True)}
+            with NamedTemporaryFile(suffix=".crypt", **tmpargs) as dst:
+                copyfileobj(zf, CryptIO(dst, cipher))
+                os.rename(dst.name, path)
+        return (path, self._zip(name, files, _enc))
+
+    def _zip(self, name, files, enc=None):
+        tmpargs = {'prefix': name,
+                   'dir': self._cache_dir('tmp', write=True)}
         # do it in two passes now as zip can't easily handle streaming
-        kwargs = {'prefix': name, 'dir': tmpdir, 'delete': True}
-        with NamedTemporaryFile(suffix=".zip", **kwargs) as zf:
+        with NamedTemporaryFile(**tmpargs) as zf:
             for f in zip_writer(zf, files, self):
                 yield f
-            print "Encrypting.."
-            kwargs['delete'] = False
-            with NamedTemporaryFile(suffix=".crypt", **kwargs) as dst:
-                copyfileobj(zf, CryptIO(dst, cipher))
-                os.rename(dst.name, os.path.join(datadir, name))
+            # do it in two passes now as zip can't easily handle streaming
+            if enc:
+                enc(zf)
 
     def certs(self):
         return dict(imap(self._get_cert,
