@@ -27,6 +27,19 @@ def _slugify(value):
         ).strip().lower())
 
 
+def restore_archive(archive, path, cert, folder, tmpdir):
+    if not folder:
+        folder = os.getcwd()
+    cipher = get_cipher(archive, cert)
+    with open(path) as infile:
+        with NamedTemporaryFile() as dst:
+            with CryptIO(infile, cipher) as cf:
+                copyfileobj(cf, dst)
+            dst.flush()
+            with ZipFile(dst) as zf:
+                zf.extractall(folder)
+
+
 def dump_archive(archive, folder, cert, cb, tmpdir):
     name = "{}-{}".format(date.today().isoformat(),
                           _slugify(archive.title))

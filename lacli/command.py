@@ -3,8 +3,10 @@ import cmd
 import glob
 from lacli.log import getLogger, setupLogging
 from lacli.upload import Upload
+from lacli.archive import restore_archive
 from time import strftime
 from contextlib import contextmanager
+from urlparse import urlparse
 
 
 class LaCommand(cmd.Cmd):
@@ -21,7 +23,10 @@ class LaCommand(cmd.Cmd):
         else:
             self.uploader = uploader
         self._var = {}
-        self._default_var = {'archive_title': lambda: strftime("%x archive")}
+        self._default_var = {
+            'archive_title': lambda: strftime("%x archive"),
+            'output_directory': os.getcwd()
+            }
 
     def do_EOF(self, line):
         return True
@@ -107,7 +112,19 @@ class LaCommand(cmd.Cmd):
             if cert:
                 link = self.cache.links().get(archive.title)
                 if link and link.local:
-                    print "archive restored."
+                    parsed = urlparse(link.local)
+                    if parsed.scheme == 'file':
+                        if 'output_directory' in self._var:
+                            outdir = self._var['output_directory']
+                        else:
+                            outdir = os.getcwd()
+                        restore_archive(archive, parsed.path, cert,
+                                        outdir,
+                                        self.cache._cache_dir(
+                                            'tmp', write=True))
+                        print "archive restored."
+                    else:
+                        print "url not local: " + link.local
                 else:
                     print "no local copy exists yet."
             else:
