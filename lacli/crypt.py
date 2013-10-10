@@ -89,13 +89,13 @@ class CryptIO(BufferedIOBase):
             except EOFError:
                 buf = ""
 
-            if buf == "":  # EOF
+            if len(buf) > 0:
+                _add(self.cipher.decipher(buf))
+            else:  # EOF
                 _add(self.cipher.flush())
                 if not _finished():
                     size = self.extrasize
                 break
-            else:
-                _add(self.cipher.decipher(buf))
 
         start = self.offset - self.extrastart
         stop = start + size

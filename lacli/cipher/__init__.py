@@ -1,3 +1,7 @@
+from __future__ import division
+
+import functools
+
 from abc import ABCMeta, abstractmethod
 from Crypto import Random
 
@@ -26,22 +30,20 @@ class CipherBase(object):
         return self._pad(self._extra)
 
     def _buffer(self, data):
+        data = self._extra + data
         total = len(data)
-        if total > 0:
-            blocksize = (self.BLOCKSIZE or 16)
-            remaining = total
-            while remaining >= blocksize:
-                offset = total - remaining
-                yield data[offset:(offset + blocksize)]
-                remaining -= blocksize
-            if remaining:
-                self._extra = data[-remaining:]
+        nblocks = total // self.BLOCKSIZE
+        pos = 0
+        for i in range(nblocks):
+            yield data[pos:pos + self.BLOCKSIZE]
+            pos += self.BLOCKSIZE
+        self._extra = data[pos:]
+
+    def _reduce(self, func, blocks):
+        return functools.reduce(lambda r, b: r + func(b), blocks, '')
 
     def encipher(self, data):
-        ret = ''
-        for block in self._buffer(self._extra + data):
-            ret += self.encipher_block(block)
-        return ret
+        return self._reduce(self.encipher_block, self._buffer(data))
 
     @abstractmethod
     def encipher_block(self, block):
