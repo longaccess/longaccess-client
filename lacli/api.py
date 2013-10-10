@@ -5,6 +5,7 @@ from lacli.decorators import cached_property, with_api_response
 from netrc import netrc
 
 import json
+import os
 
 
 API_URL = 'http://stage.longaccess.com/api/v1/'
@@ -15,7 +16,8 @@ class RequestsFactory():
     def __init__(self, prefs):
         self.prefs = prefs
         if self.prefs.get('user') is None:
-            self.read_netrc(self.prefs.get('url', API_URL))
+            if os.path.exists(os.path.expanduser('~/.netrc')):
+                self.read_netrc(self.prefs.get('url', API_URL))
 
     def new_session(self):
         import requests
