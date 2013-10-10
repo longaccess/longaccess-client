@@ -76,17 +76,13 @@ class Cache(object):
 
     def _get_cert(self, f):
         with open(f) as fh:
-            return self._title_cert(load_all(fh))
-
-    def _title_cert(self, ds):
-        cs = []
-        t = None
-        for d in ds:
-            if hasattr(d, 'key'):
-                cs.append(d.key)
-            if hasattr(d, 'keys'):
-                cs.extend(d.keys)
-            if hasattr(d, 'title'):
-                t = d.title
-        if t:
-            return (t, cs)
+            docs = load_all(fh)
+            cert = None
+            t = None
+            for d in docs:
+                if hasattr(d, 'key') or hasattr(d, 'keys'):
+                    cert = d
+                if hasattr(d, 'title'):
+                    t = d.title
+            if t:
+                return (t, cert)
