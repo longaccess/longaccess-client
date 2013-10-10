@@ -105,7 +105,11 @@ class LaCommand(cmd.Cmd):
             archive = archives[a-1]
             cert = self.cache.certs().get(archive.title)
             if cert:
-                print "archive restored."
+                link = self.cache.links().get(archive.title)
+                if link and link.local:
+                    print "archive restored."
+                else:
+                    print "no local copy exists yet."
             else:
                 print "no matching certificate found"
 

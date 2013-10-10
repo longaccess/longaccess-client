@@ -51,10 +51,28 @@ class Cache(object):
         with self._cert_open(name + ".adf", 'w') as f:
             make_adf([archive, cert], out=f)
 
+    def links(self):
+        return dict(imap(self._get_link,
+                         iglob(os.path.join(self._cache_dir('archives'),
+                               '*.adf'))))
+
     def certs(self):
         return dict(imap(self._get_cert,
                          iglob(os.path.join(self._cache_dir('certs'),
                                '*.adf'))))
+
+    def _get_link(self, f):
+        with open(f) as fh:
+            docs = load_all(fh)
+            link = None
+            t = None
+            for d in docs:
+                if hasattr(d, 'local') or hasattr(d, 'download'):
+                    link = d
+                if hasattr(d, 'title'):
+                    t = d.title
+            if t:
+                return (t, link)
 
     def _get_cert(self, f):
         with open(f) as fh:
