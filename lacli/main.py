@@ -4,6 +4,7 @@
 Usage: lacli put [options] [-b <bucket> ] [-n <np>] <filename>...
        lacli list [options]
        lacli archive [options] [-t <title>] [<dirname>]
+       lacli restore [options] [-o <dirname>] [<archive>]
        lacli [options]
        lacli -h, --help
 
@@ -15,6 +16,7 @@ Options:
     -n <np>, --procs <np>          number of processes [default: auto]
     --home <home>                  conf/cache dir [default: ~/.longaccess]
     -t <title>, --title <title>    title for prepared archive
+    -o <dirname>, --out <dirname>  directory to restore archive
 
 """
 
@@ -83,6 +85,8 @@ def main(args=sys.argv[1:]):
                 cli.onecmd('archive {}'.format(d))
         else:
             cli.onecmd('archive')
+    elif options['restore']:
+        print "No available archive to restore"
     else:
         cli.cmdloop()
 
