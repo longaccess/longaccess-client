@@ -30,6 +30,10 @@ class Cache(object):
         dname = self._cache_dir('archives', write='w' in mode)
         return open(os.path.join(dname, name), mode)
 
+    def _cert_open(self, name, mode='r'):
+        dname = self._cache_dir('certs', write='w' in mode)
+        return open(os.path.join(dname, name), mode)
+
     def archives(self):
         def getit(fn):
             with open(fn) as f:
@@ -70,7 +74,9 @@ class Cache(object):
         map(cb, writer)
         link = Links(local=urlunparse(('file', path, '', '', '', '')))
         with self._archive_open(name + ".adf", 'w') as f:
-            make_adf([archive, cert, link], out=f)
+            make_adf([archive, link], out=f)
+        with self._cert_open(name + ".adf", 'w') as f:
+            make_adf([archive, cert], out=f)
 
     def _writer(self, name, files, cipher):
         path = os.path.join(self._cache_dir('data', write=True), name+".zip")
