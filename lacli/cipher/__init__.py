@@ -4,10 +4,13 @@ import functools
 
 from abc import ABCMeta, abstractmethod
 from Crypto import Random
+from ..decorators import contains
 
 
+@contains(dict)
 def cipher_modes():
-    return dict([(c.mode, c) for c in CipherBase.__subclasses__()])
+    for c in CipherBase.__subclasses__():
+        yield (c.mode, c)
 
 
 def new_key(nbit):
@@ -17,18 +20,27 @@ def new_key(nbit):
 def get_cipher(archive, cert):
     input = None
     key = None
-    if hasattr(archive.meta.cipher, 'input'):
-        input = archive.meta.cipher.input
+    cipher = archive.meta.cipher
+    if hasattr(cipher, 'input'):
+        input = cipher.input
     if hasattr(cert, 'key'):
         key = cert.key
     elif hasattr(cert, 'keys') and len(cert.keys) > 0:
-        if hasattr(archive.meta.cipher, 'key'):
-            idx = archive.meta.cipher.key
+        if hasattr(cipher, 'key'):
+            idx = cipher.key
             if idx > 0 and idx <= len(cert.keys):
                 key = cert.keys[idx-1]
         else:
             key = cert.keys[0]
-    return cipher_modes()[archive.meta.cipher.mode](key, input)
+    mode = None
+    if hasattr(cipher, 'mode'):
+        mode = cipher.mode
+    elif isinstance(cipher, str):
+        mode = cipher
+    if mode:
+        cipher_class = cipher_modes().get(mode)
+        if cipher_class:
+            return cipher_class(key, input)
 
 
 class CipherBase(object):

@@ -22,7 +22,7 @@ class CipherTest(TestCase):
         from lacli.cipher import CipherBase
 
         class Foo(CipherBase):
-            pass
+            mode = 'foo'
         Foo()
 
     def _makeit(self, *args, **kwargs):
@@ -96,6 +96,10 @@ class CipherTest(TestCase):
             get_cipher(archive, cert)
             xorinit.assert_called_with('baz', 'bar')
             archive = Archive('foo', Meta('zip', Cipher('xor', 2, 'bar')))
+            cert = Mock(keys=['baz', 'spam'])
+            del cert.key
+            get_cipher(archive, cert)
+            archive = Archive('foo', Meta('zip', 'xor'))
             cert = Mock(keys=['baz', 'spam'])
             del cert.key
             get_cipher(archive, cert)
