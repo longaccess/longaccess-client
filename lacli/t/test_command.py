@@ -139,7 +139,7 @@ class CommandTest(TestCase):
             from lacli.cache import Cache
             cli = self._makeit(Mock(upload=MagicMock()), Cache(self.home),
                                self.prefs, self._makeupload())
-            cli._var['capsule'] = ''
+            cli._var['capsule'] = 1
             with patch('lacli.command.urlparse') as urlparse:
                 urlparse.return_value = Mock(scheme='file', path=self.home)
                 cli.onecmd('put 2')

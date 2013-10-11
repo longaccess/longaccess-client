@@ -80,6 +80,7 @@ def main(args=sys.argv[1:]):
     prefs, cache = settings(options)
     cli = LaCommand(Api(prefs['api']), cache, prefs)
     if options['put']:
+        capsule = 1
         try:
             capsule = int(options['--capsule'])
         except ValueError:
