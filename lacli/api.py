@@ -22,8 +22,10 @@ class RequestsFactory():
     def new_session(self):
         import requests
         session = requests.Session()
-        session.auth = (self.prefs['user'], self.prefs['pass'])
-        session.verify = self.prefs['verify']
+        if 'user' in self.prefs and 'pass' in self.prefs:
+            session.auth = (self.prefs['user'], self.prefs['pass'])
+        if 'verify' in self.prefs:
+            session.verify = self.prefs['verify']
         return session
 
     def read_netrc(self, url):
