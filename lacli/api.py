@@ -1,9 +1,7 @@
 from urlparse import urljoin, urlparse
-from latvm.tvm import BaseTvm
 from lacli.log import getLogger
-from lacli.decorators import cached_property, with_api_response
+from lacli.decorators import cached_property, with_api_response, contains
 from netrc import netrc
-from itertools import repeat, imap
 from contextlib import contextmanager
 
 import json
@@ -37,7 +35,7 @@ class RequestsFactory():
                 self.prefs['pass'] = creds[2]
 
 
-class Api(BaseTvm):
+class Api(object):
 
     def __init__(self, prefs, sessions=None):
         self.url = prefs.get('url')
@@ -77,11 +75,11 @@ class Api(BaseTvm):
     def upload(self, capsule, archive):
         url = self.endpoints['capsule']
         cs = self._get(url)['objects']
-        import pdb; pdb.set_trace()
         if capsule > len(cs):
             raise ValueError("No such capsule")
 
-        req_data=json.dumps({
+        req_data = json.dumps(
+            {
                 'title': archive.title,
                 'description': archive.description,
                 'capsule': cs[capsule]['resource_uri'],
@@ -94,10 +92,10 @@ class Api(BaseTvm):
             uri, headers={'content-type': 'application/json'},
             data={'status': 'uploaded'})
 
-
+    @contains(list)
     def capsules(self):
         url = self.endpoints['capsule']
-        keys = ['title', 'remaining', 'size']
         getLogger().debug("requesting capsules from {}".format(url))
         for cs in self._get(url)['objects']:
-            yield dict([(k, cs.get(k, None)) for k in keys])
+            yield dict([(k, cs.get(k, None))
+                        for k in ['title', 'remaining', 'size']])

@@ -1,11 +1,12 @@
 import os
 
 from glob import iglob
-from itertools import imap
 from lacli.adf import (load_archive, make_adf, load_all, Certificate, Archive,
                        Meta, Links, Cipher)
 from lacli.log import getLogger
 from lacli.archive import dump_archive
+from lacli.exceptions import InvalidArchiveError
+from lacli.decorators import contains
 from urlparse import urlunparse
 
 
@@ -27,18 +28,16 @@ class Cache(object):
         dname = self._cache_dir('certs', write='w' in mode)
         return open(os.path.join(dname, name), mode)
 
+    @contains(list)
     def archives(self):
-        def getit(fn):
+        for fn in iglob(os.path.join(self._cache_dir('archives'), '*.adf')):
             with open(fn) as f:
-                a = load_archive(f)
-                if a:
-                    return a
-            getLogger().debug(
-                "ADF file '{}' didn't contain archive description!".format(fn))
-        fs = iglob(os.path.join(self._cache_dir('archives'), '*.adf'))
-        return filter(None, imap(getit, fs))
+                try:
+                    yield load_archive(f)
+                except InvalidArchiveError:
+                    getLogger().debug(fn, exc_info=True)
 
-    def prepare(self, title, folder, fmt='zip', cb=lambda x: x):
+    def prepare(self, title, folder, fmt='zip', cb=None):
         archive = Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)))
         cert = Certificate()
         tmpdir = self._cache_dir('tmp', write=True)
@@ -52,37 +51,26 @@ class Cache(object):
             make_adf([archive, cert], out=f)
 
     def links(self):
-        return dict(imap(self._get_link,
-                         iglob(os.path.join(self._cache_dir('archives'),
-                               '*.adf'))))
+        return self._by_title(
+            lambda d: hasattr(d, 'local') or hasattr(d, 'download'),
+            iglob(os.path.join(self._cache_dir('archives'), '*.adf')))
 
     def certs(self):
-        return dict(imap(self._get_cert,
-                         iglob(os.path.join(self._cache_dir('certs'),
-                               '*.adf'))))
+        return self._by_title(
+            lambda d: hasattr(d, 'key') or hasattr(d, 'keys'),
+            iglob(os.path.join(self._cache_dir('certs'), '*.adf')))
 
-    def _get_link(self, f):
-        with open(f) as fh:
-            docs = load_all(fh)
-            link = None
-            t = None
-            for d in docs:
-                if hasattr(d, 'local') or hasattr(d, 'download'):
-                    link = d
-                if hasattr(d, 'title'):
-                    t = d.title
-            if t:
-                return (t, link)
-
-    def _get_cert(self, f):
-        with open(f) as fh:
-            docs = load_all(fh)
-            cert = None
-            t = None
-            for d in docs:
-                if hasattr(d, 'key') or hasattr(d, 'keys'):
-                    cert = d
-                if hasattr(d, 'title'):
-                    t = d.title
-            if t:
-                return (t, cert)
+    @contains(dict)
+    def _by_title(self, predicate, fs):
+        for f in fs:
+            with open(f) as fh:
+                docs = load_all(fh)
+                value = None
+                title = None
+                for d in docs:
+                    if predicate(d):
+                        value = d
+                    if hasattr(d, 'title'):
+                        title = d.title
+                if title:
+                    yield (title, value)

@@ -3,6 +3,7 @@ import yaml
 from lacli.cipher import cipher_modes, new_key
 from yaml import SafeLoader
 from yaml import SafeDumper
+from lacli.exceptions import InvalidArchiveError
 
 
 class PrettySafeLoader(SafeLoader):
@@ -113,6 +114,7 @@ def load_archive(f):
     for o in load_all(f):
         if hasattr(o, 'meta'):
             return o
+    raise InvalidArchiveError()
 
 
 def make_adf(archive=None, canonical=False, out=None):
