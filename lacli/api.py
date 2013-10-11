@@ -65,6 +65,13 @@ class Api(object):
             headers['content-type'] = 'application/json'
         return self.session.post(url, headers=headers, data=data)
 
+    @with_api_response
+    def _patch(self, url, data=None):
+        headers = {}
+        if data is not None:
+            headers['content-type'] = 'application/json'
+        return self.session.patch(url, headers=headers, data=data)
+
     def _upload_status(self, uri, first=None):
         if first:
             yield first
@@ -86,11 +93,9 @@ class Api(object):
                 'size': '',
             })
         status = self._post(self.endpoints['upload'], data=req_data)
-        uri = status['resource_uri']
+        uri = urljoin(self.url, status['resource_uri'])
         yield self._upload_status(uri, status)
-        self.session.patch(
-            uri, headers={'content-type': 'application/json'},
-            data={'status': 'uploaded'})
+        self._patch(uri, data=json.dumps({'status': 'uploaded'}))
 
     @contains(list)
     def capsules(self):
