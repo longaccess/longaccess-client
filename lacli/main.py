@@ -49,7 +49,7 @@ def settings(options):
         raise
 
     verify = True
-    if '0' != os.getenv('LA_API_VERIFY'):
+    if '0' == os.getenv('LA_API_VERIFY'):
         verify = False
 
     return (
