@@ -2,17 +2,11 @@
 import os
 
 from testtools import TestCase
-from . import makeprefs
+from . import makeprefs, dummykey, dummyurl
 from shutil import rmtree, copy
 from contextlib import contextmanager
 from tempfile import mkdtemp
 from mock import patch, Mock
-from binascii import a2b_hex
-
-dummykey = a2b_hex(
-    '824aed71bd74c656ed6bdaa19f2a338faedd824d5fd6e96e85b7fac5c6dabe18')
-
-dummyurl = 'http://download.longaccess.com/x0fs8907494875'
 
 
 class CacheTest(TestCase):
@@ -44,11 +38,6 @@ class CacheTest(TestCase):
         archives = self._makeit(self.home).archives()
         self.assertEqual(len(archives), 2)
         self.assertEqual(archives[0].title, 'milos 2013')
-
-    def test_slugify(self):
-        from lacli.archive import _slugify
-        self.assertEqual(_slugify("This is a test"), "this-is-a-test")
-        self.assertEqual(_slugify(u"γειά σου ρε"), "geia-sou-re")
 
     def test_prepare(self):
         with self._temp_home() as home:

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from nose.tools import raises
 from testtools import TestCase
-from mock import Mock
 from binascii import a2b_hex, b2a_hex
+from mock import Mock, patch
 
 
 class CipherTest(TestCase):
@@ -30,6 +30,7 @@ class CipherTest(TestCase):
 
         class Foo(CipherBase):
             mode = 'foo'
+
             def flush(self):
                 return super(Foo, self).flush()
 
@@ -81,3 +82,20 @@ class CipherTest(TestCase):
         padded = cipher._pad(a2b_hex("00"*10))
         self.assertEqual("00"*10+"06"*6, b2a_hex(padded))
         self.assertEqual("00"*10, b2a_hex(cipher._unpad(padded)))
+
+    def test_get_cipher(self):
+        from lacli.adf import Archive, Meta, Cipher
+        from lacli.cipher import get_cipher
+        with patch('lacli.cipher.xor.CipherXOR.__init__') as xorinit:
+            xorinit.return_value = None
+            archive = Archive('foo', Meta('zip', Cipher('xor', 1, 'bar')))
+            get_cipher(archive, Mock(key='baz'))
+            xorinit.assert_called_with('baz', 'bar')
+            cert = Mock(keys=['baz'])
+            del cert.key
+            get_cipher(archive, cert)
+            xorinit.assert_called_with('baz', 'bar')
+            archive = Archive('foo', Meta('zip', Cipher('xor', 2, 'bar')))
+            cert = Mock(keys=['baz', 'spam'])
+            del cert.key
+            get_cipher(archive, cert)
