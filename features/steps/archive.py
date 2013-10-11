@@ -60,3 +60,21 @@ def exists_archive_titled(context, title):
         When I run console script "lacli"
         Then I see ") {}"
         """.format(title))
+
+
+@step(u'I prepare an archive with a file "{title}"')
+def prepare_archive(context, title):
+    context.execute_steps(u'''
+        Given an empty folder "foo"
+        And under "{{foo}}" an empty file "{title}"
+        And the command line arguments "archive {{foo}}"
+        When I run console script "lacli"
+        Then I see "archive prepared"'''.format(title=title))
+
+
+@step(u'I prepare an archive with a directory "{title}"')
+def prepare_archive_folder(context, title):
+    context.execute_steps(u'''
+        Given the command line arguments "archive {title}"
+        When I run console script "lacli"
+        Then I see "archive prepared"'''.format(title=title))
