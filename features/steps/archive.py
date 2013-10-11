@@ -16,7 +16,7 @@ def one_archive_titled(context, title):
     if not os.path.isdir(d):
         os.makedirs(d)
     context.archive = NamedTemporaryFile(dir=d, suffix='.adf')
-    context.archive.write(make_adf(Archive(title, Meta('zip', 'aes'))))
+    context.archive.write(make_adf(Archive(title, Meta('zip', 'aes-256-ctr'))))
     context.archive.flush()
 
 
@@ -25,10 +25,20 @@ def archive_copy(context, title):
     assert context.archive
     context.archive.seek(0)
     context.archive.write(make_adf([
-        Archive(title, Meta('zip', 'aes')),
+        Archive(title, Meta('zip', 'aes-256-ctr')),
         Links(local='file://' + os.path.join(context.environ['HOME'],
-                                             ".longaccess/data"))]))
+                                             ".longaccess/data/test"))]))
     context.archive.flush()
+
+
+@step(u'the local copy for "{title}" is an empty file')
+def archive_copy_empty(context, title):
+    assert context.archive
+    datadir = os.path.join(context.environ['HOME'], ".longaccess/data")
+    if not os.path.exists(datadir):
+        os.makedirs(datadir)
+    with open(os.path.join(datadir, 'test'), 'w'):
+        pass
 
 
 @step(u'I have a certificate for the archive with title "{title}"')
@@ -38,7 +48,7 @@ def archive_cert(context, title):
     if not os.path.isdir(d):
         os.makedirs(d)
     context.cert = NamedTemporaryFile(dir=d, suffix='.adf')
-    context.cert.write(make_adf([Archive(title, Meta('zip', 'aes')),
+    context.cert.write(make_adf([Archive(title, Meta('zip', 'aes-256-ctr')),
                                  Certificate()]))
     context.cert.flush()
 
