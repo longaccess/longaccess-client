@@ -11,7 +11,7 @@ Usage: lacli put [options] [-c <capsule> ] [-n <np>] [<archive>]
 Options:
     -u <user>, --user <user>            user name
     -p <pass>, --password <pass>        user password
-    -d <level>, --debug <level>         debugging level, from 0 to 2 [default: 0]
+    -d <level>, --debug <level>         debug level, from 0 to 2 [default: 0]
     -b <bucket>, --bucket <bucket>      bucket to upload to [default: lastage]
     -n <np>, --procs <np>               number of processes [default: auto]
     --home <home>                       conf/cache dir [default: ~/.longaccess]
