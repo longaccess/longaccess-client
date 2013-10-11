@@ -106,7 +106,8 @@ def main(args=sys.argv[1:]):
         cmd = 'restore '
         if options['<archive>']:
             cmd += options['<archive>']
-        cli.onecmd(cmd)
+        with cli.temp_var(output_directory=options['--out']):
+            cli.onecmd(cmd)
     else:
         cli.cmdloop()
 
