@@ -54,5 +54,7 @@ class ArchiveTest(TestCase):
                 with open(cf, 'w') as dst:
                     copyfileobj(open(zf),
                                 CryptIO(dst, get_cipher(archive, cert)))
-            restore_archive(archive, cf, cert, tmpdir, tmpdir)
+            cb = Mock()
+            restore_archive(archive, cf, cert, tmpdir, tmpdir, cb)
+            self.assertEqual(1, cb.call_count)
             self.assertTrue(os.path.exists(os.path.join(tmpdir, adf)))

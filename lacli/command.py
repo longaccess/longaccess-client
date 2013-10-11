@@ -153,13 +153,16 @@ class LaCommand(cmd.Cmd):
             else:
                 outdir = os.getcwd()
             try:
+
+                def _print(f):
+                    print "Extracting", f
                 restore_archive(archive, path, cert,
                                 outdir,
                                 self.cache._cache_dir(
-                                    'tmp', write=True))
+                                    'tmp', write=True), _print)
                 print "archive restored."
             except Exception as e:
-                getLogger().debug("exception while uploading",
+                getLogger().debug("exception while restoring",
                                   exc_info=True)
                 print "error: " + str(e)
         else:

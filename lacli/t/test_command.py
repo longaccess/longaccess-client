@@ -196,6 +196,13 @@ class CommandTest(TestCase):
             cli._var['output_directory'] = 'foo'
             cli.onecmd('restore')
             self.assertThat(out.getvalue(), Contains('archive restored'))
+            args, kwargs = restore_archive.call_args 
+            a, p, cert, o, c, cb = args
+            self.assertEqual('cert', cert)
+            self.assertEqual('/path', p)
+            self.assertEqual('foo', o)
+            cb("foo")
+            self.assertThat(out.getvalue(), Contains("Extracting foo"))
         with patch('sys.stdout', new_callable=StringIO) as out:
             restore_archive.side_effect = Exception("foo")
             cache.links.return_value = {'foo': Mock(local="file:///path")}

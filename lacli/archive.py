@@ -27,7 +27,7 @@ def _slugify(value):
         ).strip().lower())
 
 
-def restore_archive(archive, path, cert, folder, tmpdir):
+def restore_archive(archive, path, cert, folder, tmpdir, cb=None):
     cipher = get_cipher(archive, cert)
     with open(path) as infile:
         with NamedTemporaryFile() as dst:
@@ -35,22 +35,20 @@ def restore_archive(archive, path, cert, folder, tmpdir):
                 copyfileobj(cf, dst)
             dst.flush()
             with ZipFile(dst) as zf:
-                zf.extractall(folder)
+                map(cb,
+                    map(lambda zi: zf.extract(zi, folder), zf.infolist()))
 
 
 def dump_archive(archive, folder, cert, cb=None, tmpdir='/tmp'):
     name = "{}-{}".format(date.today().isoformat(),
                           _slugify(archive.title))
-    files = (os.path.join(root, f)
-             for root, _, fs in os.walk(folder)
-             for f in fs)
     cipher = get_cipher(archive, cert)
-    path, writer = _writer(name, files, cipher, tmpdir)
+    path, writer = _writer(name, os.path.abspath(folder), cipher, tmpdir)
     map(cb, writer)
     return (name, path)
 
 
-def _writer(name, files, cipher, tmpdir):
+def _writer(name, folder, cipher, tmpdir):
     path = os.path.join(tmpdir, name+".zip")
 
     def _enc(zf):
@@ -60,18 +58,20 @@ def _writer(name, files, cipher, tmpdir):
         with NamedTemporaryFile(suffix=".crypt", **tmpargs) as dst:
             copyfileobj(zf, CryptIO(dst, cipher))
             os.rename(dst.name, path)
-    return (path, _zip(name, files, tmpdir, _enc))
+    return (path, _zip(name, folder, tmpdir, _enc))
 
 
-def _zip(name, files, tmpdir, enc=None):
+def _zip(name, folder, tmpdir, enc=None):
     tmpargs = {'prefix': name,
                'dir': tmpdir}
     # do it in two passes now as zip can't easily handle streaming
     with NamedTemporaryFile(**tmpargs) as zf:
         with ZipFile(zf, 'w', ZIP_DEFLATED, True) as zpf:
-            for f in files:
-                zpf.write(f)
-                yield f
+            for root, _, fs in os.walk(folder):
+                for f in (os.path.join(root, f) for f in fs):
+                    path = os.path.join(root, f)
+                    zpf.write(path, os.path.relpath(path, folder))
+                    yield f
         if enc:
             zf.flush()
             zf.seek(0)
