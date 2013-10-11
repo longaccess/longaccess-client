@@ -1,6 +1,9 @@
 from boto import set_stream_logger
 from lacli.log import setupLogging
 from binascii import a2b_hex
+from contextlib import contextmanager
+from tempfile import mkdtemp
+from shutil import rmtree
 
 
 def setup():
@@ -30,3 +33,10 @@ dummykey = a2b_hex(
     '824aed71bd74c656ed6bdaa19f2a338faedd824d5fd6e96e85b7fac5c6dabe18')
 
 dummyurl = 'http://download.longaccess.com/x0fs8907494875'
+
+
+@contextmanager
+def _temp_home():
+    d = mkdtemp()
+    yield d
+    rmtree(d)
