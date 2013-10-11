@@ -8,7 +8,7 @@ import json
 import os
 
 
-API_URL = 'http://www.longaccess.com/api/v1/'
+API_URL = 'https://www.longaccess.com/api/v1/'
 
 
 class RequestsFactory():
