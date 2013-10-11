@@ -2,8 +2,8 @@ from __future__ import division
 import os
 import dateutil.parser
 import dateutil.tz
-import datetime
 import math
+from datetime import datetime
 from lacli.progress import make_progress, save_progress
 from itertools import imap, repeat, izip
 from lacli.log import getLogger
@@ -47,9 +47,15 @@ class MPConnection(object):
     def timeout(self):
         """ return total number of seconds till
             this connection must be renewed. """
-        tz = dateutil.tz.tzutc()
-        expiration = dateutil.parser.parse(self.expiration).astimezone(tz)
-        timeout = expiration-datetime.datetime.now(tz)
+        expiration = dateutil.parser.parse(self.expiration)
+        now = datetime.utcnow()
+        # check if API is timezone aware
+        tzinfo = expiration.tzinfo
+        if tzinfo and tzinfo.utcoffset(expiration) is not None:
+            tz = dateutil.tz.tzutc()
+            expiration = expiration.astimezone(tz)
+            now = datetime.now(tz)
+        timeout = expiration-now
         return timeout.total_seconds()-self.grace
 
     def __getstate__(self):

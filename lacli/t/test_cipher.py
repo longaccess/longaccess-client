@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from nose.tools import raises
 from testtools import TestCase
-from mock import Mock
 from binascii import a2b_hex, b2a_hex
+from mock import Mock, patch
 
 
 class CipherTest(TestCase):
@@ -29,6 +29,8 @@ class CipherTest(TestCase):
         from lacli.cipher import CipherBase
 
         class Foo(CipherBase):
+            mode = 'foo'
+
             def flush(self):
                 return super(Foo, self).flush()
 
@@ -60,8 +62,8 @@ class CipherTest(TestCase):
 
     def test_xor(self):
         from lacli.cipher.xor import CipherXOR
-        self.assertRaises(ValueError, CipherXOR, Mock(key='1'))
-        cipher = CipherXOR(Mock(key=a2b_hex('ff00ff00ff00ff00')))
+        self.assertRaises(ValueError, CipherXOR, '1')
+        cipher = CipherXOR(a2b_hex('ff00ff00ff00ff00'))
         self.assertEqual("5aa55aa55aa55aa5"*2+"f708f708f708f708", b2a_hex(
             cipher.encipher(a2b_hex('a5a5a5a5a5a5a5a5'*2))+cipher.flush()))
         self.assertEqual("fb04fb04fb04fb04", b2a_hex(cipher.encipher(
@@ -69,8 +71,8 @@ class CipherTest(TestCase):
 
     def test_xor_dec(self):
         from lacli.cipher.xor import CipherXOR
-        c1 = CipherXOR(Mock(key=a2b_hex('ff00ff00ff00ff00')))
-        c2 = CipherXOR(Mock(key=a2b_hex('ff00ff00ff00ff00')))
+        c1 = CipherXOR(a2b_hex('ff00ff00ff00ff00'))
+        c2 = CipherXOR(a2b_hex('ff00ff00ff00ff00'))
         self.assertFalse(c2.decipher(c1.encipher("a5a5")))  # 4
         self.assertEqual("a5"*8, c2.decipher(c1.encipher("a5"*12)))  # 24
         self.assertEqual("a5"*6, c2.decipher(c1.flush(), True))
@@ -80,3 +82,20 @@ class CipherTest(TestCase):
         padded = cipher._pad(a2b_hex("00"*10))
         self.assertEqual("00"*10+"06"*6, b2a_hex(padded))
         self.assertEqual("00"*10, b2a_hex(cipher._unpad(padded)))
+
+    def test_get_cipher(self):
+        from lacli.adf import Archive, Meta, Cipher
+        from lacli.cipher import get_cipher
+        with patch('lacli.cipher.xor.CipherXOR.__init__') as xorinit:
+            xorinit.return_value = None
+            archive = Archive('foo', Meta('zip', Cipher('xor', 1, 'bar')))
+            get_cipher(archive, Mock(key='baz'))
+            xorinit.assert_called_with('baz', 'bar')
+            cert = Mock(keys=['baz'])
+            del cert.key
+            get_cipher(archive, cert)
+            xorinit.assert_called_with('baz', 'bar')
+            archive = Archive('foo', Meta('zip', Cipher('xor', 2, 'bar')))
+            cert = Mock(keys=['baz', 'spam'])
+            del cert.key
+            get_cipher(archive, cert)

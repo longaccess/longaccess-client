@@ -1,19 +1,13 @@
 import os
-import re
 
-from urlparse import urlunparse
 from glob import iglob
-from itertools import imap
-from lacli.adf import (load_archive, Certificate, Archive,
-                       Meta, Links, make_adf, Cipher)
+from lacli.adf import (load_archive, make_adf, load_all, Certificate, Archive,
+                       Meta, Links, Cipher)
 from lacli.log import getLogger
-from unidecode import unidecode
-from datetime import date
-from lacli.zip import zip_writer
-from tempfile import NamedTemporaryFile
-from lacli.crypt import CryptIO
-from lacli.cipher import get_cipher
-from shutil import copyfileobj
+from lacli.archive import dump_archive
+from lacli.exceptions import InvalidArchiveError
+from lacli.decorators import contains
+from urlparse import urlunparse
 
 
 class Cache(object):
@@ -30,65 +24,53 @@ class Cache(object):
         dname = self._cache_dir('archives', write='w' in mode)
         return open(os.path.join(dname, name), mode)
 
+    def _cert_open(self, name, mode='r'):
+        dname = self._cache_dir('certs', write='w' in mode)
+        return open(os.path.join(dname, name), mode)
+
+    @contains(list)
     def archives(self):
-        def getit(fn):
+        for fn in iglob(os.path.join(self._cache_dir('archives'), '*.adf')):
             with open(fn) as f:
-                a = load_archive(f)
-                if a:
-                    return a
-            getLogger().debug(
-                "ADF file '{}' didn't contain archive description!".format(fn))
-        fs = iglob(os.path.join(self._cache_dir('archives'), '*.adf'))
-        return filter(None, imap(getit, fs))
+                try:
+                    yield load_archive(f)
+                except InvalidArchiveError:
+                    getLogger().debug(fn, exc_info=True)
 
-    _slugify_strip_re = re.compile(r'[^\w\s-]')
-    _slugify_hyphenate_re = re.compile(r'[-\s]+')
-
-    @classmethod
-    def _slugify(cls, value):
-        """
-        Normalizes string, converts to lowercase, removes non-alpha characters,
-        and converts spaces to hyphens.
-        From Django's "django/template/defaultfilters.py".
-        """
-        if not isinstance(value, unicode):
-            value = unicode(value)
-        return unicode(cls._slugify_hyphenate_re.sub(
-            '-', cls._slugify_strip_re.sub('', unidecode(value))
-            ).strip().lower())
-
-    def prepare(self, title, folder, fmt='zip'):
-        cipher = Cipher('aes-256-ctr', 1)
-        archive = Archive(title, Meta(fmt, cipher))
-        for f in self._dump(archive, folder):
-            print "Added ", f
-
-    def _dump(self, archive, folder):
-        name = "{}-{}".format(
-            date.today().isoformat(),
-            Cache._slugify(archive.title))
-        link = Links(local=urlunparse(
-            ('file', os.path.join(self._cache_dir('data'), name + ".zip"),
-             '', '', '', '')))
+    def prepare(self, title, folder, fmt='zip', cb=None):
+        archive = Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)))
         cert = Certificate()
-        cipher = get_cipher(archive, cert, archive.meta.cipher)
-        with self._archive_open(name + ".adf", 'w') as f:
-            make_adf([archive, cert, link], out=f)
-            files = (os.path.join(root, f)
-                     for root, _, fs in os.walk(folder)
-                     for f in fs)
-            return self._writer(name, files, cipher)
-
-    def _writer(self, name, files, cipher):
         tmpdir = self._cache_dir('tmp', write=True)
-        datadir = self._cache_dir('data', write=True)
-        # do it in two passes now as zip can't easily handle streaming
-        kwargs = {'prefix': name, 'dir': tmpdir, 'delete': True}
-        with NamedTemporaryFile(suffix=".zip", **kwargs) as zf:
-            for f in zip_writer(zf, files, self):
-                yield f
-            print "Encrypting.."
-            kwargs['delete'] = False
-            with NamedTemporaryFile(suffix=".crypt", **kwargs) as dst:
-                copyfileobj(zf, CryptIO(dst, cipher))
-                os.rename(dst.name, os.path.join(datadir, name))
+        name, tmppath = dump_archive(archive, folder, cert, cb, tmpdir)
+        path = os.path.join(self._cache_dir('data', write=True), name)
+        os.rename(tmppath, path)
+        link = Links(local=urlunparse(('file', path, '', '', '', '')))
+        with self._archive_open(name + ".adf", 'w') as f:
+            make_adf([archive, link], out=f)
+        with self._cert_open(name + ".adf", 'w') as f:
+            make_adf([archive, cert], out=f)
+
+    def links(self):
+        return self._by_title(
+            lambda d: hasattr(d, 'local') or hasattr(d, 'download'),
+            iglob(os.path.join(self._cache_dir('archives'), '*.adf')))
+
+    def certs(self):
+        return self._by_title(
+            lambda d: hasattr(d, 'key') or hasattr(d, 'keys'),
+            iglob(os.path.join(self._cache_dir('certs'), '*.adf')))
+
+    @contains(dict)
+    def _by_title(self, predicate, fs):
+        for f in fs:
+            with open(f) as fh:
+                docs = load_all(fh)
+                value = None
+                title = None
+                for d in docs:
+                    if predicate(d):
+                        value = d
+                    if hasattr(d, 'title'):
+                        title = d.title
+                if title:
+                    yield (title, value)

@@ -14,8 +14,21 @@ def new_key(nbit):
     return Random.new().read(32)
 
 
-def get_cipher(archive, *args, **kwargs):
-    return cipher_modes()[archive.meta.cipher.mode](*args, **kwargs)
+def get_cipher(archive, cert):
+    input = None
+    key = None
+    if hasattr(archive.meta.cipher, 'input'):
+        input = archive.meta.cipher.input
+    if hasattr(cert, 'key'):
+        key = cert.key
+    elif hasattr(cert, 'keys') and len(cert.keys) > 0:
+        if hasattr(archive.meta.cipher, 'key'):
+            idx = archive.meta.cipher.key
+            if idx > 0 and idx <= len(cert.keys):
+                key = cert.keys[idx-1]
+        else:
+            key = cert.keys[0]
+    return cipher_modes()[archive.meta.cipher.mode](key, input)
 
 
 class CipherBase(object):
@@ -49,10 +62,11 @@ class CipherBase(object):
 
     def decipher(self, data, last=False):
         ret = self._reduce(self.decipher_block, self._buffer(data, True))
-        if last:
+        if last and len(self._extra) > 0:
             if len(self._extra) != self.BLOCKSIZE:
                 raise ValueError("Total input not a multiple of blocksize")
             ret += self._unpad(self.decipher_block(self._extra))
+            self._extra = ''
         return ret
 
     @abstractmethod

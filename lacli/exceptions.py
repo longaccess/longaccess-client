@@ -32,3 +32,7 @@ class WorkerFailureError(BaseAppException):
     def __init__(self, *args, **kwargs):
         super(BaseAppException, self).__init__(self.msg, *args, **kwargs)
         self.msg = "worker '{}' failed".format(current_process())
+
+
+class InvalidArchiveError(BaseAppException):
+    msg = "invalid archive"

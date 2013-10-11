@@ -4,8 +4,7 @@ import time
 from testtools import TestCase
 from testtools.matchers import Contains
 from . import makeprefs
-from mock import Mock, patch
-from contextlib import nested
+from mock import MagicMock, Mock, patch
 from StringIO import StringIO
 
 
@@ -73,40 +72,153 @@ class CommandTest(TestCase):
         self.assertThat(mock_stdout.getvalue(),
                         Contains('error: foo'))
 
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_do_archive_unexist(self, mock_stdout):
+        cli = self._makeit(Mock(), Mock(), self.prefs)
+        cli.onecmd('archive /tmp/doesnotexistisay')
+        self.assertEqual('The specified folder does not exist.\n',
+                         mock_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_do_archive_list_none(self, out):
+        cache = Mock(archives=Mock(return_value=[]))
+        cli = self._makeit(Mock(), cache, self.prefs)
+        cli.onecmd('archive')
+        self.assertEqual('No prepared archives.\n', out.getvalue())
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_do_archive_list_some(self, out):  # NOQA
+        cache = Mock(archives=Mock(return_value=[
+            Mock(title="foo", description='', tags=[], meta=Mock(format=''))]))
+        cli = self._makeit(Mock(), cache, self.prefs)
+        cli.onecmd('archive')
+        self.assertThat(out.getvalue(),
+                        Contains('Prepared archives:\n1) foo\n'))
+
     @patch('sys.stdin', new_callable=StringIO)
     def test_loop_none(self, mock_stdin):
         cli = self._makeit(Mock(), Mock, self.prefs)
         cli.cmdloop()
 
     def test_do_put_error(self):
-        # cache = Mock(prepare=Mock(side_effect=Exception("foo")))
-        cli = self._makeit(Mock(), Mock(), self.prefs)
+        from lacli.cache import Cache
+        cli = self._makeit(Mock(), Cache(self.home), self.prefs)
         with patch('sys.stdout', new_callable=StringIO) as out:
             cli.onecmd('put')
             self.assertThat(out.getvalue(),
-                            Contains('Argument required'))
+                            Contains('No such archive'))
         with patch('sys.stdout', new_callable=StringIO) as out:
-            cli.onecmd('put /tmp/doesnotexistisaid')
+            cli.onecmd('put foobar')
             self.assertThat(out.getvalue(),
-                            Contains('File /tmp/doesnotexistisaid not found.'))
+                            Contains('No such archive'))
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            cli.onecmd('put 2')
+            self.assertThat(out.getvalue(),
+                            Contains('File /path/to/archive not found.'))
+
+    def test_do_put_not_found(self):
+        from lacli.cache import Cache
+        cli = self._makeit(Mock(), Cache(self.home), self.prefs)
+        cli.cache.links = Mock(return_value={})
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            cli.onecmd('put 2')
+            self.assertThat(out.getvalue(), Contains('no local copy exists'))
+
+    def test_do_put_not_local(self):
+        from lacli.cache import Cache
+        cli = self._makeit(Mock(), Cache(self.home), self.prefs)
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            with patch('lacli.command.urlparse') as urlparse:
+                urlparse.return_value = Mock(scheme='gopher', path=self.home)
+                cli.onecmd('put 2')
+                self.assertThat(out.getvalue(), Contains('url not local'))
+                urlparse.assert_called_with('file:///path/to/archive')
 
     def test_do_put_done(self):
-        with nested(
-                patch('sys.stdout', new_callable=StringIO),
-                patch('lacli.command.Upload')
-                ) as (out, upload):
-            cli = self._makeit(Mock(), Mock(), self.prefs)
-            cli.onecmd('put t/data/arc1')
-            self.assertThat(out.getvalue(),
-                            Contains('done'))
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            from lacli.cache import Cache
+            cli = self._makeit(Mock(upload=MagicMock()), Cache(self.home),
+                               self.prefs, self._makeupload())
+            cli._var['capsule'] = ''
+            with patch('lacli.command.urlparse') as urlparse:
+                urlparse.return_value = Mock(scheme='file', path=self.home)
+                cli.onecmd('put 2')
+            self.assertThat(out.getvalue(), Contains('done'))
 
     def test_do_put_exception(self):
-        with nested(
-                patch('sys.stdout', new_callable=StringIO),
-                patch('lacli.command.Upload')
-                ) as (out, upload):
-            upload.return_value = self._makeupload(side_effect=Exception)
-            cli = self._makeit(Mock(), Mock(), self.prefs)
-            cli.onecmd('put t/data/arc1')
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            from lacli.cache import Cache
+            cli = self._makeit(Mock(), Cache(self.home), self.prefs,
+                               self._makeupload(side_effect=Exception))
+            with patch('lacli.command.urlparse') as urlparse:
+                urlparse.return_value = Mock(scheme='file', path=self.home)
+                cli.onecmd('put 2')
             self.assertThat(out.getvalue(),
                             Contains('error:'))
+
+    def test_do_restore_none(self):
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            cache = Mock(archives=Mock(return_value=[]))
+            cli = self._makeit(Mock(), cache, self.prefs, Mock())
+            cli.onecmd('restore')
+            self.assertThat(out.getvalue(), Contains('No such archive'))
+            cli.onecmd('restore 1')
+            self.assertThat(out.getvalue(), Contains('No such archive'))
+
+    @patch('lacli.command.restore_archive')
+    def test_do_restore(self, restore_archive):
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            cache = Mock(archives=Mock(return_value=[Mock(title='foo')]),
+                         certs=Mock(return_value={}),
+                         links=Mock(return_value={}))
+            cli = self._makeit(Mock(), cache, self.prefs, Mock())
+            cli.onecmd('restore')
+            self.assertThat(out.getvalue(),
+                            Contains('no matching certificate found'))
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            cache.certs.return_value = {'foo': 'cert'}
+            cli.onecmd('restore')
+            self.assertThat(out.getvalue(), Contains('no local copy exists'))
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            cache.links.return_value = {'foo': Mock(local="file:///path")}
+            with patch('lacli.command.urlparse') as urlparse:
+                urlparse.return_value = Mock(scheme='gopher', path=self.home)
+                cli.onecmd('restore')
+                self.assertThat(out.getvalue(), Contains('url not local'))
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            cache.links.return_value = {'foo': Mock(local="file:///path")}
+            cli.onecmd('restore')
+            self.assertThat(out.getvalue(), Contains('archive restored'))
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            cache.links.return_value = {'foo': Mock(local="file:///path")}
+            cli._var['output_directory'] = 'foo'
+            cli.onecmd('restore')
+            self.assertThat(out.getvalue(), Contains('archive restored'))
+
+    def test_do_list_exception(self):
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            s = Mock(capsules=Mock(side_effect=Exception("foo")))
+            cli = self._makeit(s, Mock(), self.prefs, Mock())
+            cli.onecmd('list')
+            self.assertEqual("error: foo\n", out.getvalue())
+
+    def test_list_capsules(self):
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            s = Mock(capsules=Mock(return_value=()))
+            cli = self._makeit(s, Mock(), self.prefs, Mock())
+            cli.onecmd('list')
+            self.assertEqual("No available capsules.\n", out.getvalue())
+
+    def test_list_capsules_some(self):
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            s = Mock(capsules=Mock(return_value=({'title': 'foo', 'a': 'b'},)))
+            cli = self._makeit(s, Mock(), self.prefs, Mock())
+            cli.onecmd('list')
+            r = '''\
+Available capsules:
+title     :       foo
+a         :         b
+
+
+'''
+            self.assertEqual(r, out.getvalue())

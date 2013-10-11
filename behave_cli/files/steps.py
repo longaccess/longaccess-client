@@ -29,6 +29,13 @@ def file_under_dir(context, directory, name):
     empty_file(context, name, directory)
 
 
+@step(u'there is a file "{path}" under "{directory}"')
+@format_vars
+def is_file_under_dir(context, path, directory):
+    assert os.path.isdir(directory)
+    assert os.path.exists(os.path.join(directory, path))
+
+
 @step(u'file "{path}" is unreadable')
 @format_vars
 def file_unreadable(context, path):

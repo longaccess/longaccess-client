@@ -37,3 +37,12 @@ def with_api_response(f):
         except Exception as e:
             raise ApiErrorException(e)
     return wrap
+
+
+def contains(cls):
+    def decorator(func):
+        @wraps(func)
+        def patched(*args, **kwargs):
+            return cls(func(*args, **kwargs))
+        return patched
+    return decorator
