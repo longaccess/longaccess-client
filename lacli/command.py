@@ -127,6 +127,7 @@ class LaCommand(cmd.Cmd):
     def do_restore(self, line):
         a = line.strip()
         archives = self.cache.archives()
+        path = None
         if not a:
             a = 1
         if a > len(archives):
@@ -139,21 +140,30 @@ class LaCommand(cmd.Cmd):
                 if link and link.local:
                     parsed = urlparse(link.local)
                     if parsed.scheme == 'file':
-                        if 'output_directory' in self._var:
-                            outdir = self._var['output_directory']
-                        else:
-                            outdir = os.getcwd()
-                        restore_archive(archive, parsed.path, cert,
-                                        outdir,
-                                        self.cache._cache_dir(
-                                            'tmp', write=True))
-                        print "archive restored."
+                        path = parsed.path
                     else:
                         print "url not local: " + link.local
                 else:
                     print "no local copy exists yet."
             else:
                 print "no matching certificate found"
+        if path:
+            if 'output_directory' in self._var:
+                outdir = self._var['output_directory']
+            else:
+                outdir = os.getcwd()
+            try:
+                restore_archive(archive, path, cert,
+                                outdir,
+                                self.cache._cache_dir(
+                                    'tmp', write=True))
+                print "archive restored."
+            except Exception as e:
+                getLogger().debug("exception while uploading",
+                                  exc_info=True)
+                print "error: " + str(e)
+        else:
+            print "data file {} not found."
 
     def complete_put(self, text, line, begidx, endidx):  # pragma: no cover
         return [os.path.basename(x) for x in glob.glob('{}*'.format(line[4:]))]

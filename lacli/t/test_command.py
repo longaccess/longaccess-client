@@ -196,6 +196,12 @@ class CommandTest(TestCase):
             cli._var['output_directory'] = 'foo'
             cli.onecmd('restore')
             self.assertThat(out.getvalue(), Contains('archive restored'))
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            restore_archive.side_effect = Exception("foo")
+            cache.links.return_value = {'foo': Mock(local="file:///path")}
+            cli._var['output_directory'] = 'foo'
+            cli.onecmd('restore')
+            self.assertThat(out.getvalue(), Contains('error: foo'))
 
     def test_do_list_exception(self):
         with patch('sys.stdout', new_callable=StringIO) as out:
