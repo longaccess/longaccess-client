@@ -23,6 +23,7 @@ class RequestsFactory():
         import requests
         session = requests.Session()
         session.auth = (self.prefs['user'], self.prefs['pass'])
+        session.verify = self.prefs['verify']
         return session
 
     def read_netrc(self, url):

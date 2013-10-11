@@ -45,6 +45,10 @@ class ApiTest(TestCase):
             self.assertEqual(f.prefs['pass'], 'c')
             s = f.new_session()
             self.assertEqual(s.auth, ('a', 'c'))
+            self.assertEqual(s.verify, True)
+            f = self._factory({'url': 'http://bla.com', 'verify': False})
+            s = f.new_session()
+            self.assertEqual(s.verify, False)
 
     def test_api(self):
         assert self._makeit(self.prefs, Mock())

@@ -48,12 +48,17 @@ def settings(options):
         print "error: illegal value for 'procs' parameter."
         raise
 
+    verify = True
+    if '0' != os.getenv('LA_API_VERIFY'):
+        verify = False
+
     return (
         {
             'api': {
                 'user': options['--user'],
                 'pass': options['--password'],
                 'url': os.getenv('LA_API_URL'),
+                'verify': verify
             },
             'upload': {
                 'bucket': options['--bucket'],

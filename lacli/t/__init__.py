@@ -14,6 +14,7 @@ def makeprefs():
             'user': 'foo',
             'pass': 'bar',
             'url': 'http://baz.com',
+            'verify': True
         },
         'upload': {
             'timeout': 1200,
