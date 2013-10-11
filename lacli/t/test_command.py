@@ -3,7 +3,7 @@ import time
 
 from testtools import TestCase
 from testtools.matchers import Contains
-from . import makeprefs
+from . import makeprefs, _temp_home
 from mock import MagicMock, Mock, patch
 from StringIO import StringIO
 
@@ -102,11 +102,13 @@ class CommandTest(TestCase):
 
     def test_do_put_error(self):
         from lacli.cache import Cache
+        with _temp_home() as home:
+            cli = self._makeit(Mock(), Cache(home), self.prefs)
+            with patch('sys.stdout', new_callable=StringIO) as out:
+                cli.onecmd('put')
+                self.assertThat(out.getvalue(),
+                                Contains('No such archive'))
         cli = self._makeit(Mock(), Cache(self.home), self.prefs)
-        with patch('sys.stdout', new_callable=StringIO) as out:
-            cli.onecmd('put')
-            self.assertThat(out.getvalue(),
-                            Contains('No such archive'))
         with patch('sys.stdout', new_callable=StringIO) as out:
             cli.onecmd('put foobar')
             self.assertThat(out.getvalue(),
