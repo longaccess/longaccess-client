@@ -64,7 +64,7 @@ class LaCommand(cmd.Cmd):
 
             if path:
                 try:
-                    capsule = self._var['capsule']
+                    capsule = self._var['capsule'] - 1
                     with self.session.upload(capsule, archive) as tokens:
                         self.uploader.upload(path, tokens)
                     print "\ndone."
