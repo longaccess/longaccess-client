@@ -44,7 +44,7 @@ class LaCommand(cmd.Cmd):
                 idx = int(line)-1
             except ValueError:
                 pass
-        if not idx or idx > len(archives):
+        if idx < 0 or len(archives) <= idx:
             print "No such archive."
         else:
             archive = archives[idx]
