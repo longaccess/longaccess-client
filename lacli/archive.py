@@ -28,8 +28,6 @@ def _slugify(value):
 
 
 def restore_archive(archive, path, cert, folder, tmpdir):
-    if not folder:
-        folder = os.getcwd()
     cipher = get_cipher(archive, cert)
     with open(path) as infile:
         with NamedTemporaryFile() as dst:
@@ -40,7 +38,7 @@ def restore_archive(archive, path, cert, folder, tmpdir):
                 zf.extractall(folder)
 
 
-def dump_archive(archive, folder, cert, cb, tmpdir):
+def dump_archive(archive, folder, cert, cb=None, tmpdir='/tmp'):
     name = "{}-{}".format(date.today().isoformat(),
                           _slugify(archive.title))
     files = (os.path.join(root, f)

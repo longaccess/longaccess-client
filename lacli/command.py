@@ -34,40 +34,50 @@ class LaCommand(cmd.Cmd):
     def do_put(self, line):
         """Upload a file to LA [filename]
         """
-        a = line.strip()
         archives = self.cache.archives()
-        if not a:
-            a = 1
-        if a > len(archives):
+        line = line.strip()
+        idx = None
+        if not line:
+            idx = 0
+        else:
+            try:
+                idx = int(line)-1
+            except ValueError:
+                pass
+        if not idx or idx > len(archives):
             print "No such archive."
         else:
-            archive = archives[a-1]
+            archive = archives[idx]
             link = self.cache.links().get(archive.title)
-            if link and link.local:
+            path = ''
+            if link and hasattr(link, 'local'):
                 parsed = urlparse(link.local)
                 if parsed.scheme == 'file':
-                    if not os.path.exists(parsed.path):
-                        print 'File {} not found.'.format(parsed.path)
+                    if os.path.exists(parsed.path):
+                        path = parsed.path
                     else:
-                        try:
-                            capsule = self._var['capsule']
-                            with self.session.upload(capsule, archive) as tokens:
-                                self.uploader.upload(parsed.path, tokens)
-                            print "\ndone."
-                        except Exception as e:
-                            getLogger().debug("exception while uploading",
-                                              exc_info=True)
-                            print "error: " + str(e)
+                        print 'File {} not found.'.format(parsed.path)
                 else:
                     print "url not local: " + link.local
             else:
                 print "no local copy exists."
 
+            if path:
+                try:
+                    capsule = self._var['capsule']
+                    with self.session.upload(capsule, archive) as tokens:
+                        self.uploader.upload(path, tokens)
+                    print "\ndone."
+                except Exception as e:
+                    getLogger().debug("exception while uploading",
+                                      exc_info=True)
+                    print "error: " + str(e)
+
     def do_list(self, line):
         """List capsules in LA
         """
         try:
-            capsules = list(self.session.capsules())
+            capsules = self.session.capsules()
 
             if len(capsules):
                 print "Available capsules:"

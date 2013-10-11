@@ -21,8 +21,13 @@ def get_cipher(archive, cert):
         input = archive.meta.cipher.input
     if hasattr(cert, 'key'):
         key = cert.key
-    elif hasattr(cert, 'keys'):
-        key = cert.keys[0]
+    elif hasattr(cert, 'keys') and len(cert.keys) > 0:
+        if hasattr(archive.meta.cipher, 'key'):
+            idx = archive.meta.cipher.key
+            if idx > 0 and idx <= len(cert.keys):
+                key = cert.keys[idx-1]
+        else:
+            key = cert.keys[0]
     return cipher_modes()[archive.meta.cipher.mode](key, input)
 
 
