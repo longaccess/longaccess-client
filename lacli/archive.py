@@ -57,7 +57,7 @@ def _writer(name, folder, cipher, tmpdir):
                    'dir': tmpdir}
         with NamedTemporaryFile(suffix=".crypt", **tmpargs) as dst:
             copyfileobj(zf, CryptIO(dst, cipher))
-            os.rename(dst.name, path)
+        os.rename(dst.name, path)
     return (path, _zip(name, folder, tmpdir, _enc))
 
 
