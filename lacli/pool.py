@@ -18,13 +18,13 @@ from multiprocessing import TimeoutError
 
 
 class MPConnection(object):
-    def __init__(self, token, bucket='lastage', grace=1200):
+    def __init__(self, token, grace=1200):
         self.accesskey = token['token_access_key']
         self.secret = token['token_secret_key']
         self.sectoken = token['token_session']
         self.expiration = token['token_expiration']
         self.uid = token['token_uid']
-        self.bucket = bucket
+        self.bucket = token['bucket']
         self.grace = grace
         self.conn = None
         if self.uid is None:

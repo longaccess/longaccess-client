@@ -9,7 +9,6 @@ class Upload(object):
     def __init__(self, session, prefs):
         self.prefs = prefs
         self.log = LogHandler()
-        self.prefix = 'upload'
 
     @contextmanager
     def _workers(self, progq):
@@ -37,7 +36,6 @@ class Upload(object):
 
     def _nexttoken(self, tokens):
         for seq, token in enumerate(tokens):
-            yield token, "{prefix}/{uid}/temp-archive-{seq}".format(
-                prefix=self.prefix,
-                uid=token['token_uid'],
+            yield token, "{prefix}temp-archive-{seq}".format(
+                prefix=token['prefix'],
                 seq=seq)

@@ -29,7 +29,6 @@ class CacheTest(TestCase):
     def test_archives(self):
         archives = self._makeit(self.home).archives()
         self.assertEqual(len(archives), 2)
-        self.assertEqual(archives[0].title, 'milos 2013')
 
     def test_prepare(self):
         with _temp_home() as home:
