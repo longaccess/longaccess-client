@@ -114,7 +114,7 @@ class CommandTest(TestCase):
             self.assertThat(out.getvalue(),
                             Contains('No such archive'))
         with patch('sys.stdout', new_callable=StringIO) as out:
-            cli.onecmd('put 2')
+            cli.onecmd('put 1')
             self.assertThat(out.getvalue(),
                             Contains('File /path/to/archive not found.'))
 
@@ -123,7 +123,7 @@ class CommandTest(TestCase):
         cli = self._makeit(Mock(), Cache(self.home), self.prefs)
         cli.cache.links = Mock(return_value={})
         with patch('sys.stdout', new_callable=StringIO) as out:
-            cli.onecmd('put 2')
+            cli.onecmd('put 1')
             self.assertThat(out.getvalue(), Contains('no local copy exists'))
 
     def test_do_put_not_local(self):
@@ -132,7 +132,7 @@ class CommandTest(TestCase):
         with patch('sys.stdout', new_callable=StringIO) as out:
             with patch('lacli.command.urlparse') as urlparse:
                 urlparse.return_value = Mock(scheme='gopher', path=self.home)
-                cli.onecmd('put 2')
+                cli.onecmd('put 1')
                 self.assertThat(out.getvalue(), Contains('url not local'))
                 urlparse.assert_called_with('file:///path/to/archive')
 
@@ -144,7 +144,7 @@ class CommandTest(TestCase):
             cli._var['capsule'] = 1
             with patch('lacli.command.urlparse') as urlparse:
                 urlparse.return_value = Mock(scheme='file', path=self.home)
-                cli.onecmd('put 2')
+                cli.onecmd('put 1')
             self.assertThat(out.getvalue(), Contains('done'))
 
     def test_do_put_exception(self):
@@ -154,7 +154,7 @@ class CommandTest(TestCase):
                                self._makeupload(side_effect=Exception))
             with patch('lacli.command.urlparse') as urlparse:
                 urlparse.return_value = Mock(scheme='file', path=self.home)
-                cli.onecmd('put 2')
+                cli.onecmd('put 1')
             self.assertThat(out.getvalue(),
                             Contains('error:'))
 
