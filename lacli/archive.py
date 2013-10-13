@@ -41,14 +41,15 @@ def restore_archive(archive, path, cert, folder, tmpdir, cb=None):
                     map(lambda zi: zf.extract(zi, folder), zf.infolist()))
 
 
-def dump_archive(archive, folder, cert, cb=None, tmpdir='/tmp', hashf='sha512'):
+def dump_archive(archive, folder, cert, cb=None, tmpdir='/tmp',
+                 hashf='sha512'):
     name = "{}-{}".format(date.today().isoformat(),
                           _slugify(archive.title))
     cipher = get_cipher(archive, cert)
     hashobj = None
     if hasattr(hashlib, hashf):
         hashobj = getattr(hashlib, hashf)()
-    path, writer = _writer(name, os.path.abspath(folder), 
+    path, writer = _writer(name, os.path.abspath(folder),
                            cipher, tmpdir, hashobj)
     map(cb, writer)
     args = {hashf: hashobj.digest()}
