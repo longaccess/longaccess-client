@@ -6,6 +6,8 @@ from lacli.cipher import cipher_modes, new_key
 from yaml import SafeLoader
 from yaml import SafeDumper
 from lacli.exceptions import InvalidArchiveError
+from datetime import datetime
+from dateutil.tz import tzutc
 
 
 class PrettySafeLoader(SafeLoader):
@@ -23,7 +25,7 @@ class BaseYAMLObject(yaml.YAMLObject):
 
 class Archive(BaseYAMLObject):
     """
-    >>> meta = Meta('zip', 'aes-256-ctr', size=1024)
+    >>> meta = Meta('zip', 'aes-256-ctr', size=1024, created='now')
     >>> archive = Archive('title', meta, tags=['foo', 'bar'])
     >>> archive.title
     'title'
@@ -32,6 +34,8 @@ class Archive(BaseYAMLObject):
     'aes-256-ctr'
     >>> archive.meta.size
     1024
+    >>> archive.meta.created
+    'now'
     >>> archive.tags[1]
     'bar'
     >>> archive.description = 'what a wonderful dataset'
@@ -39,13 +43,14 @@ class Archive(BaseYAMLObject):
     'what a wonderful dataset'
     >>> Archive('title', meta, description='worthless junk').description
     'worthless junk'
-    >>> pyaml.dump(Archive('foo', Meta('zip', 'xor')), sys.stdout)
+    >>> pyaml.dump(Archive('foo', meta), sys.stdout)
     !archive
     meta: !meta
-      cipher: xor
+      cipher: aes-256-ctr
+      created: now
       format: zip
+      size: 1024
     title: foo
-
     """
     yaml_tag = u'!archive'
     title = None
@@ -98,11 +103,16 @@ class Meta(BaseYAMLObject):
     format = None
     cipher = None
 
-    def __init__(self, format, cipher, size=None):
+    def __init__(self, format, cipher, size=None, created=None):
         self.format = format
         self.cipher = cipher
         if size:
             self.size = size
+        if created:
+            self.created = created
+        else:
+            self.created = datetime.utcnow().replace(
+                microsecond=0, tzinfo=tzutc()).isoformat()
 
 
 class Format(BaseYAMLObject):
@@ -240,12 +250,14 @@ def load_archive(f):
 
 def make_adf(archive=None, canonical=False, out=None, pretty=False):
     """
-    >>> archive = Archive('title', Meta('zip', 'aes-256-ctr'))
+    >>> meta = Meta('zip', 'aes-256-ctr', created='now')
+    >>> archive = Archive('title', meta)
     >>> cert = Certificate(chr(255)*16)
     >>> make_adf([archive, cert], out=sys.stdout, pretty=True)
     !archive
     meta: !meta
       cipher: aes-256-ctr
+      created: now
       format: zip
     title: title
     ---!certificate
@@ -253,7 +265,7 @@ def make_adf(archive=None, canonical=False, out=None, pretty=False):
       /////////////////////w==
     >>> make_adf([archive, cert], out=sys.stdout)
     !archive
-    meta: !meta {cipher: aes-256-ctr, format: zip}
+    meta: !meta {cipher: aes-256-ctr, created: now, format: zip}
     title: title
     --- !certificate
     key: !!binary |

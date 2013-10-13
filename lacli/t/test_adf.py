@@ -13,7 +13,7 @@ class AdfTest(TestCase):
 
     def _archive(self, title='', format='', cipher=''):
         from lacli.adf import Archive, Meta
-        return Archive(title, Meta(format, cipher))
+        return Archive(title, Meta(format, cipher, created='now'))
 
     def test_archive(self):
         from lacli.adf import make_adf
@@ -32,7 +32,8 @@ class AdfTest(TestCase):
 
     def test_meta(self):
         from lacli.adf import Meta, make_adf
-        meta = make_adf(Meta(format='zip', cipher='aes-256-ctr'), True)
+        meta = make_adf(Meta(
+            format='zip', cipher='aes-256-ctr', created='now'), True)
         self.assertEqual(meta, ADF_TEST_DATA_2)
 
     def test_links(self):
@@ -73,6 +74,8 @@ ADF_TEST_DATA_1 = """---
   : !meta {
     ? !!str "cipher"
     : !!str "",
+    ? !!str "created"
+    : !!str "now",
     ? !!str "format"
     : !!str "",
   },
@@ -85,6 +88,8 @@ ADF_TEST_DATA_2 = """---
 !meta {
   ? !!str "cipher"
   : !!str "aes-256-ctr",
+  ? !!str "created"
+  : !!str "now",
   ? !!str "format"
   : !!str "zip",
 }
