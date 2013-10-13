@@ -52,7 +52,7 @@ class Cache(object):
         path = os.path.join(self._cache_dir('data', write=True), name)
         os.rename(tmppath, path)
         link = Links(local=urlunparse(('file', path, '', '', '', '')))
-        archive.size = os.path.getsize(path)
+        archive.meta.size = os.path.getsize(path)
         with self._archive_open(name + ".adf", 'w') as f:
             make_adf([archive, cert, auth, link], out=f)
 

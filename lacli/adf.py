@@ -23,15 +23,15 @@ class BaseYAMLObject(yaml.YAMLObject):
 
 class Archive(BaseYAMLObject):
     """
-    >>> meta = Meta('zip', 'aes-256-ctr')
-    >>> archive = Archive('title', meta, size=1024, tags=['foo', 'bar'])
+    >>> meta = Meta('zip', 'aes-256-ctr', size=1024)
+    >>> archive = Archive('title', meta, tags=['foo', 'bar'])
     >>> archive.title
     'title'
-    >>> archive.size
-    1024
     >>> archive.description
     >>> archive.meta.cipher
     'aes-256-ctr'
+    >>> archive.meta.size
+    1024
     >>> archive.tags[1]
     'bar'
     >>> archive.description = 'what a wonderful dataset'
@@ -51,17 +51,14 @@ class Archive(BaseYAMLObject):
     title = None
     description = None
     tags = None
-    size = None
     meta = None
 
-    def __init__(self, title, meta, size=None, description=None, tags=[]):
+    def __init__(self, title, meta, description=None, tags=[]):
         self.title = title
         if description:
             self.description = description
         if len(tags):
             self.tags = tags
-        if size:
-            self.size = size
         if not hasattr(meta, 'format'):
             raise ValueError("invalid meta: " + str(meta))
         self.meta = meta
@@ -83,17 +80,29 @@ class Auth(BaseYAMLObject):
 
 class Meta(BaseYAMLObject):
     """
-    >>> meta = Meta('zip', 'aes-256-ctr')
+    >>> meta = Meta('zip', 'aes-256-ctr', size=1024)
     >>> meta.format
     'zip'
     >>> meta.cipher
     'aes-256-ctr'
+    >>> meta.size
+    1024
+    >>> meta = Meta('zip', 'aes-256-ctr')
+    >>> meta.size
+    >>> meta.size = 1024
+    >>> meta.size
+    1024
     """
     yaml_tag = u'!meta'
+    size = None
+    format = None
+    cipher = None
 
-    def __init__(self, format, cipher):
+    def __init__(self, format, cipher, size=None):
         self.format = format
         self.cipher = cipher
+        if size:
+            self.size = size
 
 
 class Format(BaseYAMLObject):
