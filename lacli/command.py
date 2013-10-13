@@ -34,7 +34,7 @@ class LaCommand(cmd.Cmd):
     def do_put(self, line):
         """Upload a file to LA [filename]
         """
-        archives = self.cache.archives()
+        docs = self.cache.archives(full=True)
         line = line.strip()
         idx = None
         if not line:
@@ -44,10 +44,10 @@ class LaCommand(cmd.Cmd):
                 idx = int(line)-1
             except ValueError:
                 pass
-        if idx < 0 or len(archives) <= idx:
+        if idx < 0 or len(docs) <= idx:
             print "No such archive."
         else:
-            archive = archives[idx]
+            archive = docs[idx]['archive']
             link = self.cache.links().get(archive.title)
             path = ''
             if link and hasattr(link, 'local'):
@@ -65,11 +65,12 @@ class LaCommand(cmd.Cmd):
             if path:
                 try:
                     capsule = self._var['capsule'] - 1
-                    with self.session.upload(capsule, archive) as tokens:
-                        self.uploader.upload(path, tokens)
+                    with self.session.upload(capsule, archive) as upload:
+                        self.cache.save_upload(docs[idx], upload)
+                        self.uploader.upload(path, upload['tokens'])
                     print "\ndone."
                 except Exception as e:
-                    getLogger().debug("exception while uploading",
+                    getLogger().error("exception while uploading",
                                       exc_info=True)
                     print "error: " + str(e)
 

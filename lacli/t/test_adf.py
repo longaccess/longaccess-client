@@ -41,23 +41,23 @@ class AdfTest(TestCase):
         self.assertEqual(ADF_TEST_DATA_3, links)
 
     def test_minimal(self):
-        from lacli.adf import load_all
+        from lacli.adf import load_archive
 
         with open('t/data/home/archives/minimal.adf') as f:
-            archive, certificate, _ = load_all(f)
-            self.assertEqual(archive.meta.cipher, 'aes-256-ctr')
-            b = unpack("<LLLLLLLL", certificate.key)
+            docs = load_archive(f)
+            self.assertEqual(docs['archive'].meta.cipher, 'aes-256-ctr')
+            b = unpack("<LLLLLLLL", docs['cert'].key)
             self.assertEqual(b[0], 1911376514)
 
     def test_sample(self):
-        from lacli.adf import load_all
+        from lacli.adf import load_archive
 
         with open('t/data/home/archives/sample.adf') as f:
-            archive, _, certificate, _ = load_all(f)
-            self.assertEqual(archive.meta.cipher.mode, 'aes-256-ctr')
-            b = unpack("<LLLLLLLL", archive.meta.cipher.input)
+            docs = load_archive(f)
+            self.assertEqual(docs['archive'].meta.cipher.mode, 'aes-256-ctr')
+            b = unpack("<LLLLLLLL", docs['archive'].meta.cipher.input)
             self.assertEqual(b[0], 1911376514)
-            b = unpack("<LLLLLLLL", certificate.keys[1].input)
+            b = unpack("<LLLLLLLL", docs['cert'].keys[1].input)
             self.assertEqual(b[0], 1911376514)
 
     def test_cipher(self):

@@ -46,11 +46,9 @@ class Archive(BaseYAMLObject):
 class Auth(BaseYAMLObject):
     """
     >>> with open('t/data/home/certs/2013-10-13-foobar.adf') as f:
-    ...     docs=list(load_all(f))
-    ...     for doc in docs:
-    ...         if hasattr(doc, 'sha512'):
-    ...             auth = Auth(sha512=doc.sha512)
-    ...             auth.sha512.encode('hex')[:10]
+    ...     doc=load_archive(f)['auth']
+    ...     auth = Auth(sha512=doc.sha512)
+    ...     auth.sha512.encode('hex')[:10]
     'd34a686c5c'
     """
     yaml_tag = u'!auth'
@@ -79,7 +77,23 @@ class Format(BaseYAMLObject):
 
 
 class Links(BaseYAMLObject):
+    """
+    >>> links = Links(local='http://foo.bar.com')
+    >>> links.download
+    >>> links.upload
+    >>> links.local
+    'http://foo.bar.com'
+    >>> from StringIO import StringIO
+    >>> out = StringIO()
+    >>> make_adf(links, out=out)
+    >>> print out.getvalue()
+    !links {local: 'http://foo.bar.com'}
+    <BLANKLINE>
+    """
     yaml_tag = u'!links'
+    download = None
+    local = None
+    upload = None
 
     def __init__(self, download=None, local=None):
         if download:
@@ -165,14 +179,19 @@ add_path_resolver(u'!signature', ["signature"])
 add_path_resolver(u'!key', ["keys", None])
 
 
-def load_all(f):
-    return yaml.load_all(f, Loader=PrettySafeLoader)
-
-
 def load_archive(f):
-    for o in load_all(f):
-        if hasattr(o, 'meta'):
-            return o
+    d = {}
+    for o in yaml.load_all(f, Loader=PrettySafeLoader):
+        if isinstance(o, Archive):
+            d['archive'] = o
+        elif isinstance(o, Auth):
+            d['auth'] = o
+        elif isinstance(o, Certificate):
+            d['cert'] = o
+        elif isinstance(o, Links):
+            d['links'] = o
+    if 'archive' in d:
+        return d
     raise InvalidArchiveError()
 
 

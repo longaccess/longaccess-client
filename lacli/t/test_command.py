@@ -145,8 +145,16 @@ class CommandTest(TestCase):
     def test_do_put_done(self):
         with patch('sys.stdout', new_callable=StringIO) as out:
             from lacli.cache import Cache
-            cli = self._makeit(Mock(upload=MagicMock()), Cache(self.home),
-                               self.prefs, self._makeupload())
+            upload = MagicMock()
+            upload.__enter__.return_value = {
+                'uri': 'http://foo.com',
+                'id': '1',
+                'tokens': Mock()
+            }
+            cli = self._makeit(Mock(upload=Mock(return_value=upload)),
+                               Cache(self.home),
+                               self.prefs,
+                               self._makeupload())
             cli._var['capsule'] = 1
             with patch('lacli.command.urlparse') as urlparse:
                 urlparse.return_value = Mock(scheme='file', path=self.home)

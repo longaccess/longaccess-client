@@ -116,8 +116,8 @@ class ApiTest(TestCase):
                                'patch.return_value': ur})
         api = self._makeit(self.prefs, sessions=s)
         tmgr = api.upload(1, Mock(title='', description=''))
-        with tmgr as tokens:
-            for seq, token in izip(xrange(4), tokens):
+        with tmgr as upload:
+            for seq, token in izip(xrange(4), upload['tokens']):
                 self.assertIn('token_access_key', token)
 
 

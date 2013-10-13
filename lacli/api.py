@@ -97,7 +97,11 @@ class Api(object):
             })
         status = self._post(self.endpoints['upload'], data=req_data)
         uri = urljoin(self.url, status['resource_uri'])
-        yield self._upload_status(uri, status)
+        yield {
+            'tokens': self._upload_status(uri, status),
+            'uri': uri,
+            'id': status['id']
+        }
         self._patch(uri, data=json.dumps({'status': 'uploaded'}))
 
     @contains(list)
