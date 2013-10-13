@@ -70,10 +70,9 @@ class CacheTest(TestCase):
 #        self.assertFalse(cache._title_cert([ds]))
 
     def test_certs(self):
-        cache = self._makeit(self.home)
-        self.assertEqual({}, cache.certs())
         with _temp_home() as home:
             cache = self._makeit(home)
+            self.assertEqual({}, cache.certs())
             cdir = os.path.join(home, 'certs')
             os.makedirs(cdir)
             copy(os.path.join(self.home, 'archives', 'minimal.adf'), cdir)
