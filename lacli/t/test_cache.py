@@ -58,6 +58,11 @@ class CacheTest(TestCase):
                 cache._archive_open('foo', 'w')
                 open_mock.assert_called_with(fname, 'w')
                 self.assertTrue(os.path.isdir(dname))
+                cache._cert_open('foo', 'w')
+                dname = os.path.join(home, 'certs')
+                fname = os.path.join(dname, 'foo')
+                open_mock.assert_called_with(fname, 'w')
+                self.assertTrue(os.path.isdir(dname))
 
 #    def test_title_cert(self):
 #        cache = self._makeit(self.home)
