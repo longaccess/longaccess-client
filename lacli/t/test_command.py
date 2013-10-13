@@ -151,22 +151,30 @@ class CommandTest(TestCase):
                 'id': '1',
                 'tokens': Mock()
             }
-            cli = self._makeit(Mock(upload=Mock(return_value=upload)),
-                               Cache(self.home),
-                               self.prefs,
-                               self._makeupload())
-            cli._var['capsule'] = 1
-            with patch('lacli.command.urlparse') as urlparse:
-                urlparse.return_value = Mock(scheme='file', path=self.home)
-                for seq, archive in enumerate(cli.cache.archives()):
-                    if archive.title == 'My 2013 vacation':
-                        cli.onecmd('put {}'.format(seq+1))
+            with patch.object(Cache, 'save_upload'):
+                cli = self._makeit(Mock(upload=Mock(return_value=upload)),
+                                   Cache(self.home),
+                                   self.prefs,
+                                   self._makeupload())
+                cli._var['capsule'] = 1
+                with patch('lacli.command.urlparse') as urlparse:
+                    urlparse.return_value = Mock(scheme='file', path=self.home)
+                    for seq, archive in enumerate(cli.cache.archives()):
+                        if archive.title == 'My 2013 vacation':
+                            cli.onecmd('put {}'.format(seq+1))
             self.assertThat(out.getvalue(), Contains('done'))
 
     def test_do_put_exception(self):
         with patch('sys.stdout', new_callable=StringIO) as out:
             from lacli.cache import Cache
-            cli = self._makeit(Mock(), Cache(self.home), self.prefs,
+            upload = MagicMock()
+            upload.__enter__.return_value = {
+                'uri': 'http://foo.com',
+                'id': '1',
+                'tokens': Mock()
+            }
+            cli = self._makeit(Mock(upload=Mock(return_value=upload)),
+                               Cache(self.home), self.prefs,
                                self._makeupload(side_effect=Exception))
             with patch('lacli.command.urlparse') as urlparse:
                 urlparse.return_value = Mock(scheme='file', path=self.home)
