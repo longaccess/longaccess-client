@@ -85,7 +85,7 @@ class Api(object):
     def upload(self, capsule, archive):
         url = self.endpoints['capsule']
         cs = self._get(url)['objects']
-        if capsule > len(cs):
+        if capsule >= len(cs):
             raise ValueError("No such capsule")
 
         req_data = json.dumps(

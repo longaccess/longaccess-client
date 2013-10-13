@@ -64,13 +64,16 @@ class LaCommand(cmd.Cmd):
 
             if path:
                 try:
-                    capsule = self._var['capsule'] - 1
+                    if 'capsule' in self._var:
+                        capsule = self._var['capsule'] - 1
+                    else:
+                        capsule = 0
                     with self.session.upload(capsule, archive) as upload:
                         self.cache.save_upload(docs[idx], upload)
                         self.uploader.upload(path, upload['tokens'])
                     print "\ndone."
                 except Exception as e:
-                    getLogger().error("exception while uploading",
+                    getLogger().debug("exception while uploading",
                                       exc_info=True)
                     print "error: " + str(e)
 
