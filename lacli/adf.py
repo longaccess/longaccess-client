@@ -22,22 +22,46 @@ class BaseYAMLObject(yaml.YAMLObject):
 class Archive(BaseYAMLObject):
     """
     >>> meta = Meta('zip', 'aes-256-ctr')
-    >>> archive = Archive('title', meta, 'description', tags=['foo', 'bar'])
+    >>> archive = Archive('title', meta, size=1024, tags=['foo', 'bar'])
     >>> archive.title
     'title'
+    >>> archive.size
+    1024
     >>> archive.description
-    'description'
     >>> archive.meta.cipher
     'aes-256-ctr'
     >>> archive.tags[1]
     'bar'
+    >>> archive.description = 'what a wonderful dataset'
+    >>> archive.description
+    'what a wonderful dataset'
+    >>> Archive('title', meta, description='worthless junk').description
+    'worthless junk'
+    >>> import pyaml
+    >>> import sys
+    >>> pyaml.dump(Archive('foo', Meta('zip', 'xor')), sys.stdout)
+    !archive
+    meta: !meta
+      cipher: xor
+      format: zip
+    title: foo
+
     """
     yaml_tag = u'!archive'
+    title = None
+    description = None
+    tags = None
+    size = None
+    meta = None
 
-    def __init__(self, title, meta, description=None, tags=[]):
+    def __init__(self, title, meta, size=None, description=None, tags=[]):
         self.title = title
-        self.description = description
-        self.tags = tags
+        if description:
+            self.description = description
+        if len(tags):
+            self.tags = tags
+        if size:
+            self.size = size
         if not hasattr(meta, 'format'):
             raise ValueError("invalid meta: " + str(meta))
         self.meta = meta
@@ -203,9 +227,7 @@ def make_adf(archive=None, canonical=False, out=None):
     >>> make_adf(archive, out=out)
     >>> print out.getvalue()
     !archive
-    description: null
     meta: !meta {cipher: aes-256-ctr, format: zip}
-    tags: []
     title: title
     <BLANKLINE>
     """

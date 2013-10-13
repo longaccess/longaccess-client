@@ -69,8 +69,6 @@ class AdfTest(TestCase):
 
 ADF_TEST_DATA_1 = """---
 !archive {
-  ? !!str "description"
-  : !!null "null",
   ? !!str "meta"
   : !meta {
     ? !!str "cipher"
@@ -78,8 +76,6 @@ ADF_TEST_DATA_1 = """---
     ? !!str "format"
     : !!str "",
   },
-  ? !!str "tags"
-  : !!seq [],
   ? !!str "title"
   : !!str "foo",
 }
