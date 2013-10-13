@@ -20,6 +20,18 @@ class BaseYAMLObject(yaml.YAMLObject):
 
 
 class Archive(BaseYAMLObject):
+    """
+    >>> meta = Meta('zip', 'aes-256-ctr')
+    >>> archive = Archive('title', meta, 'description', tags=['foo', 'bar'])
+    >>> archive.title
+    'title'
+    >>> archive.description
+    'description'
+    >>> archive.meta.cipher
+    'aes-256-ctr'
+    >>> archive.tags[1]
+    'bar'
+    """
     yaml_tag = u'!archive'
 
     def __init__(self, title, meta, description=None, tags=[]):
@@ -32,6 +44,15 @@ class Archive(BaseYAMLObject):
 
 
 class Auth(BaseYAMLObject):
+    """
+    >>> with open('t/data/home/certs/2013-10-13-foobar.adf') as f:
+    ...     docs=list(load_all(f))
+    ...     for doc in docs:
+    ...         if hasattr(doc, 'sha512'):
+    ...             auth = Auth(sha512=doc.sha512)
+    ...             auth.sha512.encode('hex')[:10]
+    'd34a686c5c'
+    """
     yaml_tag = u'!auth'
 
     def __init__(self, *args, **kwargs):
@@ -39,6 +60,13 @@ class Auth(BaseYAMLObject):
 
 
 class Meta(BaseYAMLObject):
+    """
+    >>> meta = Meta('zip', 'aes-256-ctr')
+    >>> meta.format
+    'zip'
+    >>> meta.cipher
+    'aes-256-ctr'
+    """
     yaml_tag = u'!meta'
 
     def __init__(self, format, cipher):
@@ -61,6 +89,34 @@ class Links(BaseYAMLObject):
 
 
 class Cipher(BaseYAMLObject):
+    """
+    >>> cipher = Cipher('aes-256-ctr', key=2, input='\1\2\3\4'*4)
+    >>> cipher.mode
+    'aes-256-ctr'
+    >>> cipher.key
+    2
+    >>> cipher.input.encode('hex')
+    '01020304010203040102030401020304'
+    >>> Cipher('aes-256-ctr', key='foo')
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "lacli/adf.py", line 70, in __init__
+    ValueError: key must be integer
+    >>> Cipher('wtf')
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "lacli/adf.py", line 68, in __init__
+    ValueError: wtf not recognized
+    >>> cipher = Cipher('aes-256-ctr')
+    >>> hasattr(cipher, 'key')
+    False
+    >>> hasattr(cipher, 'input')
+    False
+    >>> cipher = Cipher('aes-256-ctr', key=1)
+    >>> hasattr(cipher, 'key')
+    False
+    """
+
     yaml_tag = u'!cipher'
 
     def __init__(self, mode, key=1, input=None):
@@ -121,6 +177,20 @@ def load_archive(f):
 
 
 def make_adf(archive=None, canonical=False, out=None):
+    """
+    >>> from StringIO import StringIO
+    >>> archive = Archive('title', Meta('zip', 'aes-256-ctr'))
+    >>> out = StringIO()
+    >>> make_adf(archive, out=out)
+    >>> print out.getvalue()
+    !archive
+    description: null
+    meta: !meta {cipher: aes-256-ctr, format: zip}
+    tags: []
+    title: title
+    <BLANKLINE>
+    """
+
     if not hasattr(archive, '__getitem__'):
         archive = [archive]
     return yaml.safe_dump_all(archive, out, canonical=canonical)
