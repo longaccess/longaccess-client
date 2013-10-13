@@ -34,6 +34,9 @@ class Archive(BaseYAMLObject):
 class Auth(BaseYAMLObject):
     yaml_tag = u'!auth'
 
+    def __init__(self, *args, **kwargs):
+        self.__dict__.update(kwargs)
+
 
 class Meta(BaseYAMLObject):
     yaml_tag = u'!meta'

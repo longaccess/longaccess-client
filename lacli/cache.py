@@ -41,14 +41,14 @@ class Cache(object):
         archive = Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)))
         cert = Certificate()
         tmpdir = self._cache_dir('tmp', write=True)
-        name, tmppath = dump_archive(archive, folder, cert, cb, tmpdir)
+        name, tmppath, auth = dump_archive(archive, folder, cert, cb, tmpdir)
         path = os.path.join(self._cache_dir('data', write=True), name)
         os.rename(tmppath, path)
         link = Links(local=urlunparse(('file', path, '', '', '', '')))
         with self._archive_open(name + ".adf", 'w') as f:
             make_adf([archive, link], out=f)
         with self._cert_open(name + ".adf", 'w') as f:
-            make_adf([archive, cert], out=f)
+            make_adf([archive, cert, auth], out=f)
 
     def links(self):
         return self._by_title(
