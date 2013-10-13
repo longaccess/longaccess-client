@@ -1,4 +1,6 @@
 import yaml
+import pyaml
+import sys
 
 from lacli.cipher import cipher_modes, new_key
 from yaml import SafeLoader
@@ -37,8 +39,6 @@ class Archive(BaseYAMLObject):
     'what a wonderful dataset'
     >>> Archive('title', meta, description='worthless junk').description
     'worthless junk'
-    >>> import pyaml
-    >>> import sys
     >>> pyaml.dump(Archive('foo', Meta('zip', 'xor')), sys.stdout)
     !archive
     meta: !meta
@@ -178,10 +178,20 @@ class DerivedKey(BaseYAMLObject):
 
 
 class Certificate(BaseYAMLObject):
+    """
+    >>> cert = Certificate(chr(255)*16)
+    >>> pyaml.dump(cert, sys.stdout)
+    !certificate
+    key: !!binary |
+      /////////////////////w==
+    """
     yaml_tag = u'!certificate'
 
-    def __init__(self):
-        self.key = new_key(256)
+    def __init__(self, key=None):
+        if not key:
+            self.key = new_key(256)
+        else:
+            self.key = key
 
 
 class MAC(BaseYAMLObject):
@@ -219,19 +229,31 @@ def load_archive(f):
     raise InvalidArchiveError()
 
 
-def make_adf(archive=None, canonical=False, out=None):
+def make_adf(archive=None, canonical=False, out=None, pretty=False):
     """
-    >>> from StringIO import StringIO
     >>> archive = Archive('title', Meta('zip', 'aes-256-ctr'))
-    >>> out = StringIO()
-    >>> make_adf(archive, out=out)
-    >>> print out.getvalue()
+    >>> cert = Certificate(chr(255)*16)
+    >>> make_adf([archive, cert], out=sys.stdout, pretty=True)
+    !archive
+    meta: !meta
+      cipher: aes-256-ctr
+      format: zip
+    title: title
+    ---!certificate
+    key: !!binary |
+      /////////////////////w==
+    >>> make_adf([archive, cert], out=sys.stdout)
     !archive
     meta: !meta {cipher: aes-256-ctr, format: zip}
     title: title
-    <BLANKLINE>
+    --- !certificate
+    key: !!binary |
+      /////////////////////w==
     """
 
     if not hasattr(archive, '__getitem__'):
         archive = [archive]
+    if pretty:
+        out.write("---".join(map(pyaml.dump, archive)))
+        return
     return yaml.safe_dump_all(archive, out, canonical=canonical)
