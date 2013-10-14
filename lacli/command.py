@@ -4,6 +4,7 @@ import cmd
 import glob
 import pyaml
 import sys
+import time
 from lacli.log import getLogger, setupLogging
 from lacli.upload import Upload
 from lacli.archive import restore_archive
@@ -74,9 +75,23 @@ class LaCommand(cmd.Cmd):
                         capsule = self._var['capsule'] - 1
                     else:
                         capsule = 0
+                    uri = None
                     with self.session.upload(capsule, archive) as upload:
                         self.cache.save_upload(docs[idx], upload)
                         self.uploader.upload(path, upload['tokens'])
+                        uri = upload['uri']
+
+                    if uri and not self.batch:
+                        print ""
+                        print "Upload complete, waiting for verification"
+                        print "Press Ctrl-C to check manually later"
+                        while True:
+                            status = self.session.upload_status(uri)
+                            if status['status'] == "complete":
+                                self.cache.save_cert(upload, status)
+                            for i in xrange(30):
+                                time.sleep(1)
+
                     print "\ndone."
                 except Exception as e:
                     getLogger().debug("exception while uploading",
@@ -151,12 +166,7 @@ class LaCommand(cmd.Cmd):
                     status = self.session.upload_status(url)
                     print "status:", status['status']
                     if status['status'] == "complete":
-                        assert 'archive_uri' in status, "no archive uri"
-                        self.cache.save_cert(upload['fname'],
-                                             status['archive_uri'])
-                        getLogger().debug(
-                            "removing {}".format(upload['fname']))
-                        os.unlink(upload['fname'])
+                        self.cache.save_cert(upload, status)
                 except Exception as e:
                     getLogger().debug("exception while checking status",
                                       exc_info=True)

@@ -76,13 +76,17 @@ class Cache(object):
         with self._upload_open("{}.adf".format(upload['id']), 'w') as f:
             make_adf(docs, out=f)
 
-    def save_cert(self, upload, link):
-        with open(upload) as _upload:
+    def save_cert(self, upload, status):
+        assert 'archive_uri' in status, "no archive uri"
+        with open(upload['fname']) as _upload:
             docs = load_archive(_upload)
-            docs['links'] = Links(download=link)
+            docs['links'] = Links(download=status['archive_uri'])
             fname = archive_slug(docs['archive'])
             with self._cert_open(fname, 'w') as f:
                 make_adf(docs, out=f)
+        getLogger().debug(
+            "removing {}".format(upload['fname']))
+        os.unlink(upload['fname'])
 
     def links(self):
         return self._by_title('links', iglob(
