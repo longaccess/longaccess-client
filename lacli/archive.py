@@ -65,14 +65,14 @@ def _writer(name, folder, cipher, tmpdir, hashobj=None):
         tmpargs = {'delete': False,
                    'dir': tmpdir}
         with NamedTemporaryFile(suffix=".crypt", **tmpargs) as dst:
-            fdst = CryptIO(dst, cipher)
-            while 1:
-                buf = zf.read(1024)
-                if not buf:
-                    break
-                fdst.write(buf)
-                if hashobj:
-                    hashobj.update(buf)
+            with CryptIO(dst, cipher) as fdst:
+                while 1:
+                    buf = zf.read(1024)
+                    if not buf:
+                        break
+                    fdst.write(buf)
+                    if hashobj:
+                        hashobj.update(buf)
         os.rename(dst.name, path)
     return (path, _zip(name, folder, tmpdir, _enc))
 
