@@ -19,6 +19,13 @@ Feature: status command
         When I run console script "lacli"
         Then I see "No such upload pending."
 
+    Scenario: I status with a pending upload
+        Given I have 1 pending uploads titled "foo"
+        And the command line arguments "status"
+        When I run console script "lacli"
+        Then I see "Pending uploads:"
+        And I see "1) foo"
+
     Scenario: I poll for a upload that completed with an error
         Given I have 1 pending uploads titled "foo"
         And the upload status is "error"
@@ -31,7 +38,7 @@ Feature: status command
         And the upload status is "error"
         And the command line arguments "status 1"
         When I run console script "lacli"
-        Then I see "upload status: pending"
+        Then I see "status: pending"
 
     Scenario: I poll for an upload that is completed
         Given I have 1 pending upload titled "foo"

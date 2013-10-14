@@ -128,6 +128,18 @@ class LaCommand(cmd.Cmd):
                               exc_info=True)
             print "error: " + str(e)
 
+    def do_status(self, line):
+        u = line.strip()
+        if u:
+            pass
+        else:
+            uploads = self.cache.uploads()
+
+            if len(uploads):
+                print "Pending uploads:"
+            else:
+                print "No pending uploads."
+
     def do_restore(self, line):
         a = line.strip()
         archives = self.cache.archives()
