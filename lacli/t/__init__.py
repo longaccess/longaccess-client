@@ -26,7 +26,8 @@ def makeprefs():
         },
         'command': {
             'debug': 0,
-            'verbose': False
+            'verbose': False,
+            'batch': True
         },
     }
 

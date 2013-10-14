@@ -22,6 +22,7 @@ class LaCommand(cmd.Cmd):
         setupLogging(prefs['command']['debug'])
         self.session = session
         self.verbose = prefs['command']['verbose']
+        self.batch = prefs['command']['batch']
         self.cache = cache
         if not uploader:
             self.uploader = Upload(session, prefs['upload'])
