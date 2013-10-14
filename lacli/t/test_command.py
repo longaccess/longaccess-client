@@ -96,6 +96,19 @@ class CommandTest(TestCase):
         self.assertThat(out.getvalue(),
                         Contains('Prepared archives:\n1) foo'))
 
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_do_archive_list_verbose(self, out):
+        from lacli.adf import Archive, Meta
+        meta = Meta(format='', size=None, cipher='')
+        cache = Mock(archives=Mock(return_value=[
+            Archive(title="foo", description='', tags=[], meta=meta)]))
+        prefs = self.prefs
+        prefs['command']['verbose'] = True
+        cli = self._makeit(Mock(), cache, self.prefs)
+        cli.onecmd('archive')
+        self.assertThat(out.getvalue(),
+                        Contains('!archive'))
+
     def test_do_archive_list_more(self):
         with patch('sys.stdout', new_callable=StringIO) as out:
             for size in [(25, '25B'), (1024, '1KiB'), (2000000, '1MiB')]:
