@@ -53,6 +53,19 @@ def archive_cert(context, title):
     context.cert.flush()
 
 
+@step(u'I have downloaded an archive containing "{folder}"')
+def downloaded_archive(context, folder):
+    prepare_archive_folder(context, folder)
+    from glob import glob
+    aglob = os.path.join(context.environ['HOME'], ".longaccess/archives/*")
+    af = glob(aglob).pop()
+    d = os.path.join(context.environ['HOME'], ".longaccess/certs")
+    if not os.path.isdir(d):
+        os.makedirs(d)
+    from shutil import copy
+    copy(af, d)
+
+
 @step(u'there is a prepared archive titled "{title}"')
 def exists_archive_titled(context, title):
     context.execute_steps(u"""
