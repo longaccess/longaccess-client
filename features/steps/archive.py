@@ -81,8 +81,15 @@ def pending_upload(context, title):
     d = os.path.join(context.environ['HOME'], ".longaccess/uploads")
     if not os.path.isdir(d):
         os.makedirs(d)
-    from shutil import copy
-    copy(af, d)
+    assert(context.mock_api)
+    import urlparse
+    url = urlparse.urljoin(context.mock_api.url(), 'path/to/api/upload/1')
+    with open(af) as f:
+        from lacli.adf import load_archive, make_adf
+        docs = load_archive(f)
+        docs['links'].upload = url
+        with open(os.path.join(d, os.path.basename(af)), 'w') as out:
+            make_adf(list(docs.itervalues()), out=out)
 
 
 @step(u'the upload status is "{status}"')
