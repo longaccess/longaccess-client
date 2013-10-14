@@ -120,7 +120,7 @@ class LaCommand(cmd.Cmd):
                 if len(archives):
                     print "Prepared archives:"
                     for n, archive in enumerate(archives):
-                        desc = archive_short_desc(archive['archive'])
+                        desc = archive_short_desc(archive)
                         print "{})".format(n+1), desc
                         if self.verbose:
                             pyaml.dump(archive, sys.stdout)

@@ -90,9 +90,8 @@ class CommandTest(TestCase):
     def test_do_archive_list_some(self, out):
         from lacli.adf import Archive, Meta
         meta = Meta(format='', size=None, cipher='')
-        cache = Mock(archives=Mock(return_value=[{
-            'archive': Archive(
-                title="foo", description='', tags=[], meta=meta)}]))
+        cache = Mock(archives=Mock(return_value=[Archive(
+            title="foo", description='', tags=[], meta=meta)]))
         cli = self._makeit(Mock(), cache, self.prefs)
         cli.onecmd('archive')
         self.assertThat(out.getvalue(),
@@ -102,9 +101,8 @@ class CommandTest(TestCase):
     def test_do_archive_list_verbose(self, out):
         from lacli.adf import Archive, Meta
         meta = Meta(format='', size=None, cipher='')
-        cache = Mock(archives=Mock(return_value=[{
-            'archive': Archive(
-                title="foo", description='', tags=[], meta=meta)}]))
+        cache = Mock(archives=Mock(return_value=[Archive(
+            title="foo", description='', tags=[], meta=meta)]))
         prefs = self.prefs
         prefs['command']['verbose'] = True
         cli = self._makeit(Mock(), cache, self.prefs)
@@ -117,9 +115,8 @@ class CommandTest(TestCase):
             for size in [(25, '25B'), (1024, '1KiB'), (2000000, '1MiB')]:
                 from lacli.adf import Archive, Meta
                 meta = Meta(format='', size=size[0], cipher='')
-                cache = Mock(archives=Mock(return_value=[{
-                    'archive': Archive(
-                        title="foo", description='', tags=[], meta=meta)}]))
+                cache = Mock(archives=Mock(return_value=[Archive(
+                    title="foo", description='', tags=[], meta=meta)]))
                 cli = self._makeit(Mock(), cache, self.prefs)
                 cli.onecmd('archive')
                 self.assertThat(out.getvalue(),
