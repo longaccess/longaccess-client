@@ -40,7 +40,7 @@ class LaCommand(cmd.Cmd):
         """
         docs = self.cache.archives(full=True)
         line = line.strip()
-        idx = None
+        idx = -1
         if not line:
             idx = 0
         else:
@@ -148,8 +148,8 @@ class LaCommand(cmd.Cmd):
     def do_status(self, line):
         line = line.strip()
         uploads = self.cache.archives(full=True, category='uploads')
-        idx = None
         if line:
+            idx = -1
             try:
                 idx = int(line)-1
             except ValueError:
@@ -168,6 +168,7 @@ class LaCommand(cmd.Cmd):
         line = line.strip()
         archives = self.cache.archives()
         path = None
+        idx = -1
         if not line:
             idx = 0
         else:
