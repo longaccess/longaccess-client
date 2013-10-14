@@ -99,7 +99,7 @@ def prepare_archive(context, title):
     context.execute_steps(u'''
         Given an empty folder "{title}"
         And under "{{{title}}}" an empty file "{title}"
-        And the command line arguments "archive {{{title}}}"
+        And the command line arguments "archive  -t "{title}" {{{title}}}"
         When I run console script "lacli"
         Then I see "archive prepared"'''.format(title=title))
 

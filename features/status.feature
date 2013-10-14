@@ -24,7 +24,7 @@ Feature: status command
         And the command line arguments "status"
         When I run console script "lacli"
         Then I see "Pending uploads:"
-        And I see "1) foo"
+        And I see "1) upload"
 
     Scenario: I poll for a upload that completed with an error
         Given I have 1 pending uploads
