@@ -134,7 +134,7 @@ class LaCommand(cmd.Cmd):
 
     def do_status(self, line):
         line = line.strip()
-        uploads = self.cache.archives(full=True, category='uploads')
+        uploads = self.cache.uploads()
         if line:
             idx = -1
             try:
@@ -145,19 +145,21 @@ class LaCommand(cmd.Cmd):
                 print "No such upload pending."
             else:
                 upload = uploads[idx]
-                if 'links' in upload and hasattr(upload['links'], 'upload'):
-                    try:
-                        url = upload['links'].upload
-                        status = self.session.upload_status(url)
-                        print "status:", status['status']
-                        if status['status'] == "complete":
-                            self.cache.save_cert(upload, status)
-                    except Exception as e:
-                        getLogger().debug("exception while restoring",
-                                          exc_info=True)
-                        print "error: " + str(e)
-                else:
-                    print "error: no upload link"
+                try:
+                    url = upload['link']
+                    status = self.session.upload_status(url)
+                    print "status:", status['status']
+                    if status['status'] == "complete":
+                        assert 'archive_uri' in status, "no archive uri"
+                        self.cache.save_cert(upload['fname'],
+                                             status['archive_uri'])
+                        getLogger().debug(
+                            "removing {}".format(upload['fname']))
+                        os.unlink(upload['fname'])
+                except Exception as e:
+                    getLogger().debug("exception while checking status",
+                                      exc_info=True)
+                    print "error: " + str(e)
         else:
             if len(uploads):
                 print "Pending uploads:"

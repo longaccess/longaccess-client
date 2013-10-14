@@ -32,17 +32,32 @@ class Cache(object):
         dname = self._cache_dir('uploads', write='w' in mode)
         return open(os.path.join(dname, name), mode)
 
-    @contains(list)
-    def archives(self, full=False, category='archives'):
+    @contains(dict)
+    def _for_adf(self, category):
         for fn in iglob(os.path.join(self._cache_dir(category), '*.adf')):
             with open(fn) as f:
                 try:
-                    if full:
-                        yield load_archive(f)
-                    else:
-                        yield load_archive(f)['archive']
+                    yield (fn, load_archive(f))
                 except InvalidArchiveError:
                     getLogger().debug(fn, exc_info=True)
+
+    @contains(list)
+    def archives(self, full=False, category='archives'):
+        for docs in self._for_adf(category).itervalues():
+            if full:
+                yield docs
+            else:
+                yield docs['archive']
+
+    @contains(list)
+    def uploads(self):
+        for fname, docs in self._for_adf('uploads').iteritems():
+            if 'links' in docs and hasattr(docs['links'], 'upload'):
+                yield {
+                    'fname': fname,
+                    'link': docs['links'].upload,
+                    'archive': docs['archive']
+                }
 
     def prepare(self, title, folder, fmt='zip', cb=None):
         archive = Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)))
@@ -61,12 +76,13 @@ class Cache(object):
         with self._upload_open("{}.adf".format(upload['id']), 'w') as f:
             make_adf(docs, out=f)
 
-    def save_cert(self, docs, status):
-        if 'archive_uri' in status:
-            docs['links'].download = status['archive_uri']
-        fname = archive_slug(docs['archive'])
-        with self._cert_open(fname, 'w') as f:
-            make_adf(docs, out=f)
+    def save_cert(self, upload, link):
+        with open(upload) as _upload:
+            docs = load_archive(_upload)
+            docs['links'] = Links(download=link)
+            fname = archive_slug(docs['archive'])
+            with self._cert_open(fname, 'w') as f:
+                make_adf(docs, out=f)
 
     def links(self):
         return self._by_title('links', iglob(
