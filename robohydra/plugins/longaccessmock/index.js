@@ -98,6 +98,9 @@ exports.getBodyParts = function(config, modules) {
                     }
                     if (res.hasOwnProperty('upload_status'))
                         ret['status'] = res.upload_status;
+                        if (res.upload_status == 'complete')
+                            ret['archive_uri'] = 'https://longaccess.com/yoyoyo';
+
                     res.write(JSON.stringify(ret));
                     res.end(); 
                 }
