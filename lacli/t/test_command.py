@@ -87,13 +87,26 @@ class CommandTest(TestCase):
         self.assertEqual('No prepared archives.\n', out.getvalue())
 
     @patch('sys.stdout', new_callable=StringIO)
-    def test_do_archive_list_some(self, out):  # NOQA
+    def test_do_archive_list_some(self, out):
+        meta = Mock(format='', size=None)
         cache = Mock(archives=Mock(return_value=[
-            Mock(title="foo", description='', tags=[], meta=Mock(format=''))]))
+            Mock(title="foo", description='', tags=[], meta=meta)]))
         cli = self._makeit(Mock(), cache, self.prefs)
         cli.onecmd('archive')
         self.assertThat(out.getvalue(),
-                        Contains('Prepared archives:\n1) foo\n'))
+                        Contains('Prepared archives:\n1) foo'))
+
+    def test_do_archive_list_more(self):
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            for size in [(25, '25B'), (1024, '1KiB'), (2000000, '1MiB')]:
+                meta = Mock(format='', size=size[0], cipher='')
+                cache = Mock(archives=Mock(return_value=[
+                    Mock(title="foo", description='', tags=[], meta=meta)]))
+                cli = self._makeit(Mock(), cache, self.prefs)
+                cli.onecmd('archive')
+                self.assertThat(out.getvalue(),
+                                Contains('Prepared archives:\n1) foo [//'
+                                         + size[1]))
 
     @patch('sys.stdin', new_callable=StringIO)
     def test_loop_none(self, mock_stdin):
