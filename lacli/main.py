@@ -38,6 +38,7 @@ Options:
     -t <title>, --title <title>         title for prepared archive
     -o <dirname>, --out <dirname>       directory to restore archive
     -c <capsule>, --capsule <capsule>   capsule to upload to [default: 1]
+    -v, --verbose                       print verbose information
 
 """
 
@@ -87,7 +88,8 @@ def settings(options):
                 'debugworker': debug > 2
             },
             'command': {
-                'debug': debug
+                'debug': debug,
+                'verbose': options['--verbose']
             },
         },
         Cache(os.path.expanduser(options['--home'])))
