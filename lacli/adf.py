@@ -137,6 +137,11 @@ class Links(BaseYAMLObject):
     download = None
     local = None
     upload = None
+    """
+    This attribute is undocumented in the ADF format, because it only makes
+    sense in the context of a specific client. It contains the URL of the
+    pending upload API resource.
+    """
 
     def __init__(self, download=None, local=None):
         if download:
