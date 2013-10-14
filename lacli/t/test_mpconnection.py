@@ -12,6 +12,8 @@ class MPConnectionTest(TestCase):
             'token_session': '',
             'token_expiration': '',
             'token_uid': '',
+            'bucket': 'lastage',
+            'prefix': 'upload/14/',
         }
         cls._bucket = 'lastage'
 

@@ -5,6 +5,17 @@ var heads               = require('robohydra').heads,
     apiPrefix           = "/path/to/api";
 
 exports.getBodyParts = function(config, modules) {
+    var mockupload = {
+        id: 1,
+        resource_uri: '/path/to/upload/1',
+        token_access_key: '123123',
+        token_secret_key: '123123',
+        token_session: '123123',
+        token_uid: '123123',
+        bucket: 'foobucket',
+        prefix: 'foobar',
+        status: 'pending',
+    }
     function meta(n){
         return {
             limit: 20,
@@ -55,17 +66,30 @@ exports.getBodyParts = function(config, modules) {
                     
                     date = new Date()
                     date.setTime(date.getTime()+(60*60*1000))
-                    ret = {
-                        id: 1,
-                        resource_uri: '/path/to/upload/1',
-                        token_access_key: '123123',
-                        token_secret_key: '123123',
-                        token_session: '123123',
-                        token_expiration: date.toISOString(),
-                        token_uid: '123123',
-                        bucket: 'lastage',
-                        prefix: 'foobar',
+                    ret['token_expiration'] = date.toISOString()
+                    ret = mockupload
+                    if (res.hasOwnProperty('token')) {
+                        for (var attr in res.token) { 
+                            ret[attr] = res.token[attr]; 
+
+                        }
                     }
+                    res.write(JSON.stringify(ret));
+                    res.end(); 
+                }
+            })
+            new RoboHydraHead({
+                path: apiPrefix + '/upload/1',
+                handler: function(req, res, next) {
+                    if (req.method == "PATCH") {
+                        content = JSON.parse(req.rawBody)
+                        modules.assert.ok("status" in content)
+                    }
+                    res.statusCode='200';
+                    date = new Date()
+                    date.setTime(date.getTime()+(60*60*1000))
+                    ret['token_expiration'] = date.toISOString()
+                    ret = mockupload
                     if (res.hasOwnProperty('token')) {
                         for (var attr in res.token) { 
                             ret[attr] = res.token[attr]; 

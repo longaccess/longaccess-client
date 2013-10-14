@@ -12,6 +12,9 @@ def setupLogging(level, logfile=None, queue=False):
     if not boto_config.has_section('Boto'):
         boto_config.add_section('Boto')
 
+    import httplib
+    httplib.HTTPConnection.debuglevel = level
+
     if level == 0:
         level = 'WARN'
         boto_config.set('Boto', 'debug', '0')
@@ -50,6 +53,10 @@ def setupLogging(level, logfile=None, queue=False):
                 },
                 'multiprocessing': {
                     'handlers': ['console']
+                },
+                'requests.packages.urllib3': {
+                    'handlers': ['console'],
+                    'propagate': True
                 },
             },
             'root': {

@@ -2,8 +2,8 @@ from __future__ import division
 import os
 import dateutil.parser
 import dateutil.tz
-import datetime
 import math
+from datetime import datetime
 from lacli.progress import make_progress, save_progress
 from itertools import imap, repeat, izip
 from lacli.log import getLogger
@@ -18,13 +18,13 @@ from multiprocessing import TimeoutError
 
 
 class MPConnection(object):
-    def __init__(self, token, bucket='lastage', grace=1200):
+    def __init__(self, token, grace=1200):
         self.accesskey = token['token_access_key']
         self.secret = token['token_secret_key']
         self.sectoken = token['token_session']
         self.expiration = token['token_expiration']
         self.uid = token['token_uid']
-        self.bucket = bucket
+        self.bucket = token['bucket']
         self.grace = grace
         self.conn = None
         if self.uid is None:
@@ -47,9 +47,15 @@ class MPConnection(object):
     def timeout(self):
         """ return total number of seconds till
             this connection must be renewed. """
-        tz = dateutil.tz.tzutc()
-        expiration = dateutil.parser.parse(self.expiration).astimezone(tz)
-        timeout = expiration-datetime.datetime.now(tz)
+        expiration = dateutil.parser.parse(self.expiration)
+        now = datetime.utcnow()
+        # check if API is timezone aware
+        tzinfo = expiration.tzinfo
+        if tzinfo and tzinfo.utcoffset(expiration) is not None:
+            tz = dateutil.tz.tzutc()
+            expiration = expiration.astimezone(tz)
+            now = datetime.now(tz)
+        timeout = expiration-now
         return timeout.total_seconds()-self.grace
 
     def __getstate__(self):

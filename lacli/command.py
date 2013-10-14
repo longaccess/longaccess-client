@@ -3,49 +3,81 @@ import cmd
 import glob
 from lacli.log import getLogger, setupLogging
 from lacli.upload import Upload
+from lacli.archive import restore_archive
 from time import strftime
 from contextlib import contextmanager
+from urlparse import urlparse
 
 
 class LaCommand(cmd.Cmd):
     """ Our LA command line interface"""
     prompt = 'lacli> '
 
-    def __init__(self, session, cache, prefs, *args, **kwargs):
+    def __init__(self, session, cache, prefs, uploader=None, *args, **kwargs):
         cmd.Cmd.__init__(self, *args, **kwargs)
         setupLogging(prefs['command']['debug'])
         self.session = session
         self.cache = cache
-        # we should do dep injection here
-        self.uploader = Upload(session, prefs['upload'])
+        if not uploader:
+            self.uploader = Upload(session, prefs['upload'])
+        else:
+            self.uploader = uploader
         self._var = {}
-        self._default_var = {'archive_title': lambda: strftime("%x archive")}
+        self._default_var = {
+            'archive_title': lambda: strftime("%x archive"),
+            'output_directory': os.getcwd()
+            }
 
     def do_EOF(self, line):
         return True
 
-    def do_put(self, f):
+    def do_put(self, line):
         """Upload a file to LA [filename]
         """
-        fname = f.strip()
-        if not fname:
-            print "Argument required."
-        elif not os.path.exists(fname):
-            print 'File {} not found.'.format(fname)
+        archives = self.cache.archives()
+        line = line.strip()
+        idx = None
+        if not line:
+            idx = 0
         else:
             try:
-                self.uploader.upload(fname)
-                print "\ndone."
-            except Exception as e:
-                getLogger().debug("exception while uploading",
-                                  exc_info=True)
-                print "error: " + str(e)
+                idx = int(line)-1
+            except ValueError:
+                pass
+        if idx < 0 or len(archives) <= idx:
+            print "No such archive."
+        else:
+            archive = archives[idx]
+            link = self.cache.links().get(archive.title)
+            path = ''
+            if link and hasattr(link, 'local'):
+                parsed = urlparse(link.local)
+                if parsed.scheme == 'file':
+                    if os.path.exists(parsed.path):
+                        path = parsed.path
+                    else:
+                        print 'File {} not found.'.format(parsed.path)
+                else:
+                    print "url not local: " + link.local
+            else:
+                print "no local copy exists."
+
+            if path:
+                try:
+                    capsule = self._var['capsule'] - 1
+                    with self.session.upload(capsule, archive) as tokens:
+                        self.uploader.upload(path, tokens)
+                    print "\ndone."
+                except Exception as e:
+                    getLogger().debug("exception while uploading",
+                                      exc_info=True)
+                    print "error: " + str(e)
 
     def do_list(self, line):
         """List capsules in LA
         """
         try:
-            capsules = list(self.session.capsules())
+            capsules = self.session.capsules()
 
             if len(capsules):
                 print "Available capsules:"
@@ -92,7 +124,51 @@ class LaCommand(cmd.Cmd):
                               exc_info=True)
             print "error: " + str(e)
 
-    def complete_put(self, text, line, begidx, endidx):
+    def do_restore(self, line):
+        a = line.strip()
+        archives = self.cache.archives()
+        path = None
+        if not a:
+            a = 1
+        if a > len(archives):
+            print "No such archive."
+        else:
+            archive = archives[a-1]
+            cert = self.cache.certs().get(archive.title)
+            if cert:
+                link = self.cache.links().get(archive.title)
+                if link and link.local:
+                    parsed = urlparse(link.local)
+                    if parsed.scheme == 'file':
+                        path = parsed.path
+                    else:
+                        print "url not local: " + link.local
+                else:
+                    print "no local copy exists yet."
+            else:
+                print "no matching certificate found"
+        if path:
+            if 'output_directory' in self._var:
+                outdir = self._var['output_directory']
+            else:
+                outdir = os.getcwd()
+            try:
+
+                def _print(f):
+                    print "Extracting", f
+                restore_archive(archive, path, cert,
+                                outdir,
+                                self.cache._cache_dir(
+                                    'tmp', write=True), _print)
+                print "archive restored."
+            except Exception as e:
+                getLogger().debug("exception while restoring",
+                                  exc_info=True)
+                print "error: " + str(e)
+        else:
+            print "data file {} not found."
+
+    def complete_put(self, text, line, begidx, endidx):  # pragma: no cover
         return [os.path.basename(x) for x in glob.glob('{}*'.format(line[4:]))]
 
     @contextmanager

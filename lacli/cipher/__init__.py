@@ -4,18 +4,43 @@ import functools
 
 from abc import ABCMeta, abstractmethod
 from Crypto import Random
+from ..decorators import contains
 
 
+@contains(dict)
 def cipher_modes():
-    return dict([(c.mode, c) for c in CipherBase.__subclasses__()])
+    for c in CipherBase.__subclasses__():
+        yield (c.mode, c)
 
 
 def new_key(nbit):
     return Random.new().read(32)
 
 
-def get_cipher(archive, *args, **kwargs):
-    return cipher_modes()[archive.meta.cipher.mode](*args, **kwargs)
+def get_cipher(archive, cert):
+    input = None
+    key = None
+    cipher = archive.meta.cipher
+    if hasattr(cipher, 'input'):
+        input = cipher.input
+    if hasattr(cert, 'key'):
+        key = cert.key
+    elif hasattr(cert, 'keys') and len(cert.keys) > 0:
+        if hasattr(cipher, 'key'):
+            idx = cipher.key
+            if idx > 0 and idx <= len(cert.keys):
+                key = cert.keys[idx-1]
+        else:
+            key = cert.keys[0]
+    mode = None
+    if hasattr(cipher, 'mode'):
+        mode = cipher.mode
+    elif isinstance(cipher, str):
+        mode = cipher
+    if mode:
+        cipher_class = cipher_modes().get(mode)
+        if cipher_class:
+            return cipher_class(key, input)
 
 
 class CipherBase(object):
@@ -49,10 +74,11 @@ class CipherBase(object):
 
     def decipher(self, data, last=False):
         ret = self._reduce(self.decipher_block, self._buffer(data, True))
-        if last:
+        if last and len(self._extra) > 0:
             if len(self._extra) != self.BLOCKSIZE:
                 raise ValueError("Total input not a multiple of blocksize")
             ret += self._unpad(self.decipher_block(self._extra))
+            self._extra = ''
         return ret
 
     @abstractmethod

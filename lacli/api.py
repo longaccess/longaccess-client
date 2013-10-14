@@ -1,14 +1,14 @@
 from urlparse import urljoin, urlparse
-from latvm.tvm import BaseTvm
 from lacli.log import getLogger
-from lacli.decorators import cached_property, with_api_response
+from lacli.decorators import cached_property, with_api_response, contains
 from netrc import netrc
+from contextlib import contextmanager
 
 import json
 import os
 
 
-API_URL = 'http://stage.longaccess.com/api/v1/'
+API_URL = 'https://www.longaccess.com/api/v1/'
 
 
 class RequestsFactory():
@@ -22,7 +22,10 @@ class RequestsFactory():
     def new_session(self):
         import requests
         session = requests.Session()
-        session.auth = (self.prefs['user'], self.prefs['pass'])
+        if 'user' in self.prefs and 'pass' in self.prefs:
+            session.auth = (self.prefs['user'], self.prefs['pass'])
+        if 'verify' in self.prefs:
+            session.verify = self.prefs['verify']
         return session
 
     def read_netrc(self, url):
@@ -35,7 +38,7 @@ class RequestsFactory():
                 self.prefs['pass'] = creds[2]
 
 
-class Api(BaseTvm):
+class Api(object):
 
     def __init__(self, prefs, sessions=None):
         self.url = prefs.get('url')
@@ -65,23 +68,42 @@ class Api(BaseTvm):
             headers['content-type'] = 'application/json'
         return self.session.post(url, headers=headers, data=data)
 
-    def get_upload_token(self):
-        token_url = self.endpoints['upload']
-        getLogger().debug("requesting token from {}".format(token_url))
-        return self._post(token_url, data=json.dumps({
-            'title': 'test',
-            'description': 'foobar',
-            'capsule': '',
-            'size': '',
-        }))
+    @with_api_response
+    def _patch(self, url, data=None):
+        headers = {}
+        if data is not None:
+            headers['content-type'] = 'application/json'
+        return self.session.patch(url, headers=headers, data=data)
 
-    def tokens(self):
+    def _upload_status(self, uri, first=None):
+        if first:
+            yield first
         while True:
-            yield self.get_upload_token()
+            yield self._get(uri)
 
+    @contextmanager
+    def upload(self, capsule, archive):
+        url = self.endpoints['capsule']
+        cs = self._get(url)['objects']
+        if capsule > len(cs):
+            raise ValueError("No such capsule")
+
+        req_data = json.dumps(
+            {
+                'title': archive.title,
+                'description': archive.description,
+                'capsule': cs[capsule]['resource_uri'],
+                'size': '',
+            })
+        status = self._post(self.endpoints['upload'], data=req_data)
+        uri = urljoin(self.url, status['resource_uri'])
+        yield self._upload_status(uri, status)
+        self._patch(uri, data=json.dumps({'status': 'uploaded'}))
+
+    @contains(list)
     def capsules(self):
         url = self.endpoints['capsule']
-        keys = ['title', 'remaining', 'size']
         getLogger().debug("requesting capsules from {}".format(url))
         for cs in self._get(url)['objects']:
-            yield dict([(k, cs.get(k, None)) for k in keys])
+            yield dict([(k, cs.get(k, None))
+                        for k in ['title', 'remaining', 'size']])

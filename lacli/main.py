@@ -1,20 +1,23 @@
 #!/home/kouk/code/bototest/bin/python
 """Upload a file to Long Access
 
-Usage: lacli put [options] [-b <bucket> ] [-n <np>] <filename>...
+Usage: lacli put [options] [-c <capsule> ] [-n <np>] [<archive>]
        lacli list [options]
        lacli archive [options] [-t <title>] [<dirname>]
+       lacli restore [options] [-o <dirname>] [<archive>]
        lacli [options]
        lacli -h, --help
 
 Options:
-    -u <user>, --user <user>       user name
-    -p <pass>, --password <pass>   user password
-    -d <level>, --debug <level>    debugging level, from 0 to 2 [default: 0]
-    -b <bucket>, --bucket <bucket> bucket to upload to [default: lastage]
-    -n <np>, --procs <np>          number of processes [default: auto]
-    --home <home>                  conf/cache dir [default: ~/.longaccess]
-    -t <title>, --title <title>    title for prepared archive
+    -u <user>, --user <user>            user name
+    -p <pass>, --password <pass>        user password
+    -d <level>, --debug <level>         debug level, from 0 to 2 [default: 0]
+    -b <bucket>, --bucket <bucket>      bucket to upload to [default: lastage]
+    -n <np>, --procs <np>               number of processes [default: auto]
+    --home <home>                       conf/cache dir [default: ~/.longaccess]
+    -t <title>, --title <title>         title for prepared archive
+    -o <dirname>, --out <dirname>       directory to restore archive
+    -c <capsule>, --capsule <capsule>   capsule to upload to [default: 1]
 
 """
 
@@ -45,12 +48,17 @@ def settings(options):
         print "error: illegal value for 'procs' parameter."
         raise
 
+    verify = True
+    if '0' == os.getenv('LA_API_VERIFY'):
+        verify = False
+
     return (
         {
             'api': {
                 'user': options['--user'],
                 'pass': options['--password'],
                 'url': os.getenv('LA_API_URL'),
+                'verify': verify
             },
             'upload': {
                 'bucket': options['--bucket'],
@@ -72,8 +80,19 @@ def main(args=sys.argv[1:]):
     prefs, cache = settings(options)
     cli = LaCommand(Api(prefs['api']), cache, prefs)
     if options['put']:
-        for fname in options['<filename>']:
-            cli.onecmd('put {}'.format(fname))
+        capsule = 1
+        try:
+            capsule = int(options['--capsule'])
+        except ValueError:
+            print "error: illegal value for 'capsule' parameter."
+            raise
+
+        with cli.temp_var(capsule=capsule):
+            a = options['<archive>']
+            if a:
+                cli.onecmd('put {}'.format(a))
+            else:
+                cli.onecmd('put')
     elif options['list']:
         cli.onecmd('list')
     elif options['archive']:
@@ -83,6 +102,12 @@ def main(args=sys.argv[1:]):
                 cli.onecmd('archive {}'.format(d))
         else:
             cli.onecmd('archive')
+    elif options['restore']:
+        cmd = 'restore '
+        if options['<archive>']:
+            cmd += options['<archive>']
+        with cli.temp_var(output_directory=options['--out']):
+            cli.onecmd(cmd)
     else:
         cli.cmdloop()
 

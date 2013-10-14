@@ -45,6 +45,10 @@ class ApiTest(TestCase):
             self.assertEqual(f.prefs['pass'], 'c')
             s = f.new_session()
             self.assertEqual(s.auth, ('a', 'c'))
+            self.assertEqual(s.verify, True)
+            f = self._factory({'url': 'http://bla.com', 'verify': False})
+            s = f.new_session()
+            self.assertEqual(s.verify, False)
 
     def test_api(self):
         assert self._makeit(self.prefs, Mock())
@@ -89,23 +93,32 @@ class ApiTest(TestCase):
         with ExpectedException(ApiAuthException):
             list(api.capsules())
 
+    def test_tokens_error(self):
+        er = self._mockresponse([json.loads(LA_ENDPOINTS_RESPONSE)])
+        caps = json.loads(LA_CAPSULES_RESPONSE)
+        caps['objects'] = []
+        caps['meta']['total_count'] = 0
+        cr = self._mockresponse([caps])
+        ur = self._mockresponse(repeat(json.loads(LA_UPLOAD_RESPONSE)))
+        s = self._mocksessions({'get.side_effect': [er, cr],
+                               'post.return_value': ur,
+                               'patch.return_value': ur})
+        api = self._makeit(self.prefs, sessions=s)
+        tmgr = api.upload(1, Mock(title='', description=''))
+        self.assertRaises(ValueError, tmgr.__enter__)
+
     def test_tokens(self):
         er = self._mockresponse([json.loads(LA_ENDPOINTS_RESPONSE)])
+        cr = self._mockresponse([json.loads(LA_CAPSULES_RESPONSE)])
         ur = self._mockresponse(repeat(json.loads(LA_UPLOAD_RESPONSE)))
-        s = self._mocksessions({'get.return_value': er,
-                               'post.return_value': ur})
+        s = self._mocksessions({'get.side_effect': [er, cr, ur, ur, ur],
+                               'post.return_value': ur,
+                               'patch.return_value': ur})
         api = self._makeit(self.prefs, sessions=s)
-        for seq, token in izip(xrange(15), api.tokens()):
-            self.assertIn('token_access_key', token)
-
-    def test_get_upload_token(self):
-        er = self._mockresponse([json.loads(LA_ENDPOINTS_RESPONSE)])
-        ur = self._mockresponse([json.loads(LA_UPLOAD_RESPONSE)])
-        s = self._mocksessions({'get.return_value': er,
-                               'post.return_value': ur})
-        api = self._makeit(self.prefs, sessions=s)
-        token = api.get_upload_token()
-        self.assertIn('token_access_key', token)
+        tmgr = api.upload(1, Mock(title='', description=''))
+        with tmgr as tokens:
+            for seq, token in izip(xrange(4), tokens):
+                self.assertIn('token_access_key', token)
 
 
 LA_UPLOAD_RESPONSE = """{

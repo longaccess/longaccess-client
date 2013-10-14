@@ -9,18 +9,42 @@ Feature: upload command
     Scenario: I try an upload without files
         Given the command line arguments "put"
         When I run console script "lacli"
-        Then I see "Usage:"
+        Then I see "No such archive"
+
+    Scenario: I upload an archive with no local copy
+        Given I have 1 prepared archive titled "foo"
+        And I have a certificate for the archive with title "foo"
+        And the command line arguments "put"
+        When I run console script "lacli"
+        Then I see "no local copy exists"
+
+    Scenario: I upload an archive with missing file
+        Given I have 1 prepared archive titled "foo"
+        And I have a certificate for the archive with title "foo"
+        And the archive titled "foo" has a link to a local copy
+        And the command line arguments "put"
+        When I run console script "lacli"
+        Then I see "File /tmp/test/.longaccess/data/test not found"
+
+    Scenario: I upload an archive with empty copy
+        Given I have 1 prepared archive titled "foo"
+        And I have a certificate for the archive with title "foo"
+        And the archive titled "foo" has a link to a local copy
+        And the local copy for "foo" is an empty file
+        And the command line arguments "put"
+        When I run console script "lacli"
+        Then I see "error: File is not a zip file"
 
     Scenario: I upload an empty file to an incorrect API url
-        Given an empty file "foo"
-        And the command line arguments "put {foo}"
+        Given I prepare an archive with a file "test"
+        And the command line arguments "put 1"
         And the environment variable "LA_API_URL" is "http://stage.longaccess.com/foobar"
         When I run console script "lacli"
         Then I see "error: server not found" 
 
     Scenario: I upload an empty file to a failing API
-        Given an empty file "foo"
-        And the command line arguments "put {foo}"
+        Given I prepare an archive with a file "test"
+        And the command line arguments "put"
         And the API is failing
         When I run console script "lacli"
         Then I see "error: the server couldn't fulfill your request"
@@ -28,28 +52,21 @@ Feature: upload command
     Scenario: I upload an non-existent file
         Given the command line arguments "put /tmp/thisdoesnotexist"
         When I run console script "lacli"
-        Then I see "File /tmp/thisdoesnotexist not found."
+        Then I see "No such archive"
 
-    Scenario: I upload an empty file
-        Given an empty file "foo"
-        And the command line arguments "put {foo}"
+    Scenario: I upload an archive
+        Given I prepare an archive with a file "test"
+        And the command line arguments "put"
         When I run console script "lacli"
         Then I see "ETA:"
         And I see "done"
 
-    Scenario: I upload a small file
-        Given a file "foo" with contents
-        """
-            The quick brown fox, ah whatever.
-        """
-        And the command line arguments "put {foo}"
+    Scenario: I upload a big archive
+        Given the command line arguments "archive /usr/include"
+        And the timeout is 4000 seconds
         When I run console script "lacli"
-        Then I see "ETA:"
-        And I see "done"
-
-    Scenario: I upload a 20mb file
-        Given a file "big" with 20 mb of zeroes
-        And the command line arguments "put -d 4 {big}"
+        Then I see "archive prepared"
+        Given the command line arguments "put"
         When I run console script "lacli"
         Then I see "ETA:"
         And I wait until I don't see "ETA:" anymore

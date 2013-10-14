@@ -111,3 +111,8 @@ def i_see_text(context, text):
 def wait_for_text(context, text):
     while expected_text(context.child, text, context.timeout):
         pass
+
+
+@step(u'the timeout is {seconds} seconds')
+def set_timeout(context, seconds):
+    context.timeout = int(seconds)
