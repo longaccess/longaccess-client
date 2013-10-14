@@ -25,7 +25,8 @@ def makeprefs():
             'nprocs': None,
         },
         'command': {
-            'debug': 0
+            'debug': 0,
+            'verbose': False
         },
     }
 
