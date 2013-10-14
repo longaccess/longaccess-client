@@ -95,9 +95,9 @@ def pending_upload(context, title):
 @step(u'the upload status is "{status}"')
 def upload_status(context, status):
     if status == 'error':
-        pass
+        context.mock_api.test('uploadError', 'longaccessmock')
     elif status == 'completed':
-        pass
+        context.mock_api.test('uploadComplete', 'longaccessmock')
 
 
 @step(u'there is a prepared archive titled "{title}"')

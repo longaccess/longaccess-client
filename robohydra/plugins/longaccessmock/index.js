@@ -95,12 +95,38 @@ exports.getBodyParts = function(config, modules) {
 
                         }
                     }
+                    if (res.hasOwnProperty('upload_status'))
+                        ret['status'] = res.upload_status;
                     res.write(JSON.stringify(ret));
                     res.end(); 
                 }
             })
         ],
         scenarios: {
+            uploadError: {
+                instructions: "Init an upload and then check it's status. it will be 'error'",
+                heads: [
+                    new RoboHydraHead({
+                        path: apiPrefix + '/upload/1',
+                        handler: function(req, res, next) {
+                            res.upload_status = 'error';
+                            next(req, res);
+                        }
+                    })
+                ]
+            },
+            uploadComplete: {
+                instructions: "Init an upload and then check it's status. it will be 'complete'",
+                heads: [
+                    new RoboHydraHead({
+                        path: apiPrefix + '/upload/1',
+                        handler: function(req, res, next) {
+                            res.upload_status = 'complete';
+                            next(req, res);
+                        }
+                    })
+                ]
+            },
             serverProblems: {
                 instructions: "Try to upload a file. The client should show some error messaging stating the server couldn't fulfill the request or the API wasn't available",
                 heads: [
