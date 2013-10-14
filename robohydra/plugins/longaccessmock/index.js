@@ -63,11 +63,10 @@ exports.getBodyParts = function(config, modules) {
                     modules.assert.ok("capsule" in content)
                     modules.assert.ok("size" in content)
                     res.statusCode='200';
-                    
-                    date = new Date()
-                    date.setTime(date.getTime()+(60*60*1000))
-                    ret['token_expiration'] = date.toISOString()
-                    ret = mockupload
+                    ret = mockupload;
+                    date = new Date();
+                    date.setTime(date.getTime()+(60*60*1000));
+                    ret['token_expiration'] = date.toISOString();
                     if (res.hasOwnProperty('token')) {
                         for (var attr in res.token) { 
                             ret[attr] = res.token[attr]; 
@@ -86,10 +85,10 @@ exports.getBodyParts = function(config, modules) {
                         modules.assert.ok("status" in content)
                     }
                     res.statusCode='200';
-                    date = new Date()
-                    date.setTime(date.getTime()+(60*60*1000))
-                    ret['token_expiration'] = date.toISOString()
-                    ret = mockupload
+                    ret = mockupload;
+                    date = new Date();
+                    date.setTime(date.getTime()+(60*60*1000));
+                    ret['token_expiration'] = date.toISOString();
                     if (res.hasOwnProperty('token')) {
                         for (var attr in res.token) { 
                             ret[attr] = res.token[attr]; 
