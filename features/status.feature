@@ -14,34 +14,34 @@ Feature: status command
         Then I see "No such upload pending."
 
     Scenario: I poll for an upload that doesn't exist
-        Given I have 2 pending uploads titled "foo"
+        Given I have 2 pending uploads
         And the command line arguments "status 3"
         When I run console script "lacli"
         Then I see "No such upload pending."
 
     Scenario: I status with a pending upload
-        Given I have 1 pending uploads titled "foo"
+        Given I have 1 pending uploads
         And the command line arguments "status"
         When I run console script "lacli"
         Then I see "Pending uploads:"
         And I see "1) foo"
 
     Scenario: I poll for a upload that completed with an error
-        Given I have 1 pending uploads titled "foo"
+        Given I have 1 pending uploads
         And the upload status is "error"
         And the command line arguments "status 1"
         When I run console script "lacli"
         Then I see "upload status: error"
 
     Scenario: I poll for an upload that is still pending
-        Given I have 1 pending uploads titled "foo"
+        Given I have 1 pending uploads
         And the upload status is "error"
         And the command line arguments "status 1"
         When I run console script "lacli"
         Then I see "status: pending"
 
     Scenario: I poll for an upload that is completed
-        Given I have 1 pending upload titled "foo"
+        Given I have 1 pending upload
         And the upload status is "completed"
         And the command line arguments "status 1"
         When I run console script "lacli"

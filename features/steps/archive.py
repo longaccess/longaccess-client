@@ -66,6 +66,25 @@ def downloaded_archive(context, folder):
     copy(af, d)
 
 
+@step(u'I have {num} pending uploads')
+def num_pending_uploads(context, num):
+    for n in range(int(num)):
+        pending_upload(context, "upload"+str(n))
+
+
+@step(u'I have a pending upload titled "{title}"')
+def pending_upload(context, title):
+    prepare_archive(context, title)
+    from glob import glob
+    aglob = os.path.join(context.environ['HOME'], ".longaccess/archives/*")
+    af = glob(aglob).pop()
+    d = os.path.join(context.environ['HOME'], ".longaccess/uploads")
+    if not os.path.isdir(d):
+        os.makedirs(d)
+    from shutil import copy
+    copy(af, d)
+
+
 @step(u'there is a prepared archive titled "{title}"')
 def exists_archive_titled(context, title):
     context.execute_steps(u"""
@@ -78,9 +97,9 @@ def exists_archive_titled(context, title):
 @step(u'I prepare an archive with a file "{title}"')
 def prepare_archive(context, title):
     context.execute_steps(u'''
-        Given an empty folder "foo"
-        And under "{{foo}}" an empty file "{title}"
-        And the command line arguments "archive {{foo}}"
+        Given an empty folder "{title}"
+        And under "{{{title}}}" an empty file "{title}"
+        And the command line arguments "archive {{{title}}}"
         When I run console script "lacli"
         Then I see "archive prepared"'''.format(title=title))
 
