@@ -8,6 +8,21 @@ Usage: lacli put [options] [-c <capsule> ] [-n <np>] [<archive>]
        lacli [options]
        lacli -h, --help
 
+Command description:
+
+    put:      upload a prepared archive to a capsule in Long Access. If no
+              archive index is specified the first listed (see the "archive"
+              command)
+
+    list:     list capsules available in Long Access.
+
+    archive:  manage prepared archives. Create a new archive if the directory
+              name argument is present. With no argument it lists prepared
+              archives.
+
+    restore:  restore a downloaded archive. If no archive index is specified
+              the first listed (see "archive") is restored.
+
 Options:
     -u <user>, --user <user>            user name
     -p <pass>, --password <pass>        user password
