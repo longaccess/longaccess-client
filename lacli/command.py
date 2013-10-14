@@ -4,6 +4,7 @@ import cmd
 import glob
 import pyaml
 import sys
+import time
 from lacli.log import getLogger, setupLogging
 from lacli.upload import Upload
 from lacli.archive import restore_archive
@@ -22,6 +23,7 @@ class LaCommand(cmd.Cmd):
         setupLogging(prefs['command']['debug'])
         self.session = session
         self.verbose = prefs['command']['verbose']
+        self.batch = prefs['command']['batch']
         self.cache = cache
         if not uploader:
             self.uploader = Upload(session, prefs['upload'])
@@ -73,9 +75,23 @@ class LaCommand(cmd.Cmd):
                         capsule = self._var['capsule'] - 1
                     else:
                         capsule = 0
+                    uri = None
                     with self.session.upload(capsule, archive) as upload:
                         self.cache.save_upload(docs[idx], upload)
                         self.uploader.upload(path, upload['tokens'])
+                        uri = upload['uri']
+
+                    if uri and not self.batch:
+                        print ""
+                        print "Upload complete, waiting for verification"
+                        print "Press Ctrl-C to check manually later"
+                        while True:
+                            status = self.session.upload_status(uri)
+                            if status['status'] == "complete":
+                                self.cache.save_cert(upload, status)
+                            for i in xrange(30):
+                                time.sleep(1)
+
                     print "\ndone."
                 except Exception as e:
                     getLogger().debug("exception while uploading",
@@ -134,7 +150,7 @@ class LaCommand(cmd.Cmd):
 
     def do_status(self, line):
         line = line.strip()
-        uploads = self.cache.archives(full=True, category='uploads')
+        uploads = self.cache.uploads()
         if line:
             idx = -1
             try:
@@ -144,7 +160,17 @@ class LaCommand(cmd.Cmd):
             if idx < 0 or len(uploads) <= idx:
                 print "No such upload pending."
             else:
-                print "error:"
+                upload = uploads[idx]
+                try:
+                    url = upload['link']
+                    status = self.session.upload_status(url)
+                    print "status:", status['status']
+                    if status['status'] == "complete":
+                        self.cache.save_cert(upload, status)
+                except Exception as e:
+                    getLogger().debug("exception while checking status",
+                                      exc_info=True)
+                    print "error: " + str(e)
         else:
             if len(uploads):
                 print "Pending uploads:"

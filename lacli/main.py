@@ -39,6 +39,7 @@ Options:
     -o <dirname>, --out <dirname>       directory to restore archive
     -c <capsule>, --capsule <capsule>   capsule to upload to [default: 1]
     -v, --verbose                       print verbose information
+    --batch                             be brief, don't ask questions
 
 """
 
@@ -73,6 +74,10 @@ def settings(options):
     if '0' == os.getenv('LA_API_VERIFY'):
         verify = False
 
+    batch = options['--batch']
+    if not batch and os.getenv('LA_BATCH_OPERATION'):
+        batch = True
+
     return (
         {
             'api': {
@@ -89,7 +94,8 @@ def settings(options):
             },
             'command': {
                 'debug': debug,
-                'verbose': options['--verbose']
+                'verbose': options['--verbose'],
+                'batch': options['--batch']
             },
         },
         Cache(os.path.expanduser(options['--home'])))

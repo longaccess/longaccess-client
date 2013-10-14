@@ -29,6 +29,11 @@ def _slugify(value):
         ).strip().lower())
 
 
+def archive_slug(archive):
+    return "{}-{}".format(date.today().isoformat(),
+                          _slugify(archive.title))
+
+
 def restore_archive(archive, path, cert, folder, tmpdir, cb=None):
     cipher = get_cipher(archive, cert)
     with open(path) as infile:
@@ -43,8 +48,7 @@ def restore_archive(archive, path, cert, folder, tmpdir, cb=None):
 
 def dump_archive(archive, folder, cert, cb=None, tmpdir='/tmp',
                  hashf='sha512'):
-    name = "{}-{}".format(date.today().isoformat(),
-                          _slugify(archive.title))
+    name = archive_slug(archive)
     cipher = get_cipher(archive, cert)
     hashobj = None
     if hasattr(hashlib, hashf):

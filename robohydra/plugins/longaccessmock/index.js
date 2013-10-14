@@ -5,16 +5,17 @@ var heads               = require('robohydra').heads,
     apiPrefix           = "/path/to/api";
 
 exports.getBodyParts = function(config, modules) {
-    var mockupload = {
-        id: 1,
-        resource_uri: '/path/to/upload/1',
-        token_access_key: '123123',
-        token_secret_key: '123123',
-        token_session: '123123',
-        token_uid: '123123',
-        bucket: 'foobucket',
-        prefix: 'foobar',
-        status: 'pending',
+    function mockupload() {
+        return { id: 1,
+            resource_uri: '/path/to/upload/1',
+            token_access_key: '123123',
+            token_secret_key: '123123',
+            token_session: '123123',
+            token_uid: '123123',
+            bucket: 'foobucket',
+            prefix: 'foobar',
+            status: 'pending',
+        }
     }
     function meta(n){
         return {
@@ -63,11 +64,10 @@ exports.getBodyParts = function(config, modules) {
                     modules.assert.ok("capsule" in content)
                     modules.assert.ok("size" in content)
                     res.statusCode='200';
-                    
-                    date = new Date()
-                    date.setTime(date.getTime()+(60*60*1000))
-                    ret['token_expiration'] = date.toISOString()
-                    ret = mockupload
+                    var ret = mockupload();
+                    date = new Date();
+                    date.setTime(date.getTime()+(60*60*1000));
+                    ret['token_expiration'] = date.toISOString();
                     if (res.hasOwnProperty('token')) {
                         for (var attr in res.token) { 
                             ret[attr] = res.token[attr]; 
@@ -86,22 +86,51 @@ exports.getBodyParts = function(config, modules) {
                         modules.assert.ok("status" in content)
                     }
                     res.statusCode='200';
-                    date = new Date()
-                    date.setTime(date.getTime()+(60*60*1000))
-                    ret['token_expiration'] = date.toISOString()
-                    ret = mockupload
+                    var ret = mockupload();
+                    date = new Date();
+                    date.setTime(date.getTime()+(60*60*1000));
+                    ret['token_expiration'] = date.toISOString();
                     if (res.hasOwnProperty('token')) {
                         for (var attr in res.token) { 
                             ret[attr] = res.token[attr]; 
 
                         }
                     }
+                    if (res.hasOwnProperty('upload_status'))
+                        ret['status'] = res.upload_status;
+                        if (res.upload_status == 'complete')
+                            ret['archive_uri'] = 'https://longaccess.com/yoyoyo';
+
                     res.write(JSON.stringify(ret));
                     res.end(); 
                 }
             })
         ],
         scenarios: {
+            uploadError: {
+                instructions: "Init an upload and then check it's status. it will be 'error'",
+                heads: [
+                    new RoboHydraHead({
+                        path: apiPrefix + '/upload/1',
+                        handler: function(req, res, next) {
+                            res.upload_status = 'error';
+                            next(req, res);
+                        }
+                    })
+                ]
+            },
+            uploadComplete: {
+                instructions: "Init an upload and then check it's status. it will be 'complete'",
+                heads: [
+                    new RoboHydraHead({
+                        path: apiPrefix + '/upload/1',
+                        handler: function(req, res, next) {
+                            res.upload_status = 'complete';
+                            next(req, res);
+                        }
+                    })
+                ]
+            },
             serverProblems: {
                 instructions: "Try to upload a file. The client should show some error messaging stating the server couldn't fulfill the request or the API wasn't available",
                 heads: [

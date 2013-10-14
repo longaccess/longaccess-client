@@ -81,16 +81,23 @@ def pending_upload(context, title):
     d = os.path.join(context.environ['HOME'], ".longaccess/uploads")
     if not os.path.isdir(d):
         os.makedirs(d)
-    from shutil import copy
-    copy(af, d)
+    assert(context.mock_api)
+    import urlparse
+    url = urlparse.urljoin(context.mock_api.url(), 'path/to/api/upload/1')
+    with open(af) as f:
+        from lacli.adf import load_archive, make_adf
+        docs = load_archive(f)
+        docs['links'].upload = url
+        with open(os.path.join(d, os.path.basename(af)), 'w') as out:
+            make_adf(list(docs.itervalues()), out=out)
 
 
 @step(u'the upload status is "{status}"')
 def upload_status(context, status):
     if status == 'error':
-        pass
+        context.mock_api.test('uploadError', 'longaccessmock')
     elif status == 'completed':
-        pass
+        context.mock_api.test('uploadComplete', 'longaccessmock')
 
 
 @step(u'there is a prepared archive titled "{title}"')
@@ -100,6 +107,20 @@ def exists_archive_titled(context, title):
         When I run console script "lacli"
         Then I see ") {}"
         """.format(title))
+
+
+@step(u'there is a completed certificate')
+def exists_certificate(context):
+    from glob import glob
+    aglob = os.path.join(context.environ['HOME'], ".longaccess/certs/*")
+    assert len(glob(aglob)) > 0, "there is a certificate"
+
+
+@step(u'there are {num} pending uploads')
+def pending_upload_num(context, num):
+    from glob import glob
+    aglob = os.path.join(context.environ['HOME'], ".longaccess/uploads/*")
+    assert len(glob(aglob)) == int(num)
 
 
 @step(u'I prepare an archive with a file "{title}"')

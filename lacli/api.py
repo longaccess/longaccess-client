@@ -93,7 +93,7 @@ class Api(object):
                 'title': archive.title,
                 'description': archive.description or '',
                 'capsule': cs[capsule]['resource_uri'],
-                'size': '',
+                'size': archive.meta.size,
             })
         status = self._post(self.endpoints['upload'], data=req_data)
         uri = urljoin(self.url, status['resource_uri'])
@@ -103,6 +103,15 @@ class Api(object):
             'id': status['id']
         }
         self._patch(uri, data=json.dumps({'status': 'uploaded'}))
+
+    def upload_status(self, uri):
+        try:
+            return next(self._upload_status(uri))
+        except Exception:
+            getLogger().debug(
+                "error requesting upload status from {}".format(uri),
+                exc_info=True)
+            return None
 
     @contains(list)
     def capsules(self):
