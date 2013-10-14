@@ -3,6 +3,8 @@ from latvm.tvm import BaseTvm
 from lacli.log import getLogger
 from lacli.decorators import cached_property, with_api_response
 from netrc import netrc
+from itertools import repeat, imap
+from contextlib import contextmanager
 
 import json
 import os
@@ -65,19 +67,33 @@ class Api(BaseTvm):
             headers['content-type'] = 'application/json'
         return self.session.post(url, headers=headers, data=data)
 
-    def get_upload_token(self):
-        token_url = self.endpoints['upload']
-        getLogger().debug("requesting token from {}".format(token_url))
-        return self._post(token_url, data=json.dumps({
-            'title': 'test',
-            'description': 'foobar',
-            'capsule': '',
-            'size': '',
-        }))
-
-    def tokens(self):
+    def _upload_status(self, uri, first=None):
+        if first:
+            yield first
         while True:
-            yield self.get_upload_token()
+            yield self._get(uri)
+
+    @contextmanager
+    def upload(self, capsule, archive):
+        url = self.endpoints['capsule']
+        cs = self._get(url)['objects']
+        import pdb; pdb.set_trace()
+        if capsule > len(cs):
+            raise ValueError("No such capsule")
+
+        req_data=json.dumps({
+                'title': archive.title,
+                'description': archive.description,
+                'capsule': cs[capsule]['resource_uri'],
+                'size': '',
+            })
+        status = self._post(self.endpoints['upload'], data=req_data)
+        uri = status['resource_uri']
+        yield self._upload_status(uri, status)
+        self.session.patch(
+            uri, headers={'content-type': 'application/json'},
+            data={'status': 'uploaded'})
+
 
     def capsules(self):
         url = self.endpoints['capsule']

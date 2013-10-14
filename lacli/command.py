@@ -31,22 +31,37 @@ class LaCommand(cmd.Cmd):
     def do_EOF(self, line):
         return True
 
-    def do_put(self, f):
+    def do_put(self, line):
         """Upload a file to LA [filename]
         """
-        fname = f.strip()
-        if not fname:
-            print "Argument required."
-        elif not os.path.exists(fname):
-            print 'File {} not found.'.format(fname)
+        a = line.strip()
+        archives = self.cache.archives()
+        if not a:
+            a = 1
+        if a > len(archives):
+            print "No such archive."
         else:
-            try:
-                self.uploader.upload(fname)
-                print "\ndone."
-            except Exception as e:
-                getLogger().debug("exception while uploading",
-                                  exc_info=True)
-                print "error: " + str(e)
+            archive = archives[a-1]
+            link = self.cache.links().get(archive.title)
+            if link and link.local:
+                parsed = urlparse(link.local)
+                if parsed.scheme == 'file':
+                    if not os.path.exists(parsed.path):
+                        print 'File {} not found.'.format(parsed.path)
+                    else:
+                        try:
+                            capsule = self._var['capsule']
+                            with self.session.upload(capsule, archive) as tokens:
+                                self.uploader.upload(parsed.path, tokens)
+                            print "\ndone."
+                        except Exception as e:
+                            getLogger().debug("exception while uploading",
+                                              exc_info=True)
+                            print "error: " + str(e)
+                else:
+                    print "url not local: " + link.local
+            else:
+                print "no local copy exists."
 
     def do_list(self, line):
         """List capsules in LA

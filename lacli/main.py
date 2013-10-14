@@ -1,7 +1,7 @@
 #!/home/kouk/code/bototest/bin/python
 """Upload a file to Long Access
 
-Usage: lacli put [options] [-b <bucket> ] [-n <np>] <filename>...
+Usage: lacli put [options] [-c <capsule> ] [-n <np>] [<archive>]
        lacli list [options]
        lacli archive [options] [-t <title>] [<dirname>]
        lacli restore [options] [-o <dirname>] [<archive>]
@@ -17,6 +17,7 @@ Options:
     --home <home>                  conf/cache dir [default: ~/.longaccess]
     -t <title>, --title <title>    title for prepared archive
     -o <dirname>, --out <dirname>  directory to restore archive
+    --capsule <capsule>            capsule to upload to [default: 1]
 
 """
 
@@ -74,8 +75,18 @@ def main(args=sys.argv[1:]):
     prefs, cache = settings(options)
     cli = LaCommand(Api(prefs['api']), cache, prefs)
     if options['put']:
-        for fname in options['<filename>']:
-            cli.onecmd('put {}'.format(fname))
+        try:
+            capsule = int(options['--capsule'])
+        except ValueError:
+            print "error: illegal value for 'capsule' parameter."
+            raise
+
+        with cli.temp_var(capsule=capsule):
+            a = options['<archive>']
+            if a:
+                cli.onecmd('put {}'.format(a))
+            else:
+                cli.onecmd('put')
     elif options['list']:
         cli.onecmd('list')
     elif options['archive']:
