@@ -58,7 +58,7 @@ class Cache(object):
 
     def save_upload(self, docs, upload):
         docs['links'].upload = upload['uri']
-        with self._upload_open(upload['id'] + ".adf", 'w') as f:
+        with self._upload_open("{}.adf".format(upload['id']), 'w') as f:
             make_adf(docs, out=f)
 
     def links(self):
