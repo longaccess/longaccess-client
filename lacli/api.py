@@ -93,7 +93,7 @@ class Api(object):
                 'title': archive.title,
                 'description': archive.description or '',
                 'capsule': cs[capsule]['resource_uri'],
-                'size': '',
+                'size': archive.meta.size,
             })
         status = self._post(self.endpoints['upload'], data=req_data)
         uri = urljoin(self.url, status['resource_uri'])

@@ -116,13 +116,15 @@ class ApiTest(TestCase):
                                'post': post,
                                'patch.return_value': ur})
         api = self._makeit(self.prefs, sessions=s)
-        tmgr = api.upload(1, Mock(title='', description=None))
+        meta = Mock(size=1)
+        tmgr = api.upload(1, Mock(title='', meta=meta, description=None))
         with tmgr as upload:
             args, kwargs = post.call_args
             headers = kwargs['headers']
             self.assertEqual('http://baz.com/api/v1/upload/', args[0])
             self.assertEqual('application/json', headers['content-type'])
             self.assertTrue('"description": ""' in kwargs['data'])
+            self.assertTrue('"size": 1' in kwargs['data'])
             for seq, token in izip(xrange(4), upload['tokens']):
                 self.assertIn('token_access_key', token)
 
