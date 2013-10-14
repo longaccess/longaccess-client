@@ -41,7 +41,7 @@ Feature: status command
         Then I see "status: pending"
 
     Scenario: I poll for an upload that is completed
-        Given I have 1 pending upload
+        Given I have 1 pending uploads
         And the upload status is "completed"
         And the command line arguments "status 1"
         When I run console script "lacli"
