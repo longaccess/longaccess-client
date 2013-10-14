@@ -109,6 +109,13 @@ def exists_archive_titled(context, title):
         """.format(title))
 
 
+@step(u'there is a completed certificate')
+def exists_certificate(context):
+    from glob import glob
+    aglob = os.path.join(context.environ['HOME'], ".longaccess/certs/*")
+    assert len(glob(aglob)) > 0, "there is a certificate"
+
+
 @step(u'I prepare an archive with a file "{title}"')
 def prepare_archive(context, title):
     context.execute_steps(u'''

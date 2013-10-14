@@ -47,5 +47,5 @@ Feature: status command
         And the command line arguments "status 1"
         When I run console script "lacli"
         Then I see "status: complete"
-        And there is a completed certificate titled "foo"
+        And there is a completed certificate
         And there are 0 pending uploads
