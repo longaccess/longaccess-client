@@ -33,8 +33,8 @@ class Cache(object):
         return open(os.path.join(dname, name), mode)
 
     @contains(list)
-    def archives(self, full=False):
-        for fn in iglob(os.path.join(self._cache_dir('archives'), '*.adf')):
+    def archives(self, full=False, category='archives'):
+        for fn in iglob(os.path.join(self._cache_dir(category), '*.adf')):
             with open(fn) as f:
                 try:
                     if full:

@@ -100,6 +100,37 @@ class CommandTest(TestCase):
         cli = self._makeit(Mock(), Mock, self.prefs)
         cli.cmdloop()
 
+    def test_do_status_error(self):
+        from lacli.cache import Cache
+        with _temp_home() as home:
+            cli = self._makeit(Mock(), Cache(home), self.prefs)
+            with patch('sys.stdout', new_callable=StringIO) as out:
+                cli.onecmd('status')
+                self.assertThat(out.getvalue(),
+                                Contains('No pending uploads'))
+        cli = self._makeit(Mock(), Cache(self.home), self.prefs)
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            cli.onecmd('status foobar')
+            self.assertThat(out.getvalue(),
+                            Contains('No such upload pending'))
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            uploads = cli.cache.archives(category='uploads')
+            with patch('lacli.command.urlparse') as urlparse:
+                urlparse.return_value = Mock(scheme='gopher', path=self.home)
+                for seq, archive in enumerate(uploads):
+                        if archive.title == 'My pending upload':
+                            cli.onecmd('status {}'.format(seq+1))
+            self.assertThat(out.getvalue(),
+                            Contains('error:'))
+
+    def test_do_status(self):
+        from lacli.cache import Cache
+        cli = self._makeit(Mock(), Cache(self.home), self.prefs)
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            cli.onecmd('status')
+            self.assertThat(out.getvalue(),
+                            Contains('Pending uploads'))
+
     def test_do_put_error(self):
         from lacli.cache import Cache
         with _temp_home() as home:

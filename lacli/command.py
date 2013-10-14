@@ -129,12 +129,19 @@ class LaCommand(cmd.Cmd):
             print "error: " + str(e)
 
     def do_status(self, line):
-        u = line.strip()
-        if u:
-            pass
+        line = line.strip()
+        uploads = self.cache.archives(full=True, category='uploads')
+        idx = None
+        if line:
+            try:
+                idx = int(line)-1
+            except ValueError:
+                pass
+            if idx < 0 or len(uploads) <= idx:
+                print "No such upload pending."
+            else:
+                print "error:"
         else:
-            uploads = self.cache.uploads()
-
             if len(uploads):
                 print "Pending uploads:"
             else:
