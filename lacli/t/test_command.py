@@ -88,9 +88,11 @@ class CommandTest(TestCase):
 
     @patch('sys.stdout', new_callable=StringIO)
     def test_do_archive_list_some(self, out):
-        meta = Mock(format='', size=None)
-        cache = Mock(archives=Mock(return_value=[
-            Mock(title="foo", description='', tags=[], meta=meta)]))
+        from lacli.adf import Archive, Meta
+        meta = Meta(format='', size=None, cipher='')
+        cache = Mock(archives=Mock(return_value=[{
+            'archive': Archive(
+                title="foo", description='', tags=[], meta=meta)}]))
         cli = self._makeit(Mock(), cache, self.prefs)
         cli.onecmd('archive')
         self.assertThat(out.getvalue(),
@@ -100,8 +102,9 @@ class CommandTest(TestCase):
     def test_do_archive_list_verbose(self, out):
         from lacli.adf import Archive, Meta
         meta = Meta(format='', size=None, cipher='')
-        cache = Mock(archives=Mock(return_value=[
-            Archive(title="foo", description='', tags=[], meta=meta)]))
+        cache = Mock(archives=Mock(return_value=[{
+            'archive': Archive(
+                title="foo", description='', tags=[], meta=meta)}]))
         prefs = self.prefs
         prefs['command']['verbose'] = True
         cli = self._makeit(Mock(), cache, self.prefs)
@@ -112,9 +115,11 @@ class CommandTest(TestCase):
     def test_do_archive_list_more(self):
         with patch('sys.stdout', new_callable=StringIO) as out:
             for size in [(25, '25B'), (1024, '1KiB'), (2000000, '1MiB')]:
-                meta = Mock(format='', size=size[0], cipher='')
-                cache = Mock(archives=Mock(return_value=[
-                    Mock(title="foo", description='', tags=[], meta=meta)]))
+                from lacli.adf import Archive, Meta
+                meta = Meta(format='', size=size[0], cipher='')
+                cache = Mock(archives=Mock(return_value=[{
+                    'archive': Archive(
+                        title="foo", description='', tags=[], meta=meta)}]))
                 cli = self._makeit(Mock(), cache, self.prefs)
                 cli.onecmd('archive')
                 self.assertThat(out.getvalue(),

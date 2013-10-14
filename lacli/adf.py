@@ -283,3 +283,27 @@ def make_adf(archive=None, canonical=False, out=None, pretty=False):
         out.write("---".join(map(pyaml.dump, archive)))
         return
     return yaml.safe_dump_all(archive, out, canonical=canonical)
+
+
+def archive_short_desc(archive):
+    """
+    >>> meta = Meta('zip', Cipher(mode='aes-256-ctr'), size=1024)
+    >>> archive = Archive('foo', meta)
+    >>> archive_short_desc(archive)
+    'foo [zip/aes-256-ctr/1KiB]'
+    """
+    size = ""
+    if archive.meta.size:
+        kib = archive.meta.size // 1024
+        mib = kib // 1024
+        if not kib:
+            size = "/{}B".format(archive.meta.size)
+        elif not mib:
+            size = "/{}KiB".format(kib)
+        else:
+            size = "/{}MiB".format(mib)
+    cipher = archive.meta.cipher
+    if hasattr(cipher, 'mode'):
+        cipher = cipher.mode
+    return "{} [{}/{}{}]".format(
+        archive.title, archive.meta.format, cipher, size)

@@ -7,6 +7,7 @@ import sys
 from lacli.log import getLogger, setupLogging
 from lacli.upload import Upload
 from lacli.archive import restore_archive
+from lacli.adf import archive_short_desc
 from time import strftime
 from contextlib import contextmanager
 from urlparse import urlparse
@@ -119,22 +120,8 @@ class LaCommand(cmd.Cmd):
                 if len(archives):
                     print "Prepared archives:"
                     for n, archive in enumerate(archives):
-                        size = ""
-                        if archive.meta.size:
-                            kib = archive.meta.size // 1024
-                            mib = kib // 1024
-                            if not kib:
-                                size = "/{}B".format(archive.meta.size)
-                            elif not mib:
-                                size = "/{}KiB".format(kib)
-                            else:
-                                size = "/{}MiB".format(mib)
-                        cipher = archive.meta.cipher
-                        if hasattr(cipher, 'mode'):
-                            cipher = cipher.mode
-                        print "{}) {} [{}/{}{}]".format(
-                            n+1, archive.title,
-                            archive.meta.format, cipher, size)
+                        desc = archive_short_desc(archive['archive'])
+                        print "{})".format(n+1), desc
                         if self.verbose:
                             pyaml.dump(archive, sys.stdout)
                             print
@@ -161,6 +148,9 @@ class LaCommand(cmd.Cmd):
         else:
             if len(uploads):
                 print "Pending uploads:"
+                for n, upload in enumerate(uploads):
+                    desc = archive_short_desc(upload['archive'])
+                    print "{})".format(n+1), desc
             else:
                 print "No pending uploads."
 
