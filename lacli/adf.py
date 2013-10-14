@@ -1,16 +1,8 @@
 import yaml
 
 from lacli.cipher import cipher_modes, new_key
-
-
-try:
-    from yaml import CSafeLoader as SafeLoader
-except ImportError:
-    from yaml import SafeLoader
-try:
-    from yaml import CSafeDumper as SafeDumper
-except ImportError:
-    from yaml import SafeDumper
+from yaml import SafeLoader
+from yaml import SafeDumper
 
 
 class PrettySafeLoader(SafeLoader):
