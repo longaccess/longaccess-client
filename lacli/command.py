@@ -1,6 +1,9 @@
+from __future__ import division
 import os
 import cmd
 import glob
+import pyaml
+import sys
 from lacli.log import getLogger, setupLogging
 from lacli.upload import Upload
 from lacli.archive import restore_archive
@@ -116,12 +119,25 @@ class LaCommand(cmd.Cmd):
                 if len(archives):
                     print "Prepared archives:"
                     for n, archive in enumerate(archives):
-                        lines = (('desc:', archive.description),
-                                 ('tags:', ", ".join(archive.tags)),
-                                 ('type:', archive.meta.format))
-                        print "{}) {}".format(n+1, archive.title)
-                        for line in lines:
-                            print "{:<7}{:<30}".format(line[0], line[1])
+                        size = ""
+                        if archive.meta.size:
+                            kib = archive.meta.size // 1024
+                            mib = kib // 1024
+                            if not kib:
+                                size = "/{}B".format(archive.meta.size)
+                            elif not mib:
+                                size = "/{}KiB".format(kib)
+                            else:
+                                size = "/{}MiB".format(mib)
+                        cipher = archive.meta.cipher
+                        if hasattr(cipher, 'mode'):
+                            cipher = cipher.mode
+                        print "{}) {} [{}/{}{}]".format(
+                            n+1, archive.title,
+                            archive.meta.format, cipher, size)
+                        if self.verbose:
+                            pyaml.dump(archive, sys.stdout)
+                            print
                 else:
                     print "No prepared archives."
         except Exception as e:
