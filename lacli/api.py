@@ -104,6 +104,15 @@ class Api(object):
         }
         self._patch(uri, data=json.dumps({'status': 'uploaded'}))
 
+    def upload_status(self, uri):
+        try:
+            return next(self._upload_status(uri))['status']
+        except Exception:
+            getLogger().debug(
+                "error requesting upload status from {}".format(uri),
+                exc_info=True)
+            return None
+
     @contains(list)
     def capsules(self):
         url = self.endpoints['capsule']

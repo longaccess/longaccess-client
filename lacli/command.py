@@ -144,7 +144,13 @@ class LaCommand(cmd.Cmd):
             if idx < 0 or len(uploads) <= idx:
                 print "No such upload pending."
             else:
-                print "error:"
+                upload = uploads[idx]
+                if 'links' in upload and hasattr(upload['links'], 'upload'):
+                    url = upload['links'].upload
+                    status = self.session.upload_status(url)
+                    print "status:", status
+                else:
+                    print "error: no upload link"
         else:
             if len(uploads):
                 print "Pending uploads:"
