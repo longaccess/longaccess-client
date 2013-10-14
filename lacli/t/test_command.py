@@ -249,6 +249,8 @@ class CommandTest(TestCase):
             self.assertThat(out.getvalue(), Contains('No such archive'))
             cli.onecmd('restore 1')
             self.assertThat(out.getvalue(), Contains('No such archive'))
+            cli.onecmd('restore foobar')
+            self.assertThat(out.getvalue(), Contains('No such archive'))
 
     @patch('lacli.command.restore_archive')
     def test_do_restore(self, restore_archive):
