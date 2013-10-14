@@ -85,6 +85,14 @@ def pending_upload(context, title):
     copy(af, d)
 
 
+@step(u'the upload status is "{status}"')
+def upload_status(context, status):
+    if status == 'error':
+        pass
+    elif status == 'completed':
+        pass
+
+
 @step(u'there is a prepared archive titled "{title}"')
 def exists_archive_titled(context, title):
     context.execute_steps(u"""
