@@ -9,7 +9,7 @@ setup(version=unicode(__version__),
       packages=['lacli', 'lacli.t', 'latvm', 'latvm.t'],
       install_requires=['boto', 'python-dateutil', 'filechunkio', 'docopt',
                         'progressbar', 'logutils', 'requests', 'setproctitle',
-                        'unidecode', 'pycrypto'],
+                        'unidecode', 'pycrypto', 'pyyaml'],
       tests_require=['testtools'],
       test_suite="lacli.t",
       entry_points="""
