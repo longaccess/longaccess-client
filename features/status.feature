@@ -1,0 +1,43 @@
+Feature: status command
+
+    Background: setup the command configuration
+        Given the home directory is "/tmp/test"
+
+    Scenario: I status without having any pending uploads
+        Given the command line arguments "status"
+        When I run console script "lacli"
+        Then I see "No pending uploads."
+
+    Scenario: I poll a non existent status
+        Given the command line arguments "status 1"
+        When I run console script "lacli"
+        Then I see "No such upload pending."
+
+    Scenario: I poll for an upload that doesn't exist
+        Given I have 2 pending uploads titled "foo"
+        And the command line arguments "status 3"
+        When I run console script "lacli"
+        Then I see "No such upload pending."
+
+    Scenario: I poll for a upload that completed with an error
+        Given I have 1 pending uploads titled "foo"
+        And the upload status is "error"
+        And the command line arguments "status 1"
+        When I run console script "lacli"
+        Then I see "upload status: error"
+
+    Scenario: I poll for an upload that is still pending
+        Given I have 1 pending uploads titled "foo"
+        And the upload status is "error"
+        And the command line arguments "status 1"
+        When I run console script "lacli"
+        Then I see "upload status: pending"
+
+    Scenario: I poll for an upload that is completed
+        Given I have 1 pending upload titled "foo"
+        And the upload status is "completed"
+        And the command line arguments "status 1"
+        When I run console script "lacli"
+        Then I see "upload status: completed"
+        And there is a completed certificate titled "foo"
+        And there are 0 pending uploads

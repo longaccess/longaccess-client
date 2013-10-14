@@ -5,6 +5,7 @@ Usage: lacli put [options] [-c <capsule> ] [-n <np>] [<archive>]
        lacli list [options]
        lacli archive [options] [-t <title>] [<dirname>]
        lacli restore [options] [-o <dirname>] [<archive>]
+       lacli status [options] [<upload-index>]
        lacli [options]
        lacli -h, --help
 
@@ -22,6 +23,10 @@ Command description:
 
     restore:  restore a downloaded archive. If no archive index is specified
               the first listed (see "archive") is restored.
+
+    status:   display pending archive uploads. If an upload index is specified
+              it polls the API for the status and updates the application
+              cache.
 
 Options:
     -u <user>, --user <user>            user name
@@ -123,6 +128,11 @@ def main(args=sys.argv[1:]):
             cmd += options['<archive>']
         with cli.temp_var(output_directory=options['--out']):
             cli.onecmd(cmd)
+    elif options['status']:
+        cmd = 'status  '
+        if options['<upload-index>']:
+            cmd += options['<upload-index>']
+        cli.onecmd(cmd)
     else:
         cli.cmdloop()
 
