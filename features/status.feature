@@ -2,6 +2,8 @@ Feature: status command
 
     Background: setup the command configuration
         Given the home directory is "/tmp/test"
+        And the mock API "longaccessmock"
+        And the environment variable "LA_API_URL" is "{api_url}path/to/api"
 
     Scenario: I status without having any pending uploads
         Given the command line arguments "status"
