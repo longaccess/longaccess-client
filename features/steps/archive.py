@@ -116,6 +116,13 @@ def exists_certificate(context):
     assert len(glob(aglob)) > 0, "there is a certificate"
 
 
+@step(u'there are {num} pending uploads')
+def pending_upload_num(context, num):
+    from glob import glob
+    aglob = os.path.join(context.environ['HOME'], ".longaccess/uploads/*")
+    assert len(glob(aglob)) == num
+
+
 @step(u'I prepare an archive with a file "{title}"')
 def prepare_archive(context, title):
     context.execute_steps(u'''
