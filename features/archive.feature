@@ -38,7 +38,6 @@ Feature: prepare archive command
         When I run console script "lacli"
         Then I see "archive prepared"
         And there is a prepared archive titled "foo"
-        And I see "type:  zip"
 
     Scenario: I prepare a new archive but it fails due to unreadable files
         Given an empty folder "foo"

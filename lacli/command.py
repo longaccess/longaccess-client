@@ -1,9 +1,13 @@
+from __future__ import division
 import os
 import cmd
 import glob
+import pyaml
+import sys
 from lacli.log import getLogger, setupLogging
 from lacli.upload import Upload
 from lacli.archive import restore_archive
+from lacli.adf import archive_short_desc
 from time import strftime
 from contextlib import contextmanager
 from urlparse import urlparse
@@ -17,6 +21,7 @@ class LaCommand(cmd.Cmd):
         cmd.Cmd.__init__(self, *args, **kwargs)
         setupLogging(prefs['command']['debug'])
         self.session = session
+        self.verbose = prefs['command']['verbose']
         self.cache = cache
         if not uploader:
             self.uploader = Upload(session, prefs['upload'])
@@ -34,9 +39,9 @@ class LaCommand(cmd.Cmd):
     def do_put(self, line):
         """Upload a file to LA [filename]
         """
-        archives = self.cache.archives()
+        docs = self.cache.archives(full=True)
         line = line.strip()
-        idx = None
+        idx = -1
         if not line:
             idx = 0
         else:
@@ -44,10 +49,10 @@ class LaCommand(cmd.Cmd):
                 idx = int(line)-1
             except ValueError:
                 pass
-        if idx < 0 or len(archives) <= idx:
+        if idx < 0 or len(docs) <= idx:
             print "No such archive."
         else:
-            archive = archives[idx]
+            archive = docs[idx]['archive']
             link = self.cache.links().get(archive.title)
             path = ''
             if link and hasattr(link, 'local'):
@@ -64,9 +69,13 @@ class LaCommand(cmd.Cmd):
 
             if path:
                 try:
-                    capsule = self._var['capsule'] - 1
-                    with self.session.upload(capsule, archive) as tokens:
-                        self.uploader.upload(path, tokens)
+                    if 'capsule' in self._var:
+                        capsule = self._var['capsule'] - 1
+                    else:
+                        capsule = 0
+                    with self.session.upload(capsule, archive) as upload:
+                        self.cache.save_upload(docs[idx], upload)
+                        self.uploader.upload(path, upload['tokens'])
                     print "\ndone."
                 except Exception as e:
                     getLogger().debug("exception while uploading",
@@ -111,12 +120,11 @@ class LaCommand(cmd.Cmd):
                 if len(archives):
                     print "Prepared archives:"
                     for n, archive in enumerate(archives):
-                        lines = (('desc:', archive.description),
-                                 ('tags:', ", ".join(archive.tags)),
-                                 ('type:', archive.meta.format))
-                        print "{}) {}".format(n+1, archive.title)
-                        for line in lines:
-                            print "{:<7}{:<30}".format(line[0], line[1])
+                        desc = archive_short_desc(archive)
+                        print "{})".format(n+1), desc
+                        if self.verbose:
+                            pyaml.dump(archive, sys.stdout)
+                            print
                 else:
                     print "No prepared archives."
         except Exception as e:
@@ -124,16 +132,44 @@ class LaCommand(cmd.Cmd):
                               exc_info=True)
             print "error: " + str(e)
 
+    def do_status(self, line):
+        line = line.strip()
+        uploads = self.cache.archives(full=True, category='uploads')
+        if line:
+            idx = -1
+            try:
+                idx = int(line)-1
+            except ValueError:
+                pass
+            if idx < 0 or len(uploads) <= idx:
+                print "No such upload pending."
+            else:
+                print "error:"
+        else:
+            if len(uploads):
+                print "Pending uploads:"
+                for n, upload in enumerate(uploads):
+                    desc = archive_short_desc(upload['archive'])
+                    print "{})".format(n+1), desc
+            else:
+                print "No pending uploads."
+
     def do_restore(self, line):
-        a = line.strip()
+        line = line.strip()
         archives = self.cache.archives()
         path = None
-        if not a:
-            a = 1
-        if a > len(archives):
+        idx = -1
+        if not line:
+            idx = 0
+        else:
+            try:
+                idx = int(line)-1
+            except ValueError:
+                pass
+        if idx < 0 or len(archives) <= idx:
             print "No such archive."
         else:
-            archive = archives[a-1]
+            archive = archives[idx]
             cert = self.cache.certs().get(archive.title)
             if cert:
                 link = self.cache.links().get(archive.title)
@@ -165,8 +201,6 @@ class LaCommand(cmd.Cmd):
                 getLogger().debug("exception while restoring",
                                   exc_info=True)
                 print "error: " + str(e)
-        else:
-            print "data file {} not found."
 
     def complete_put(self, text, line, begidx, endidx):  # pragma: no cover
         return [os.path.basename(x) for x in glob.glob('{}*'.format(line[4:]))]

@@ -85,19 +85,23 @@ class Api(object):
     def upload(self, capsule, archive):
         url = self.endpoints['capsule']
         cs = self._get(url)['objects']
-        if capsule > len(cs):
+        if capsule >= len(cs):
             raise ValueError("No such capsule")
 
         req_data = json.dumps(
             {
                 'title': archive.title,
-                'description': archive.description,
+                'description': archive.description or '',
                 'capsule': cs[capsule]['resource_uri'],
                 'size': '',
             })
         status = self._post(self.endpoints['upload'], data=req_data)
         uri = urljoin(self.url, status['resource_uri'])
-        yield self._upload_status(uri, status)
+        yield {
+            'tokens': self._upload_status(uri, status),
+            'uri': uri,
+            'id': status['id']
+        }
         self._patch(uri, data=json.dumps({'status': 'uploaded'}))
 
     @contains(list)

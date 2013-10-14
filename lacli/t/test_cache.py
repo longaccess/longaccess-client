@@ -58,6 +58,11 @@ class CacheTest(TestCase):
                 cache._archive_open('foo', 'w')
                 open_mock.assert_called_with(fname, 'w')
                 self.assertTrue(os.path.isdir(dname))
+                cache._cert_open('foo', 'w')
+                dname = os.path.join(home, 'certs')
+                fname = os.path.join(dname, 'foo')
+                open_mock.assert_called_with(fname, 'w')
+                self.assertTrue(os.path.isdir(dname))
 
 #    def test_title_cert(self):
 #        cache = self._makeit(self.home)
@@ -70,10 +75,9 @@ class CacheTest(TestCase):
 #        self.assertFalse(cache._title_cert([ds]))
 
     def test_certs(self):
-        cache = self._makeit(self.home)
-        self.assertEqual({}, cache.certs())
         with _temp_home() as home:
             cache = self._makeit(home)
+            self.assertEqual({}, cache.certs())
             cdir = os.path.join(home, 'certs')
             os.makedirs(cdir)
             copy(os.path.join(self.home, 'archives', 'minimal.adf'), cdir)

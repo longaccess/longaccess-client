@@ -1,9 +1,11 @@
 import os
 import re
+import hashlib
 
 from unidecode import unidecode
 from datetime import date
 from tempfile import NamedTemporaryFile
+from lacli.adf import Auth
 from lacli.crypt import CryptIO
 from lacli.cipher import get_cipher
 from shutil import copyfileobj
@@ -39,16 +41,23 @@ def restore_archive(archive, path, cert, folder, tmpdir, cb=None):
                     map(lambda zi: zf.extract(zi, folder), zf.infolist()))
 
 
-def dump_archive(archive, folder, cert, cb=None, tmpdir='/tmp'):
+def dump_archive(archive, folder, cert, cb=None, tmpdir='/tmp',
+                 hashf='sha512'):
     name = "{}-{}".format(date.today().isoformat(),
                           _slugify(archive.title))
     cipher = get_cipher(archive, cert)
-    path, writer = _writer(name, os.path.abspath(folder), cipher, tmpdir)
+    hashobj = None
+    if hasattr(hashlib, hashf):
+        hashobj = getattr(hashlib, hashf)()
+    path, writer = _writer(name, os.path.abspath(folder),
+                           cipher, tmpdir, hashobj)
     map(cb, writer)
-    return (name, path)
+    args = {hashf: hashobj.digest()}
+    auth = Auth(**args)
+    return (name, path, auth)
 
 
-def _writer(name, folder, cipher, tmpdir):
+def _writer(name, folder, cipher, tmpdir, hashobj=None):
     path = os.path.join(tmpdir, name+".zip")
 
     def _enc(zf):
@@ -56,7 +65,14 @@ def _writer(name, folder, cipher, tmpdir):
         tmpargs = {'delete': False,
                    'dir': tmpdir}
         with NamedTemporaryFile(suffix=".crypt", **tmpargs) as dst:
-            copyfileobj(zf, CryptIO(dst, cipher))
+            with CryptIO(dst, cipher) as fdst:
+                while 1:
+                    buf = zf.read(1024)
+                    if not buf:
+                        break
+                    fdst.write(buf)
+                    if hashobj:
+                        hashobj.update(buf)
         os.rename(dst.name, path)
     return (path, _zip(name, folder, tmpdir, _enc))
 

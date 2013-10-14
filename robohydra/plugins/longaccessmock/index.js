@@ -77,7 +77,7 @@ exports.getBodyParts = function(config, modules) {
                     res.write(JSON.stringify(ret));
                     res.end(); 
                 }
-            })
+            }),
             new RoboHydraHead({
                 path: apiPrefix + '/upload/1',
                 handler: function(req, res, next) {
