@@ -120,7 +120,7 @@ def exists_certificate(context):
 def pending_upload_num(context, num):
     from glob import glob
     aglob = os.path.join(context.environ['HOME'], ".longaccess/uploads/*")
-    assert len(glob(aglob)) == num
+    assert len(glob(aglob)) == int(num)
 
 
 @step(u'I prepare an archive with a file "{title}"')
