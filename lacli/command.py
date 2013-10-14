@@ -165,15 +165,20 @@ class LaCommand(cmd.Cmd):
                 print "No pending uploads."
 
     def do_restore(self, line):
-        a = line.strip()
+        line = line.strip()
         archives = self.cache.archives()
         path = None
-        if not a:
-            a = 1
-        if a > len(archives):
+        if not line:
+            idx = 0
+        else:
+            try:
+                idx = int(line)-1
+            except ValueError:
+                pass
+        if idx < 0 or len(archives) <= idx:
             print "No such archive."
         else:
-            archive = archives[a-1]
+            archive = archives[idx]
             cert = self.cache.certs().get(archive.title)
             if cert:
                 link = self.cache.links().get(archive.title)
