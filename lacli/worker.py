@@ -5,10 +5,9 @@ from lacli.log import logToQueue, getLogger
 from lacli.progress import progressToQueue
 from multiprocessing import cpu_count, pool, current_process, Process
 try:
-	from setproctitle import setproctitle
+    from setproctitle import setproctitle
 except ImportError:
-	setproctitle=lambda x:x
-
+    setproctitle = lambda x: x
 
 
 def initworker(logq, progq, stdin=None):
