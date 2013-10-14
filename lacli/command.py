@@ -146,9 +146,16 @@ class LaCommand(cmd.Cmd):
             else:
                 upload = uploads[idx]
                 if 'links' in upload and hasattr(upload['links'], 'upload'):
-                    url = upload['links'].upload
-                    status = self.session.upload_status(url)
-                    print "status:", status
+                    try:
+                        url = upload['links'].upload
+                        status = self.session.upload_status(url)
+                        print "status:", status['status']
+                        if status['status'] == "complete":
+                            self.cache.save_cert(upload, status)
+                    except Exception as e:
+                        getLogger().debug("exception while restoring",
+                                          exc_info=True)
+                        print "error: " + str(e)
                 else:
                     print "error: no upload link"
         else:

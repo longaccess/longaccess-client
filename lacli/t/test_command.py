@@ -6,6 +6,7 @@ from testtools.matchers import Contains
 from . import makeprefs, _temp_home
 from mock import MagicMock, Mock, patch
 from StringIO import StringIO
+from contextlib import nested
 
 
 class CommandTest(TestCase):
@@ -141,13 +142,18 @@ class CommandTest(TestCase):
             cli.onecmd('status foobar')
             self.assertThat(out.getvalue(),
                             Contains('No such upload pending'))
-        with patch('sys.stdout', new_callable=StringIO) as out:
+        apisession = Mock()
+        apisession.upload_status.side_effect = Exception('foo')
+        cli = self._makeit(apisession, Cache(self.home), self.prefs)
+        with nested(
+            patch('sys.stdout', new_callable=StringIO),
+            patch('lacli.command.urlparse'),
+                ) as (out, urlparse):
             uploads = cli.cache.archives(category='uploads')
-            with patch('lacli.command.urlparse') as urlparse:
-                urlparse.return_value = Mock(scheme='gopher', path=self.home)
-                for seq, archive in enumerate(uploads):
-                        if archive.title == 'My pending upload':
-                            cli.onecmd('status {}'.format(seq+1))
+            urlparse.return_value = Mock(scheme='gopher', path=self.home)
+            for seq, archive in enumerate(uploads):
+                    if archive.title == 'My pending upload':
+                        cli.onecmd('status {}'.format(seq+1))
             self.assertThat(out.getvalue(),
                             Contains('error:'))
 

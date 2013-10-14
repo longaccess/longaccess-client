@@ -106,7 +106,7 @@ class Api(object):
 
     def upload_status(self, uri):
         try:
-            return next(self._upload_status(uri))['status']
+            return next(self._upload_status(uri))
         except Exception:
             getLogger().debug(
                 "error requesting upload status from {}".format(uri),

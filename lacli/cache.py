@@ -4,7 +4,7 @@ from glob import iglob
 from lacli.adf import (load_archive, make_adf, Certificate, Archive,
                        Meta, Links, Cipher)
 from lacli.log import getLogger
-from lacli.archive import dump_archive
+from lacli.archive import dump_archive, archive_slug
 from lacli.exceptions import InvalidArchiveError
 from lacli.decorators import contains
 from urlparse import urlunparse
@@ -59,6 +59,13 @@ class Cache(object):
     def save_upload(self, docs, upload):
         docs['links'].upload = upload['uri']
         with self._upload_open("{}.adf".format(upload['id']), 'w') as f:
+            make_adf(docs, out=f)
+
+    def save_cert(self, docs, status):
+        if 'archive_uri' in status:
+            docs['links'].download = status['archive_uri']
+        fname = archive_slug(docs['archive'])
+        with self._cert_open(fname, 'w') as f:
             make_adf(docs, out=f)
 
     def links(self):
