@@ -1,0 +1,14 @@
+--- !archive
+title: My pending upload
+description: My 2013 vacation in Milos
+meta:
+  format: zip
+  cipher: aes-256-ctr
+tags:
+    - foo
+    - bar
+--- !certificate
+key: !!binary "gkrtcb10xlbta9qhnyozj67dgk1f1uluhbf6xcbavhi="
+--- !links
+upload: https://www.longaccess.com/api/v1/upload/123
+# vi:ft=yaml
