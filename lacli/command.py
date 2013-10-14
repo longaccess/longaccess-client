@@ -205,8 +205,6 @@ class LaCommand(cmd.Cmd):
                 getLogger().debug("exception while restoring",
                                   exc_info=True)
                 print "error: " + str(e)
-        else:
-            print "data file {} not found."
 
     def complete_put(self, text, line, begidx, endidx):  # pragma: no cover
         return [os.path.basename(x) for x in glob.glob('{}*'.format(line[4:]))]
