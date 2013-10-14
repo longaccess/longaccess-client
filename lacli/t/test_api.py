@@ -111,12 +111,18 @@ class ApiTest(TestCase):
         er = self._mockresponse([json.loads(LA_ENDPOINTS_RESPONSE)])
         cr = self._mockresponse([json.loads(LA_CAPSULES_RESPONSE)])
         ur = self._mockresponse(repeat(json.loads(LA_UPLOAD_RESPONSE)))
+        post = Mock(return_value=ur)
         s = self._mocksessions({'get.side_effect': [er, cr, ur, ur, ur],
-                               'post.return_value': ur,
+                               'post': post,
                                'patch.return_value': ur})
         api = self._makeit(self.prefs, sessions=s)
-        tmgr = api.upload(1, Mock(title='', description=''))
+        tmgr = api.upload(1, Mock(title='', description=None))
         with tmgr as upload:
+            args, kwargs = post.call_args
+            headers = kwargs['headers']
+            self.assertEqual('http://baz.com/api/v1/upload/', args[0])
+            self.assertEqual('application/json', headers['content-type'])
+            self.assertTrue('"description": ""' in kwargs['data'])
             for seq, token in izip(xrange(4), upload['tokens']):
                 self.assertIn('token_access_key', token)
 

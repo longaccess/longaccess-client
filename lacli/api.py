@@ -91,7 +91,7 @@ class Api(object):
         req_data = json.dumps(
             {
                 'title': archive.title,
-                'description': archive.description,
+                'description': archive.description or '',
                 'capsule': cs[capsule]['resource_uri'],
                 'size': '',
             })
