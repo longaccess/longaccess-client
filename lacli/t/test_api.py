@@ -32,6 +32,13 @@ class ApiTest(TestCase):
         }
         return Mock(**mattr)
 
+    def _json_request(self, url, mock_call):
+        args, kwargs = mock_call.call_args
+        headers = kwargs['headers']
+        self.assertEqual('application/json', headers['content-type'])
+        self.assertEqual(url, args[0])
+        return kwargs['data']
+
     def test_factory(self):
         import lacli.api
         mock_netrc = Mock(hosts={'bla.com': ('a', 'b', 'c')})
@@ -112,21 +119,28 @@ class ApiTest(TestCase):
         cr = self._mockresponse([json.loads(LA_CAPSULES_RESPONSE)])
         ur = self._mockresponse(repeat(json.loads(LA_UPLOAD_RESPONSE)))
         post = Mock(return_value=ur)
-        s = self._mocksessions({'get.side_effect': [er, cr, ur, ur, ur],
-                               'post': post,
-                               'patch.return_value': ur})
+        patch = Mock(return_value=ur)
+        get = Mock(side_effect=[er, cr, ur, ur, ur, ur, Exception("foo")])
+        s = self._mocksessions({'get': get, 'post': post, 'patch': patch})
         api = self._makeit(self.prefs, sessions=s)
         meta = Mock(size=1)
-        tmgr = api.upload(1, Mock(title='', meta=meta, description=None))
+        auth = Mock(md5="foo", sha512="bar")
+        tmgr = api.upload(1, Mock(title='', meta=meta, description=None), auth)
+        url = 'http://baz.com/api/v1/upload/'
         with tmgr as upload:
-            args, kwargs = post.call_args
-            headers = kwargs['headers']
-            self.assertEqual('http://baz.com/api/v1/upload/', args[0])
-            self.assertEqual('application/json', headers['content-type'])
-            self.assertTrue('"description": ""' in kwargs['data'])
-            self.assertTrue('"size": 1' in kwargs['data'])
+            data = self._json_request(url, post)
+            self.assertTrue('"description": ""' in data)
+            self.assertTrue('"size": 1' in data)
             for seq, token in izip(xrange(4), upload['tokens']):
                 self.assertIn('token_access_key', token)
+        data = self._json_request(url+"1/", patch)
+        self.assertTrue('"checksums": ' in data)
+        self.assertTrue('"sha512": "bar"' in data)
+        self.assertTrue('"md5": "foo"' in data)
+        status = api.upload_status(url+"1/")
+        self.assertTrue('status' in status)
+        self.assertEqual('pending', status['status'])
+        self.assertEqual(None, api.upload_status(url+"1/"))
 
 
 LA_UPLOAD_RESPONSE = """{

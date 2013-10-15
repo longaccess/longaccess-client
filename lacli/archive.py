@@ -46,19 +46,36 @@ def restore_archive(archive, path, cert, folder, tmpdir, cb=None):
                     map(lambda zi: zf.extract(zi, folder), zf.infolist()))
 
 
+class MyHashObj(object):
+    hashf = None
+
+    def __init__(self, hashf='sha512'):
+        self.md5 = hashlib.md5()
+        if hasattr(hashlib, hashf):
+            self.hashf = hashf
+            setattr(self, hashf, getattr(hashlib, hashf)())
+
+    def update(self, data):
+        self.md5.update(data)
+        if self.hashf:
+            getattr(self, self.hashf).update(data)
+
+    def auth(self):
+        args = {'md5': self.md5.digest()}
+        if self.hashf:
+            args[self.hashf] = getattr(self, self.hashf).digest()
+        return Auth(**args)
+
+
 def dump_archive(archive, folder, cert, cb=None, tmpdir='/tmp',
                  hashf='sha512'):
     name = archive_slug(archive)
     cipher = get_cipher(archive, cert)
-    hashobj = None
-    if hasattr(hashlib, hashf):
-        hashobj = getattr(hashlib, hashf)()
+    hashobj = MyHashObj(hashf)
     path, writer = _writer(name, os.path.abspath(folder),
                            cipher, tmpdir, hashobj)
     map(cb, writer)
-    args = {hashf: hashobj.digest()}
-    auth = Auth(**args)
-    return (name, path, auth)
+    return (name, path, hashobj.auth())
 
 
 def _writer(name, folder, cipher, tmpdir, hashobj=None):
