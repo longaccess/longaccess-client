@@ -92,10 +92,14 @@ class LaCommand(cmd.Cmd):
                         print "Press Ctrl-C to check manually later"
                         while True:
                             status = self.session.upload_status(uri)
-                            if status['status'] == "completed":
+                            if status['status'] == "error":
+                                print "status: error"
+                            elif status['status'] == "completed":
+                                print "status: completed"
                                 self.cache.save_cert(upload, status)
-                            for i in xrange(30):
-                                time.sleep(1)
+                            else:
+                                for i in xrange(30):
+                                    time.sleep(1)
 
                     print "\ndone."
                 except Exception as e:
