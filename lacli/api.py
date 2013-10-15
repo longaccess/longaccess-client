@@ -106,9 +106,9 @@ class Api(object):
         if auth:
             patch['checksums'] = {}
             if hasattr(auth, 'sha512'):
-                patch['checksums']['sha512'] = auth.sha512
+                patch['checksums']['sha512'] = auth.sha512.encode("hex")
             if hasattr(auth, 'md5'):
-                patch['checksums']['md5'] = auth.md5
+                patch['checksums']['md5'] = auth.md5.encode("hex")
         self._patch(uri, data=json.dumps(patch))
 
     def upload_status(self, uri):
