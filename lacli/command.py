@@ -96,7 +96,9 @@ class LaCommand(cmd.Cmd):
                                 print "status: error"
                             elif status['status'] == "completed":
                                 print "status: completed"
-                                self.cache.save_cert(upload, status)
+                                cert = self.cache.save_cert(upload, status)
+                                print "Certificate:\n"
+                                print cert
                             else:
                                 for i in xrange(30):
                                     time.sleep(1)
@@ -175,7 +177,9 @@ class LaCommand(cmd.Cmd):
                     status = self.session.upload_status(url)
                     print "status:", status['status']
                     if status['status'] == "completed":
-                        self.cache.save_cert(upload, status)
+                        cert = self.cache.save_cert(upload, status)
+                        print "Certificate:\n"
+                        print cert
                 except Exception as e:
                     getLogger().debug("exception while checking status",
                                       exc_info=True)

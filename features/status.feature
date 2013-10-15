@@ -49,3 +49,5 @@ Feature: status command
         Then I see "status: complete"
         And there is a completed certificate
         And there are 0 pending uploads
+        And I see "Certificate:"
+        And I see "!archive"

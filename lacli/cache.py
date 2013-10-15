@@ -8,6 +8,7 @@ from lacli.archive import dump_archive, archive_slug
 from lacli.exceptions import InvalidArchiveError
 from lacli.decorators import contains
 from urlparse import urlunparse
+from StringIO import StringIO
 
 
 class Cache(object):
@@ -78,15 +79,20 @@ class Cache(object):
 
     def save_cert(self, upload, status):
         assert 'archive_key' in status, "no archive key"
+        docs = []
         with open(upload['fname']) as _upload:
             docs = load_archive(_upload)
-            docs['links'] = Links(download=status['archive_key'])
-            fname = archive_slug(docs['archive'])
-            with self._cert_open(fname, 'w') as f:
-                make_adf(list(docs.itervalues()), out=f)
+        docs['links'] = Links(download=status['archive_key'])
+        docs_list = list(docs.itervalues())
+        fname = archive_slug(docs['archive'])
+        with self._cert_open(fname, 'w') as f:
+            make_adf(docs_list, out=f)
         getLogger().debug(
             "removing {}".format(upload['fname']))
         os.unlink(upload['fname'])
+        cert_pretty = StringIO()
+        make_adf(list(docs.itervalues()), pretty=True, out=cert_pretty)
+        return cert_pretty.getvalue()
 
     def links(self):
         return self._by_title('links', iglob(
