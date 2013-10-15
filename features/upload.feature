@@ -62,6 +62,7 @@ Feature: upload command
         Then I see "ETA:"
         And I see "done"
 
+    @dev
     Scenario: I upload a big archive
         Given the command line arguments "archive /usr/include"
         And the timeout is 4000 seconds
