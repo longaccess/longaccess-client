@@ -98,8 +98,8 @@ exports.getBodyParts = function(config, modules) {
                     }
                     if (res.hasOwnProperty('upload_status'))
                         ret['status'] = res.upload_status;
-                        if (res.upload_status == 'complete')
-                            ret['archive_uri'] = 'https://longaccess.com/yoyoyo';
+                        if (res.upload_status == 'completed')
+                            ret['archive_key'] = 'https://longaccess.com/yoyoyo';
 
                     res.write(JSON.stringify(ret));
                     res.end(); 
@@ -125,7 +125,7 @@ exports.getBodyParts = function(config, modules) {
                     new RoboHydraHead({
                         path: apiPrefix + '/upload/1',
                         handler: function(req, res, next) {
-                            res.upload_status = 'complete';
+                            res.upload_status = 'completed';
                             next(req, res);
                         }
                     })
