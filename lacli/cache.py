@@ -74,7 +74,7 @@ class Cache(object):
     def save_upload(self, docs, upload):
         docs['links'].upload = upload['uri']
         with self._upload_open("{}.adf".format(upload['id']), 'w') as f:
-            make_adf(docs, out=f)
+            make_adf(list(docs.itervalues()), out=f)
 
     def save_cert(self, upload, status):
         assert 'archive_uri' in status, "no archive uri"
