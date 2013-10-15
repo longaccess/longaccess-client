@@ -5,6 +5,7 @@ from testtools import TestCase
 from . import makeprefs, dummykey, dummyurl, _temp_home
 from shutil import copy
 from mock import patch, Mock
+from contextlib import nested
 
 
 class CacheTest(TestCase):
@@ -117,3 +118,33 @@ class CacheTest(TestCase):
             self.assertEqual(dummyurl, links['My 2013 vacation'].download)
             self.assertEqual("file:///path/to/archive",
                              links['My 2013 vacation'].local)
+
+    def test_save_cert(self):
+        import lacli.cache
+        from lacli.adf import Archive, Meta
+        from StringIO import StringIO
+        with nested(
+                patch.object(lacli.cache, 'open', create=True),
+                patch.object(lacli.cache, 'load_archive', create=True),
+                patch.object(lacli.cache, 'archive_slug', create=True),
+                patch.object(lacli.cache.os, 'unlink'),
+                _temp_home(),
+                patch('lacli.cache.Cache._cert_open')
+                ) as (mock_open, load, slug, mock_unlink, home, cert_open):
+            cert_open.return_value.__enter__.return_value = StringIO()
+            meta = Meta('zip', 'xor', created='now')
+            archive = Archive('foo', meta)
+            load.return_value = {'archive': archive}
+            slug.return_value = 'foo'
+            cache = self._makeit(home)
+            cache.save_cert({'fname': 'foo'}, {'archive_uri': 'http://foo'})
+            mock_open.assert_called_with('foo')
+            mock_unlink.assert_called_with('foo')
+            adf = cert_open.return_value.__enter__.return_value.getvalue()
+            self.assertEqual(ADF_EXAMPLE_1, adf)
+
+ADF_EXAMPLE_1 = """!archive
+meta: !meta {cipher: xor, created: now, format: zip}
+title: foo
+--- !links {download: 'http://foo'}
+"""

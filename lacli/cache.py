@@ -83,7 +83,7 @@ class Cache(object):
             docs['links'] = Links(download=status['archive_uri'])
             fname = archive_slug(docs['archive'])
             with self._cert_open(fname, 'w') as f:
-                make_adf(docs, out=f)
+                make_adf(list(docs.itervalues()), out=f)
         getLogger().debug(
             "removing {}".format(upload['fname']))
         os.unlink(upload['fname'])
