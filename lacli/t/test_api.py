@@ -124,7 +124,7 @@ class ApiTest(TestCase):
         s = self._mocksessions({'get': get, 'post': post, 'patch': patch})
         api = self._makeit(self.prefs, sessions=s)
         meta = Mock(size=1)
-        auth = Mock(md5="foo", sha512="bar")
+        auth = Mock(md5="aa".decode('hex'), sha512="bb".decode('hex'))
         tmgr = api.upload(1, Mock(title='', meta=meta, description=None), auth)
         url = 'http://baz.com/api/v1/upload/'
         with tmgr as upload:
@@ -135,8 +135,8 @@ class ApiTest(TestCase):
                 self.assertIn('token_access_key', token)
         data = self._json_request(url+"1/", patch)
         self.assertTrue('"checksums": ' in data)
-        self.assertTrue('"sha512": "bar"' in data)
-        self.assertTrue('"md5": "foo"' in data)
+        self.assertTrue('"sha512": "bb"' in data)
+        self.assertTrue('"md5": "aa"' in data)
         status = api.upload_status(url+"1/")
         self.assertTrue('status' in status)
         self.assertEqual('pending', status['status'])
