@@ -11,6 +11,36 @@ import os
 API_URL = 'https://www.longaccess.com/api/v1/'
 
 
+class DummyRequestsFactory(object):
+
+    class DummyResponse(object):
+        def __init__(self, response):
+            self.response = response
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return self.response
+
+    class DummySession(object):
+        def __init__(self, response_class):
+            self.response_class = response_class
+            self.get_response = {}
+
+        def get(self, *args, **kwargs):
+            return self.response_class(self.get_response)
+
+        def post(self, *args, **kwargs):
+            """ dummy post method """
+
+        def patch(self, *args, **kwargs):
+            """ dummy post method """
+
+    def new_session(self):
+        return self.DummySession(self.DummyResponse)
+
+
 class RequestsFactory():
 
     def __init__(self, prefs):
@@ -83,8 +113,34 @@ class Api(object):
 
     @contextmanager
     def upload(self, capsule, archive, auth=None):
-        url = self.endpoints['capsule']
-        cs = self._get(url)['objects']
+        """
+        Create an upload operation, provide the necessary info for transmission
+        to storage, wrap up the upload operation at the end.
+
+        >>> from lacli.adf import Archive, Meta, Auth
+        >>> api = Api({}, DummyRequestsFactory())
+        >>> meta = Meta('zip', 'xor')
+        >>> archive = Archive('foo', meta)
+        >>> auth = Auth(md5="foo")
+        >>> with api.upload(1, archive, auth) as upload:
+        ...     token = next(upload['tokens'])
+        ...     uri = upload['uri']
+        ...     id = upload['id']
+        Traceback (most recent call last):
+          File "/usr/local/lib/python2.7/doctest.py", line 1289, in __run
+            compileflags, 1) in test.globs
+          File "<doctest lacli.api.Api.upload[7]>", line 1, in <module>
+            with uploader as upload:
+          File "/usr/local/lib/python2.7/contextlib.py", line 17, in __enter__
+            return self.gen.next()
+          File "/home/kouk/code/longaccess-cli/lacli/api.py", line 137, in upload  # NOQA
+            raise ValueError("No such capsule")
+        ValueError: No such capsule
+        """
+        cs = []
+        if 'capsule' in self.endpoints:
+            url = self.endpoints['capsule']
+            cs = self._get(url).get('objects', [])
         if capsule >= len(cs):
             raise ValueError("No such capsule")
 
