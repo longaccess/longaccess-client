@@ -112,8 +112,16 @@ def exists_archive_titled(context, title):
 @step(u'there is a completed certificate')
 def exists_certificate(context):
     from glob import glob
-    aglob = os.path.join(context.environ['HOME'], ".longaccess/certs/*")
-    assert len(glob(aglob)) > 0, "there is a certificate"
+    files = glob(os.path.join(context.environ['HOME'], ".longaccess/certs/*"))
+    assert len(files) > 0, "there is a certificate"
+    from lacli.adf import load_archive
+    docs = {}
+    with open(files[0]) as f:
+        docs = load_archive(f)
+    assert 'links' in docs
+    assert 'archive' in docs
+    assert hasattr(docs['links'], 'download')
+    assert docs['links'].download == 'https://longaccess.com/yoyoyo'
 
 
 @step(u'there are {num} pending uploads')
