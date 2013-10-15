@@ -6,7 +6,7 @@ READ, WRITE = 1, 2
 
 class CryptIO(BufferedIOBase):
 
-    def __init__(self, fileobj, cipher, mode=None):
+    def __init__(self, fileobj, cipher, mode=None, hashobj=None):
         if mode:
             mode = mode.replace('U', '')
         if mode and 'b' not in mode:
@@ -48,6 +48,7 @@ class CryptIO(BufferedIOBase):
 
         self.offset = 0
         self.size = 0
+        self.hashobj = hashobj
 
     def _raise_if_closed(self):
         if self.closed:
@@ -65,7 +66,10 @@ class CryptIO(BufferedIOBase):
         sz = len(data)
         if sz > 0:
             self.size += sz
-            self.fileobj.write(self.cipher.encipher(data))
+            towrite = self.cipher.encipher(data)
+            self.fileobj.write(towrite)
+            if self.hashobj:
+                self.hashobj.update(towrite)
             self.offset += sz
         return sz
 
@@ -108,7 +112,9 @@ class CryptIO(BufferedIOBase):
     def flush(self):
         self._raise_if_closed()
         if self.mode == WRITE:
-            self.fileobj.write(self.cipher.flush())
+            towrite = self.cipher.flush()
+            self.hashobj.update(towrite)
+            self.fileobj.write(towrite)
             self.fileobj.flush()
 
     def close(self):
