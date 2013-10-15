@@ -77,10 +77,10 @@ class Cache(object):
             make_adf(list(docs.itervalues()), out=f)
 
     def save_cert(self, upload, status):
-        assert 'archive_uri' in status, "no archive uri"
+        assert 'archive_key' in status, "no archive key"
         with open(upload['fname']) as _upload:
             docs = load_archive(_upload)
-            docs['links'] = Links(download=status['archive_uri'])
+            docs['links'] = Links(download=status['archive_key'])
             fname = archive_slug(docs['archive'])
             with self._cert_open(fname, 'w') as f:
                 make_adf(list(docs.itervalues()), out=f)

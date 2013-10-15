@@ -137,7 +137,7 @@ class CacheTest(TestCase):
             load.return_value = {'archive': archive}
             slug.return_value = 'foo'
             cache = self._makeit(home)
-            cache.save_cert({'fname': 'foo'}, {'archive_uri': 'http://foo'})
+            cache.save_cert({'fname': 'foo'}, {'archive_key': 'http://foo'})
             mock_open.assert_called_with('foo')
             mock_unlink.assert_called_with('foo')
             adf = cert_open.return_value.__enter__.return_value.getvalue()
