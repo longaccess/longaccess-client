@@ -82,7 +82,7 @@ class Api(object):
             yield self._get(uri)
 
     @contextmanager
-    def upload(self, capsule, archive):
+    def upload(self, capsule, archive, auth=None):
         url = self.endpoints['capsule']
         cs = self._get(url)['objects']
         if capsule >= len(cs):
@@ -102,7 +102,14 @@ class Api(object):
             'uri': uri,
             'id': status['id']
         }
-        self._patch(uri, data=json.dumps({'status': 'uploaded'}))
+        patch = {'status': 'uploaded'}
+        if auth:
+            patch['checksums'] = {}
+            if hasattr(auth, 'sha512'):
+                patch['checksums']['sha512'] = auth.sha512
+            if hasattr(auth, 'md5'):
+                patch['checksums']['md5'] = auth.md5
+        self._patch(uri, data=json.dumps(patch))
 
     def upload_status(self, uri):
         try:

@@ -54,7 +54,8 @@ class LaCommand(cmd.Cmd):
         if idx < 0 or len(docs) <= idx:
             print "No such archive."
         else:
-            archive = docs[idx]['archive']
+            docs = docs[idx]
+            archive = docs['archive']
             link = self.cache.links().get(archive.title)
             path = ''
             if link and hasattr(link, 'local'):
@@ -69,6 +70,10 @@ class LaCommand(cmd.Cmd):
             else:
                 print "no local copy exists."
 
+            auth = None
+            if 'auth' in docs:
+                auth = docs['auth']
+
             if path:
                 try:
                     if 'capsule' in self._var:
@@ -76,8 +81,8 @@ class LaCommand(cmd.Cmd):
                     else:
                         capsule = 0
                     uri = None
-                    with self.session.upload(capsule, archive) as upload:
-                        self.cache.save_upload(docs[idx], upload)
+                    with self.session.upload(capsule, archive, auth) as upload:
+                        self.cache.save_upload(docs, upload)
                         self.uploader.upload(path, upload['tokens'])
                         uri = upload['uri']
 

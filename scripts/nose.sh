@@ -21,7 +21,7 @@ then
 fi
 echo "nosetests passed"
 
-behave
+behave -t ~@dev
 
 kill $robohydra_pid
 
