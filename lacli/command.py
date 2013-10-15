@@ -92,7 +92,7 @@ class LaCommand(cmd.Cmd):
                         print "Press Ctrl-C to check manually later"
                         while True:
                             status = self.session.upload_status(uri)
-                            if status['status'] == "complete":
+                            if status['status'] == "completed":
                                 self.cache.save_cert(upload, status)
                             for i in xrange(30):
                                 time.sleep(1)
@@ -170,7 +170,7 @@ class LaCommand(cmd.Cmd):
                     url = upload['link']
                     status = self.session.upload_status(url)
                     print "status:", status['status']
-                    if status['status'] == "complete":
+                    if status['status'] == "completed":
                         self.cache.save_cert(upload, status)
                 except Exception as e:
                     getLogger().debug("exception while checking status",
