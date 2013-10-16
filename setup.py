@@ -15,5 +15,6 @@ setup(version=unicode(__version__),
       entry_points="""
       [console_scripts]
       lacli = lacli.main:main
+      ladec = lacli.cipher.dec:main
       """
       )
