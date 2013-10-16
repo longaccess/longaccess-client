@@ -41,6 +41,7 @@ def restore_archive(archive, path, cert, folder, tmpdir, cb=None):
             with CryptIO(infile, cipher) as cf:
                 copyfileobj(cf, dst)
             dst.flush()
+            dst.seek(0)
             with ZipFile(dst) as zf:
                 map(cb,
                     map(lambda zi: zf.extract(zi, folder), zf.infolist()))
