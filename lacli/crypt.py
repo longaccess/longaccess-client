@@ -113,7 +113,8 @@ class CryptIO(BufferedIOBase):
         self._raise_if_closed()
         if self.mode == WRITE:
             towrite = self.cipher.flush()
-            self.hashobj.update(towrite)
+            if self.hashobj:
+                self.hashobj.update(towrite)
             self.fileobj.write(towrite)
             self.fileobj.flush()
 
