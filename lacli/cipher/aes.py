@@ -1,4 +1,4 @@
-from . import CipherBase
+from .base import CipherBase
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
 

@@ -1,4 +1,3 @@
-#!/home/kouk/code/bototest/bin/python
 """Upload a file to Long Access
 
 Usage: lacli put [options] [-c <capsule> ] [-n <np>] [<archive>]
