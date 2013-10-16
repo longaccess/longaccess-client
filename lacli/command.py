@@ -80,23 +80,22 @@ class LaCommand(cmd.Cmd):
                         capsule = self._var['capsule'] - 1
                     else:
                         capsule = 0
-                    uri = None
+                    saved = None
                     with self.session.upload(capsule, archive, auth) as upload:
-                        self.cache.save_upload(docs, upload)
+                        saved = self.cache.save_upload(docs, upload)
                         self.uploader.upload(path, upload['tokens'])
-                        uri = upload['uri']
 
-                    if uri and not self.batch:
+                    if saved and not self.batch:
                         print ""
                         print "Upload complete, waiting for verification"
                         print "Press Ctrl-C to check manually later"
                         while True:
-                            status = self.session.upload_status(uri)
+                            status = self.session.upload_status(saved['link'])
                             if status['status'] == "error":
                                 print "status: error"
                             elif status['status'] == "completed":
                                 print "status: completed"
-                                cert = self.cache.save_cert(upload, status)
+                                cert = self.cache.save_cert(saved, status)
                                 print "Certificate:\n"
                                 print cert
                             else:
