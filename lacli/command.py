@@ -5,56 +5,196 @@ import glob
 import pyaml
 import sys
 import time
+import shlex
+from docopt import docopt, DocoptExit
 from lacli.log import getLogger, setupLogging
 from lacli.upload import Upload
 from lacli.archive import restore_archive
 from lacli.adf import archive_short_desc
 from time import strftime
-from contextlib import contextmanager
 from urlparse import urlparse
+from functools import wraps
+
+
+def command(**types):
+    """ Decorator to parse command options with docopt and
+        validate the types.
+    """
+    def decorate(func):
+        @wraps(func)
+        def wrap(self, line):
+            kwargs = {}
+            try:
+                opts = docopt(func.__doc__, shlex.split(line))
+                for opt, val in opts.iteritems():
+                    kw = opt.strip('<>')
+                    if val and kw in types:
+                        kwargs[kw] = types[kw](val)
+            except ValueError as e:
+                print "error: ", e
+                print func.__doc__
+            except DocoptExit as e:
+                print e
+            func(self, **kwargs)
+        return wrap
+    return decorate
 
 
 class LaCommand(cmd.Cmd):
-    """ Our LA command line interface"""
     prompt = 'lacli> '
+    archive = None
+    capsule = None
+    certificate = None
 
-    def __init__(self, session, cache, prefs, uploader=None, *args, **kwargs):
-        cmd.Cmd.__init__(self, *args, **kwargs)
+    def __init__(self, session, cache, prefs):
+        cmd.Cmd.__init__(self)
         setupLogging(prefs['command']['debug'])
+        self.archive = LaArchiveCommand(session, cache, prefs)
+        self.capsule = LaCapsuleCommand(session, cache, prefs)
+
+    def do_EOF(self, line):
+        print
+        return True
+
+    def dispatch(self, subcmd, line):
+        line = line.strip()
+
+        if line:
+            subcmd.onecmd(line)
+        else:
+            subcmd.cmdloop()
+
+    def do_archive(self, line):
+        self.dispatch(self.archive, line)
+
+    def do_capsule(self, line):
+        self.dispatch(self.capsule, line)
+
+    def do_certificate(self, line):
+        self.dispatch(self.certificate, line)
+
+
+class LaCapsuleCommand(cmd.Cmd):
+    """Manage Long Access Capsules
+
+    Usage: lacli capsule list
+           lacli capsule create <title>
+           lacli capsule --help
+           lacli capsule
+
+    """
+    prompt = 'capsule> '
+
+    def __init__(self, session, cache, prefs, *args, **kwargs):
+        cmd.Cmd.__init__(self, *args, **kwargs)
         self.session = session
         self.verbose = prefs['command']['verbose']
         self.batch = prefs['command']['batch']
         self.cache = cache
-        if not uploader:
-            self.uploader = Upload(session, prefs['upload'])
+        self.debug = prefs['command']['debug']
+
+    def makecmd(self, options):
+        if options['list']:
+            return "list"
         else:
-            self.uploader = uploader
+            return None
+
+    def do_EOF(self, line):
+        print
+        return True
+
+    @command()
+    def do_list(self):
+        """
+        Usage: list
+        """
+        try:
+            capsules = self.session.capsules()
+
+            if len(capsules):
+                print "Available capsules:"
+                for capsule in capsules:
+                    print "{:<10}:{:>10}".format('title', capsule.pop('title'))
+                    for i, v in capsule.iteritems():
+                        print "{:<10}:{:>10}".format(i, v)
+                    print "\n"
+            else:
+                print "No available capsules."
+        except Exception as e:
+            print "error: " + str(e)
+
+
+class LaArchiveCommand(cmd.Cmd):
+    """Upload a file to Long Access
+
+    Usage: lacli archive upload [-n <np>] [<archive>] [<capsule>]
+           lacli archive list
+           lacli archive complete <archive>
+           lacli archive create [-t <title>] [<dirname>]
+           lacli archive extract [-o <dirname>] [<archive>] [<key>]
+           lacli archive status [<upload-index>]
+           lacli archive --help
+           lacli archive
+
+    Options:
+        -n <np>, --procs <np>               number of processes [default: auto]
+        -t <title>, --title <title>         title for prepared archive
+        -o <dirname>, --out <dirname>       directory to restore archive
+        -c <capsule>, --capsule <capsule>   capsule to upload to [default: 1]
+
+    """
+    prompt = 'archive> '
+
+    def __init__(self, session, cache, prefs, uploader=None, *args, **kwargs):
+        cmd.Cmd.__init__(self, *args, **kwargs)
+        self.session = session
+        self.verbose = prefs['command']['verbose']
+        self.batch = prefs['command']['batch']
+        self.cache = cache
+        self.debug = prefs['command']['debug']
+        self.nprocs = None
         self._var = {}
         self._default_var = {
             'archive_title': lambda: strftime("%x archive"),
             'output_directory': os.getcwd()
             }
 
+    def setopt(self, options):
+        try:
+            if options['--procs'] != 'auto':
+                self.nprocs = int(options['--procs'])
+        except ValueError:
+            print "error: illegal value for 'procs' parameter."
+            raise
+
     def do_EOF(self, line):
+        print
         return True
 
-    def do_put(self, line):
-        """Upload a file to LA [filename]
+    def makecmd(self, options):
+        self.setopt(options)
+        line = ['archive']
+        if 'put' in options and options['put']:
+            line.append("put")
+            if options['<archive>']:
+                line.append(options['<archive>'])
+            if options['<capsule>']:
+                line.append(options['<capsule>'])
+            return " ".join(line)
+        if options['list']:
+            line.append("list")
+        return " ".join(line)
+
+    @command(archive=int, capsule=int)
+    def do_upload(self, archive=0, capsule=1):
+        """
+        Usage: upload [<archive>] [<capsule>]
         """
         docs = self.cache.archives(full=True)
-        line = line.strip()
-        idx = -1
-        if not line:
-            idx = 0
-        else:
-            try:
-                idx = int(line)-1
-            except ValueError:
-                pass
-        if idx < 0 or len(docs) <= idx:
+        if archive < 0 or len(docs) <= archive:
             print "No such archive."
         else:
-            docs = docs[idx]
+            docs = docs[archive]
             archive = docs['archive']
             link = self.cache.links().get(archive.title)
             path = ''
@@ -83,7 +223,8 @@ class LaCommand(cmd.Cmd):
                     saved = None
                     with self.session.upload(capsule, archive, auth) as upload:
                         saved = self.cache.save_upload(docs, upload)
-                        self.uploader.upload(path, upload['tokens'])
+                        Upload(self.session, self.nprocs, self.debug).upload(
+                            path, upload['tokens'])
 
                     if saved and not self.batch:
                         print ""
@@ -108,106 +249,79 @@ class LaCommand(cmd.Cmd):
                                       exc_info=True)
                     print "error: " + str(e)
 
-    def do_list(self, line):
-        """List capsules in LA
+    @command(directory=str, title=str)
+    def do_create(self, directory=None, title="my archive"):
+        """
+        Usage: create <directory> <title>
         """
         try:
-            capsules = self.session.capsules()
+            if not os.path.isdir(directory):
+                print "The specified folder does not exist."
+                return
+            self.cache.prepare(title, directory)
+            print "archive prepared"
 
-            if len(capsules):
-                print "Available capsules:"
-                for capsule in capsules:
-                    print "{:<10}:{:>10}".format('title', capsule.pop('title'))
-                    for i, v in capsule.iteritems():
-                        print "{:<10}:{:>10}".format(i, v)
-                    print "\n"
-            else:
-                print "No available capsules."
-        except Exception as e:
-            print "error: " + str(e)
-
-    def do_archive(self, line):
-        """List or manage prepared archives"""
-
-        d = line.strip()
-        try:
-            if d:
-                if not os.path.isdir(d):
-                    print "The specified folder does not exist."
-                    return
-                title = None
-                if 'archive_title' in self._var:
-                    title = self._var["archive_title"]
-                    self.cache.prepare(title, d)
-                    print "archive prepared"
-            else:
-                archives = self.cache.archives()
-
-                if len(archives):
-                    print "Prepared archives:"
-                    for n, archive in enumerate(archives):
-                        desc = archive_short_desc(archive)
-                        print "{})".format(n+1), desc
-                        if self.verbose:
-                            pyaml.dump(archive, sys.stdout)
-                            print
-                else:
-                    print "No prepared archives."
         except Exception as e:
             getLogger().debug("exception while preparing",
                               exc_info=True)
             print "error: " + str(e)
 
-    def do_status(self, line):
-        line = line.strip()
-        uploads = self.cache.uploads()
-        if line:
-            idx = -1
-            try:
-                idx = int(line)-1
-            except ValueError:
-                pass
-            if idx < 0 or len(uploads) <= idx:
-                print "No such upload pending."
-            else:
-                upload = uploads[idx]
-                try:
-                    url = upload['link']
-                    status = self.session.upload_status(url)
-                    print "status:", status['status']
-                    if status['status'] == "completed":
-                        cert = self.cache.save_cert(upload, status)
-                        print "Certificate:\n"
-                        print cert
-                except Exception as e:
-                    getLogger().debug("exception while checking status",
-                                      exc_info=True)
-                    print "error: " + str(e)
-        else:
-            if len(uploads):
-                print "Pending uploads:"
-                for n, upload in enumerate(uploads):
-                    desc = archive_short_desc(upload['archive'])
-                    print "{})".format(n+1), desc
-            else:
-                print "No pending uploads."
+    @command()
+    def do_list(self):
+        """
+        Usage: list
+        """
+        archives = self.cache.archives()
 
-    def do_restore(self, line):
-        line = line.strip()
+        if len(archives):
+            print "Prepared archives:"
+            for n, archive in enumerate(archives):
+                desc = archive_short_desc(archive)
+                print "{})".format(n+1), desc
+                if self.verbose:
+                    pyaml.dump(archive, sys.stdout)
+                    print
+        else:
+            print "No prepared archives."
+
+        uploads = self.cache.uploads()
+
+        if len(uploads):
+            print "Pending uploads:"
+            for n, upload in enumerate(uploads):
+                desc = archive_short_desc(upload['archive'])
+                print "{})".format(n+1), desc
+        else:
+            print "No pending uploads."
+
+    @command(archive=str)
+    def do_complete(self, archive=None):
+        uploads = self.cache.uploads()
+        if archive < 0 or len(uploads) <= archive:
+            print "No such upload pending."
+        else:
+            upload = uploads[archive]
+            try:
+                url = upload['link']
+                status = self.session.upload_status(url)
+                print "status:", status['status']
+                if status['status'] == "completed":
+                    cert = self.cache.save_cert(upload, status)
+                    print "Certificate:\n"
+                    print cert
+            except Exception as e:
+                getLogger().debug("exception while checking status",
+                                  exc_info=True)
+                print "error: " + str(e)
+
+    @command(archive=str, key=None)
+    def do_extract(self, archive=0, key=None):
         archives = self.cache.archives()
         path = None
-        idx = -1
-        if not line:
-            idx = 0
-        else:
-            try:
-                idx = int(line)-1
-            except ValueError:
-                pass
-        if idx < 0 or len(archives) <= idx:
+        if archive < 0 or len(archives) <= archive:
             print "No such archive."
         else:
-            archive = archives[idx]
+            archive = archives[archive]
             cert = self.cache.certs().get(archive.title)
             if cert:
                 link = self.cache.links().get(archive.title)
@@ -242,23 +356,3 @@ class LaCommand(cmd.Cmd):
 
     def complete_put(self, text, line, begidx, endidx):  # pragma: no cover
         return [os.path.basename(x) for x in glob.glob('{}*'.format(line[4:]))]
-
-    @contextmanager
-    def temp_var(self, **kwargs):
-        """ replace vars with the values from kwargs and
-            restore original condition after """
-        old = {}
-        for k, v in kwargs.iteritems():
-            if k in self._var:
-                old[k] = self._var.pop(k)
-            if not v and k in self._default_var:
-                if hasattr(self._default_var[k], '__call__'):
-                    v = self._default_var[k]()
-                else:
-                    v = self._default_var[k]
-            self._var[k] = v
-        yield self
-        for k, v in kwargs.iteritems():
-            if k in self._var:
-                del self._var[k]
-        self._var.update(old)
