@@ -10,18 +10,18 @@ Feature: list capsules command
         And the API authenticates a test user
 
     Scenario: I list capsules without having any
-        And the command line arguments "list"
+        And the command line arguments "capsule list"
         When I run console script "lacli"
         Then I see "No available capsules."
 
     Scenario: I try to list capsules with bad credentials
         Given the API authentication is wrong
-        And the command line arguments "list"
+        And the command line arguments "capsule list"
         When I run console script "lacli"
         Then I see "error: authentication failed"
 
     Scenario: I list capsules
-        Given the command line arguments "list"
+        Given the command line arguments "capsule list"
         And I have 1 capsule
         When I run console script "lacli"
         Then I see "Available capsules:"
@@ -30,7 +30,7 @@ Feature: list capsules command
         And I see "remaining"
 
     Scenario: I list capsules without netrc auth
-        Given the command line arguments "list -u test -p test"
+        Given the command line arguments "-u test -p test capsule list"
         And I have 1 capsule
         When I run console script "lacli"
         Then I see "Available capsules:"
