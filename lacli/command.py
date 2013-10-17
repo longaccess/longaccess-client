@@ -52,6 +52,7 @@ class LaCommand(cmd.Cmd):
         setupLogging(prefs['command']['debug'])
         self.archive = LaArchiveCommand(session, cache, prefs)
         self.capsule = LaCapsuleCommand(session, cache, prefs)
+        self.certificate = LaCertsCommand(session, cache, prefs)
 
     def do_EOF(self, line):
         print
@@ -74,6 +75,61 @@ class LaCommand(cmd.Cmd):
 
     def do_certificate(self, line):
         self.dispatch(self.certificate, line)
+
+
+class LaCertsCommand(cmd.Cmd):
+    """Manage Long Access Certificates
+
+    Usage: lacli certificate list
+           lacli certificate create <title>
+           lacli certificate --help
+           lacli certificate
+
+    """
+    prompt = 'certificate> '
+
+    def __init__(self, session, cache, prefs, *args, **kwargs):
+        cmd.Cmd.__init__(self, *args, **kwargs)
+        self.session = session
+        self.verbose = prefs['command']['verbose']
+        self.batch = prefs['command']['batch']
+        self.cache = cache
+        self.debug = prefs['command']['debug']
+
+    def makecmd(self, options):
+        line = []
+        if options['list']:
+            line.append("list")
+        return " ".join(line)
+
+    def do_EOF(self, line):
+        print
+        return True
+
+    @command()
+    def do_list(self):
+        """
+        Usage: list
+        """
+        certs = self.cache._for_adf('certs')
+
+        if len(certs):
+            for n, cert in enumerate(certs.iteritems()):
+                cert = cert[1]
+                id = ""
+                if 'links' in cert:
+                    if cert['links'].download:
+                        id = cert['links'].download
+                title = cert['archive'].title
+                size = archive_size(cert['archive'])
+                print "{:>10} {:>6} {:<}".format(
+                    id, size, title)
+                if self.verbose:
+                    for doc in cert.itervalues():
+                        pyaml.dump(doc, sys.stdout)
+                    print
+        else:
+            print "No available certificates."
 
 
 class LaCapsuleCommand(cmd.Cmd):
