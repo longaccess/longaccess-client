@@ -4,7 +4,7 @@ Usage: lacli [--help] [-u <user>] [-p <pass>] [--verbose]
              [--home <home>] [--debug <level>] [--batch]
              [<command> [<args>...]]
 
-Commands:
+Commands (run lacli <command> -h for options):
 
     archive         manage archives
     capsule         manage capsules
