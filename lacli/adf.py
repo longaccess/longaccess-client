@@ -102,12 +102,19 @@ class Meta(BaseYAMLObject):
     size = None
     format = None
     cipher = None
+    email = None
+    name = None
 
-    def __init__(self, format, cipher, size=None, created=None):
+    def __init__(self, format, cipher, size=None, created=None,
+                 email=None, name=None):
         self.format = format
         self.cipher = cipher
         if size:
             self.size = size
+        if email:
+            self.email = email
+        if name:
+            self.name = name
         if created:
             self.created = created
         else:

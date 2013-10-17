@@ -92,6 +92,8 @@ class Cache(object):
 
     def save_upload(self, fname, docs, upload):
         docs['links'].upload = upload['uri']
+        docs['archive'].meta.email = upload['account']['email']
+        docs['archive'].meta.name = upload['account']['displayname']
         with open(fname, 'w') as f:
             make_adf(list(docs.itervalues()), out=f)
         return {
@@ -124,7 +126,6 @@ class Cache(object):
 
     def _printable_cert(self, docs):
         archive = docs['archive']
-        fmt = archive.meta.format
         cipher = archive.meta.cipher
         if hasattr(cipher, 'mode'):
             cipher = cipher.mode
@@ -140,14 +141,14 @@ class Cache(object):
             keyC=next(hk),
             keyD=next(hk),
             keyE=next(hk),
-            name='foo',
-            email='bar',
+            name=archive.meta.name,
+            email=archive.meta.email,
             uploaded=created.strftime("%c"),
             expires=expires.strftime("%c"),
             title=archive.title,
             desc=archive.description,
             md5=" . ".join(fours(pairs(iter(md5)))),
-            fmt=fmt,
+            fmt=archive.meta.format,
             cipher=cipher)
 
     def print_cert(self, aid):

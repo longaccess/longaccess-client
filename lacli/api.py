@@ -152,10 +152,12 @@ class Api(object):
             })
         status = self._post(self.endpoints['upload'], data=req_data)
         uri = urljoin(self.url, status['resource_uri'])
+        account = self._get(self.endpoints['account'])
         yield {
             'tokens': self._upload_status(uri, status),
             'uri': uri,
-            'id': status['id']
+            'id': status['id'],
+            'account': account
         }
         patch = {'status': 'uploaded', 'size': archive.meta.size}
         if auth:
