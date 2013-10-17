@@ -88,7 +88,7 @@ class LaCertsCommand(cmd.Cmd):
     """Manage Long Access Certificates
 
     Usage: lacli certificate list
-           lacli certificate create <title>
+           lacli certificate export <archive_id>
            lacli certificate --help
 
     """
@@ -106,6 +106,9 @@ class LaCertsCommand(cmd.Cmd):
         line = []
         if options['list']:
             line.append("list")
+        elif options['export']:
+            line.append("export")
+            line.append(options["<archive_id>"])
         return " ".join(line)
 
     def do_EOF(self, line):
@@ -136,6 +139,17 @@ class LaCertsCommand(cmd.Cmd):
                     print
         else:
             print "No available certificates."
+
+    @command(archive_id=str)
+    def do_export(self, archive_id=None):
+        """
+        Usage: export <archive_id>
+        """
+        path = self.cache.print_cert(archive_id)
+        if path:
+            print "Created file", path
+        else:
+            print "Certificate not found"
 
 
 class LaCapsuleCommand(cmd.Cmd):
