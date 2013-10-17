@@ -35,6 +35,7 @@ def command(**types):
                 print func.__doc__
             except DocoptExit as e:
                 print e
+                return
             func(self, **kwargs)
         return wrap
     return decorate
@@ -131,7 +132,7 @@ class LaArchiveCommand(cmd.Cmd):
     Usage: lacli archive upload [-n <np>] [<archive>] [<capsule>]
            lacli archive list
            lacli archive complete <archive>
-           lacli archive create [-t <title>] [<dirname>]
+           lacli archive create <dirname> -t <title>
            lacli archive extract [-o <dirname>] [<archive>] [<key>]
            lacli archive status [<upload-index>]
            lacli archive --help
@@ -181,9 +182,13 @@ class LaArchiveCommand(cmd.Cmd):
                 line.append(options['<archive>'])
             if options['<capsule>']:
                 line.append(options['<capsule>'])
-            return " ".join(line)
-        if options['list']:
+        elif options['list']:
             line.append("list")
+        elif options['create']:
+            line.append("create")
+            line.append(options['<dirname>'])
+            if options['--title']:
+                line.append('"'+options['--title']+'"')
         return " ".join(line)
 
     @command(archive=int, capsule=int)
