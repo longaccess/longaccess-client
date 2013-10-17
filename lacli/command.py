@@ -189,6 +189,9 @@ class LaArchiveCommand(cmd.Cmd):
             line.append(options['<dirname>'])
             if options['--title']:
                 line.append('"'+options['--title']+'"')
+        elif options['complete']:
+            line.append("complete")
+            line.append(options['<archive>'])
         return " ".join(line)
 
     @command(archive=int, capsule=int)
@@ -196,14 +199,16 @@ class LaArchiveCommand(cmd.Cmd):
         """
         Usage: upload [<archive>] [<capsule>]
         """
-        docs = self.cache.archives(full=True)
+        docs = list(self.cache._for_adf('archives').iteritems())
+
         if capsule <= 0:
             print "Invalid capsule"
         elif archive <= 0 or len(docs) < archive:
             print "No such archive."
         else:
             capsule -= 1
-            docs = docs[archive-1]
+            fname = docs[archive-1][0]
+            docs = docs[archive-1][1]
             archive = docs['archive']
             link = self.cache.links().get(archive.title)
             path = ''
@@ -227,9 +232,9 @@ class LaArchiveCommand(cmd.Cmd):
                 try:
                     saved = None
                     with self.session.upload(capsule, archive, auth) as upload:
-                        saved = self.cache.save_upload(docs, upload)
                         Upload(self.session, self.nprocs, self.debug).upload(
                             path, upload['tokens'])
+                        saved = self.cache.save_upload(fname, docs, upload)
 
                     if saved and not self.batch:
                         print ""
@@ -276,11 +281,11 @@ class LaArchiveCommand(cmd.Cmd):
         """
         Usage: list
         """
-        archives = self.cache.archives(full=True)
-        archives += self.cache.archives(full=True, category="uploads")
+        archives = self.cache._for_adf('archives')
 
         if len(archives):
-            for n, archive in enumerate(archives):
+            for n, archive in enumerate(archives.iteritems()):
+                archive = archive[1]
                 status = "LOCAL"
                 cert = ""
                 if 'links' in archive:
@@ -300,13 +305,16 @@ class LaArchiveCommand(cmd.Cmd):
         else:
             print "No prepared archives."
 
-    @command(archive=str)
-    def do_complete(self, archive=None):
+    @command(archive=int)
+    def do_complete(self, archive=1):
+        """
+        Usage: upload [<archive>] [<capsule>]
+        """
         uploads = self.cache.uploads()
-        if archive < 0 or len(uploads) <= archive:
+        if archive <= 0 or len(uploads) < archive:
             print "No such upload pending."
         else:
-            upload = uploads[archive]
+            upload = uploads[archive-1]
             try:
                 url = upload['link']
                 status = self.session.upload_status(url)

@@ -53,7 +53,7 @@ class Cache(object):
 
     @contains(list)
     def uploads(self):
-        for fname, docs in self._for_adf('uploads').iteritems():
+        for fname, docs in self._for_adf('archives').iteritems():
             if 'links' in docs and hasattr(docs['links'], 'upload'):
                 yield {
                     'fname': fname,
@@ -73,10 +73,9 @@ class Cache(object):
         with NamedTemporaryFile(prefix=name, suffix=".adf", **tmpargs) as f:
             make_adf([archive, cert, auth, link], out=f)
 
-    def save_upload(self, docs, upload):
+    def save_upload(self, fname, docs, upload):
         docs['links'].upload = upload['uri']
-        fname = "{}.adf".format(upload['id'])
-        with self._upload_open(fname, 'w') as f:
+        with open(fname, 'w') as f:
             make_adf(list(docs.itervalues()), out=f)
         return {
             'fname': fname,
@@ -89,14 +88,19 @@ class Cache(object):
         docs = []
         with open(upload['fname']) as _upload:
             docs = load_archive(_upload)
+        docs['links'].download = status['archive_key']
+        docs_list = list(docs.itervalues())
+        with open(upload['fname'], 'w') as _upload:
+            make_adf(docs_list, out=_upload)
+
+        # write cert out separately
         docs['links'] = Links(download=status['archive_key'])
         docs_list = list(docs.itervalues())
         fname = archive_slug(docs['archive'])
-        with self._cert_open(fname, 'w') as f:
+        tmpargs = {'delete': False,
+                   'dir': self._cache_dir('certs', write=True)}
+        with NamedTemporaryFile(prefix=fname, suffix=".adf", **tmpargs) as f:
             make_adf(docs_list, out=f)
-        getLogger().debug(
-            "removing {}".format(upload['fname']))
-        os.unlink(upload['fname'])
         cert_pretty = StringIO()
         make_adf(list(docs.itervalues()), pretty=True, out=cert_pretty)
         return cert_pretty.getvalue()
