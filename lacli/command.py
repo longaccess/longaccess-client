@@ -10,7 +10,7 @@ from docopt import docopt, DocoptExit
 from lacli.log import getLogger, setupLogging
 from lacli.upload import Upload
 from lacli.archive import restore_archive
-from lacli.adf import archive_short_desc
+from lacli.adf import archive_size
 from time import strftime
 from urlparse import urlparse
 from functools import wraps
@@ -56,9 +56,10 @@ class LaCommand(cmd.Cmd):
         print
         return True
 
-    def dispatch(self, subcmd, line):
-        line = line.strip()
-
+    def dispatch(self, subcmd, options):
+        options.insert(0, subcmd)
+        subcmd = getattr(self, subcmd)
+        line = subcmd.makecmd(docopt(subcmd.__doc__, options))
         if line:
             subcmd.onecmd(line)
         else:
@@ -94,10 +95,10 @@ class LaCapsuleCommand(cmd.Cmd):
         self.debug = prefs['command']['debug']
 
     def makecmd(self, options):
+        line = []
         if options['list']:
-            return "list"
-        else:
-            return None
+            line.append("list")
+        return " ".join(line)
 
     def do_EOF(self, line):
         print
@@ -173,9 +174,9 @@ class LaArchiveCommand(cmd.Cmd):
 
     def makecmd(self, options):
         self.setopt(options)
-        line = ['archive']
-        if 'put' in options and options['put']:
-            line.append("put")
+        line = []
+        if 'upload' in options and options['upload']:
+            line.append("upload")
             if options['<archive>']:
                 line.append(options['<archive>'])
             if options['<capsule>']:
@@ -186,15 +187,18 @@ class LaArchiveCommand(cmd.Cmd):
         return " ".join(line)
 
     @command(archive=int, capsule=int)
-    def do_upload(self, archive=0, capsule=1):
+    def do_upload(self, archive=1, capsule=1):
         """
         Usage: upload [<archive>] [<capsule>]
         """
         docs = self.cache.archives(full=True)
-        if archive < 0 or len(docs) <= archive:
+        if capsule <= 0:
+            print "Invalid capsule"
+        elif archive <= 0 or len(docs) < archive:
             print "No such archive."
         else:
-            docs = docs[archive]
+            capsule -= 1
+            docs = docs[archive-1]
             archive = docs['archive']
             link = self.cache.links().get(archive.title)
             path = ''
@@ -216,10 +220,6 @@ class LaArchiveCommand(cmd.Cmd):
 
             if path:
                 try:
-                    if 'capsule' in self._var:
-                        capsule = self._var['capsule'] - 1
-                    else:
-                        capsule = 0
                     saved = None
                     with self.session.upload(capsule, archive, auth) as upload:
                         saved = self.cache.save_upload(docs, upload)
@@ -271,28 +271,29 @@ class LaArchiveCommand(cmd.Cmd):
         """
         Usage: list
         """
-        archives = self.cache.archives()
+        archives = self.cache.archives(full=True)
+        archives += self.cache.archives(full=True, category="uploads")
 
         if len(archives):
-            print "Prepared archives:"
             for n, archive in enumerate(archives):
-                desc = archive_short_desc(archive)
-                print "{})".format(n+1), desc
+                status = "LOCAL"
+                cert = ""
+                if 'links' in archive:
+                    if archive['links'].upload:
+                        status = "UPLOADED"
+                    if archive['links'].download:
+                        status = "COMPLETE"
+                        cert = archive['links'].download
+                title = archive['archive'].title
+                size = archive_size(archive['archive'])
+                print "{:03d} {:>6} {:>20} {:>10} {:>10}".format(
+                    n+1, size, title, status, cert)
                 if self.verbose:
-                    pyaml.dump(archive, sys.stdout)
+                    for doc in archive.itervalues():
+                        pyaml.dump(doc, sys.stdout)
                     print
         else:
             print "No prepared archives."
-
-        uploads = self.cache.uploads()
-
-        if len(uploads):
-            print "Pending uploads:"
-            for n, upload in enumerate(uploads):
-                desc = archive_short_desc(upload['archive'])
-                print "{})".format(n+1), desc
-        else:
-            print "No pending uploads."
 
     @command(archive=str)
     def do_complete(self, archive=None):

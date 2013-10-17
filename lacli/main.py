@@ -74,10 +74,7 @@ def main(args=sys.argv[1:]):
     api = Api(prefs['api'])
     cli = LaCommand(api, cache, prefs)
     if options['<command>']:
-        subcmd = getattr(cli, options['<command>'])
-        options['<args>'].insert(0, options['<command>'])
-        subopts = docopt(subcmd.__doc__, options['<args>'])
-        cli.onecmd(subcmd.makecmd(subopts))
+        cli.dispatch(options['<command>'], options['<args>'])
     else:
         cli.cmdloop()
 
