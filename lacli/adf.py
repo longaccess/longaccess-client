@@ -285,6 +285,19 @@ def make_adf(archive=None, canonical=False, out=None, pretty=False):
     return yaml.safe_dump_all(archive, out, canonical=canonical)
 
 
+def archive_size(archive):
+    size = ""
+    if archive.meta.size:
+        kib = archive.meta.size // 1024
+        mib = kib // 1024
+        if not kib:
+            size = "{}B".format(archive.meta.size)
+        elif not mib:
+            size = "{}KiB".format(kib)
+        else:
+            size = "{}MiB".format(mib)
+    return size
+
 def archive_short_desc(archive):
     """
     >>> meta = Meta('zip', Cipher(mode='aes-256-ctr'), size=1024)
@@ -292,18 +305,9 @@ def archive_short_desc(archive):
     >>> archive_short_desc(archive)
     'foo [zip/aes-256-ctr/1KiB]'
     """
-    size = ""
-    if archive.meta.size:
-        kib = archive.meta.size // 1024
-        mib = kib // 1024
-        if not kib:
-            size = "/{}B".format(archive.meta.size)
-        elif not mib:
-            size = "/{}KiB".format(kib)
-        else:
-            size = "/{}MiB".format(mib)
+    size = archive_size(archive)
     cipher = archive.meta.cipher
     if hasattr(cipher, 'mode'):
         cipher = cipher.mode
-    return "{} [{}/{}{}]".format(
+    return "{} [{}/{}/{}]".format(
         archive.title, archive.meta.format, cipher, size)
