@@ -271,7 +271,9 @@ class LaArchiveCommand(cmd.Cmd):
             archive = docs['archive']
             link = docs['links']
             path = ''
-            if link.local:
+            if link.upload or link.download:
+                print "upload is already completed"
+            elif link.local:
                 parsed = urlparse(link.local)
                 if parsed.scheme == 'file':
                     if os.path.exists(parsed.path):
