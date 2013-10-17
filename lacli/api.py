@@ -148,8 +148,7 @@ class Api(object):
             {
                 'title': archive.title,
                 'description': archive.description or '',
-                'capsule': cs[capsule]['resource_uri'],
-                'size': archive.meta.size,
+                'capsule': cs[capsule]['resource_uri']
             })
         status = self._post(self.endpoints['upload'], data=req_data)
         uri = urljoin(self.url, status['resource_uri'])
@@ -158,7 +157,7 @@ class Api(object):
             'uri': uri,
             'id': status['id']
         }
-        patch = {'status': 'uploaded'}
+        patch = {'status': 'uploaded', 'size': archive.meta.size}
         if auth:
             patch['checksums'] = {}
             if hasattr(auth, 'sha512'):
