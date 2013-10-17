@@ -297,17 +297,3 @@ def archive_size(archive):
         else:
             size = "{}MiB".format(mib)
     return size
-
-def archive_short_desc(archive):
-    """
-    >>> meta = Meta('zip', Cipher(mode='aes-256-ctr'), size=1024)
-    >>> archive = Archive('foo', meta)
-    >>> archive_short_desc(archive)
-    'foo [zip/aes-256-ctr/1KiB]'
-    """
-    size = archive_size(archive)
-    cipher = archive.meta.cipher
-    if hasattr(cipher, 'mode'):
-        cipher = cipher.mode
-    return "{} [{}/{}/{}]".format(
-        archive.title, archive.meta.format, cipher, size)
