@@ -2,7 +2,8 @@
 
 Usage: lacli [--help] [-u <user>] [-p <pass>] [--verbose]
              [--home <home>] [--debug <level>] [--batch]
-             [<command> [<args>...]]
+             <command> [<args>...]
+       lacli -i
 
 Commands (run lacli <command> -h for options):
 
@@ -11,6 +12,7 @@ Commands (run lacli <command> -h for options):
     certificate     manage certificates
 
 Options:
+    -i, --interactive              interactive mode
     -u <user>, --user <user>       user name
     -p <pass>, --password <pass>   user password
     -d <level>, --debug <level>    debug level, from 0 to 2 [default: 0]
@@ -76,7 +78,7 @@ def main(args=sys.argv[1:]):
     cli = LaCommand(api, cache, prefs)
     if options['<command>']:
         cli.dispatch(options['<command>'], options['<args>'])
-    else:
+    elif options['--interactive']:
         cli.cmdloop()
 
 if __name__ == "__main__":
