@@ -61,20 +61,24 @@ class LaCommand(cmd.Cmd):
     def dispatch(self, subcmd, options):
         options.insert(0, subcmd)
         subcmd = getattr(self, subcmd)
-        line = subcmd.makecmd(docopt(subcmd.__doc__, options))
-        if line:
-            subcmd.onecmd(line)
-        else:
-            subcmd.cmdloop()
+        try:
+            line = subcmd.makecmd(docopt(subcmd.__doc__, options))
+            if line:
+                subcmd.onecmd(line)
+            else:
+                subcmd.cmdloop()
+        except DocoptExit as e:
+            print e
+            return
 
     def do_archive(self, line):
-        self.dispatch(self.archive, line)
+        self.dispatch('archive', shlex.split(line))
 
     def do_capsule(self, line):
-        self.dispatch(self.capsule, line)
+        self.dispatch('capsule', shlex.split(line))
 
     def do_certificate(self, line):
-        self.dispatch(self.certificate, line)
+        self.dispatch('certificate', shlex.split(line))
 
 
 class LaCertsCommand(cmd.Cmd):
