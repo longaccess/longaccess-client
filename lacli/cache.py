@@ -9,6 +9,7 @@ from lacli.exceptions import InvalidArchiveError
 from lacli.decorators import contains
 from urlparse import urlunparse
 from StringIO import StringIO
+from tempfile import NamedTemporaryFile
 
 
 class Cache(object):
@@ -63,13 +64,13 @@ class Cache(object):
     def prepare(self, title, folder, fmt='zip', cb=None):
         archive = Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)))
         cert = Certificate()
-        tmpdir = self._cache_dir('tmp', write=True)
-        name, tmppath, auth = dump_archive(archive, folder, cert, cb, tmpdir)
-        path = os.path.join(self._cache_dir('data', write=True), name)
-        os.rename(tmppath, path)
+        tmpdir = self._cache_dir('data', write=True)
+        name, path, auth = dump_archive(archive, folder, cert, cb, tmpdir)
         link = Links(local=urlunparse(('file', path, '', '', '', '')))
         archive.meta.size = os.path.getsize(path)
-        with self._archive_open(name + ".adf", 'w') as f:
+        tmpargs = {'delete': False,
+                   'dir': self._cache_dir('archives', write=True)}
+        with NamedTemporaryFile(prefix=name, suffix=".adf", **tmpargs) as f:
             make_adf([archive, cert, auth, link], out=f)
 
     def save_upload(self, docs, upload):
