@@ -7,6 +7,7 @@ Usage: lacli [--help] [-u <user>] [-p <pass>] [--verbose]
 Commands:
 
     archive         manage archives
+    capsule         manage capsules
     certificate     manage certificates
 
 Options:
