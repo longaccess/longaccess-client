@@ -63,22 +63,25 @@ class LaCommand(cmd.Cmd):
         subcmd = getattr(self, subcmd)
         try:
             line = subcmd.makecmd(docopt(subcmd.__doc__, options))
-            if line:
-                subcmd.onecmd(line)
-            else:
-                subcmd.cmdloop()
+            self.dispatch_one(subcmd, line)
         except DocoptExit as e:
             print e
             return
 
+    def dispatch_one(self, subcmd, line, interactive=False):
+        if line:
+            subcmd.onecmd(line)
+        elif interactive:
+            subcmd.cmdloop()
+
     def do_archive(self, line):
-        self.dispatch('archive', shlex.split(line))
+        self.dispatch_one(self.archive, line, True)
 
     def do_capsule(self, line):
-        self.dispatch('capsule', shlex.split(line))
+        self.dispatch_one(self.capsule, line, True)
 
     def do_certificate(self, line):
-        self.dispatch('certificate', shlex.split(line))
+        self.dispatch_one(self.certificate, line, True)
 
 
 class LaCertsCommand(cmd.Cmd):
@@ -87,10 +90,9 @@ class LaCertsCommand(cmd.Cmd):
     Usage: lacli certificate list
            lacli certificate create <title>
            lacli certificate --help
-           lacli certificate
 
     """
-    prompt = 'certificate> '
+    prompt = 'lacli:certificate> '
 
     def __init__(self, session, cache, prefs, *args, **kwargs):
         cmd.Cmd.__init__(self, *args, **kwargs)
@@ -142,10 +144,9 @@ class LaCapsuleCommand(cmd.Cmd):
     Usage: lacli capsule list
            lacli capsule create <title>
            lacli capsule --help
-           lacli capsule
 
     """
-    prompt = 'capsule> '
+    prompt = 'lacli:capsule> '
 
     def __init__(self, session, cache, prefs, *args, **kwargs):
         cmd.Cmd.__init__(self, *args, **kwargs)
@@ -195,16 +196,16 @@ class LaArchiveCommand(cmd.Cmd):
            lacli archive create <dirname> -t <title>
            lacli archive extract [-o <dirname>] [<index>] [<key>]
            lacli archive --help
-           lacli archive
 
     Options:
         -n <np>, --procs <np>               number of processes [default: auto]
         -t <title>, --title <title>         title for prepared archive
         -o <dirname>, --out <dirname>       directory to restore archive
         -c <capsule>, --capsule <capsule>   capsule to upload to [default: 1]
+        -h, --help                          this help
 
     """
-    prompt = 'archive> '
+    prompt = 'lacli:archive> '
 
     def __init__(self, session, cache, prefs, uploader=None, *args, **kwargs):
         cmd.Cmd.__init__(self, *args, **kwargs)
