@@ -1,13 +1,16 @@
 from lacli.pool import MPConnection, MPUpload, MPFile
-from contextlib import contextmanager, nested
+from contextlib import contextmanager
 from lacli.log import LogHandler, getLogger
 from lacli.progress import ProgressHandler
 from lacli.worker import WorkerPool
 
 
 class Upload(object):
-    def __init__(self, session, prefs):
-        self.prefs = prefs
+    def __init__(self, session, nprocs, debug):
+        self.prefs = {
+            'nprocs': nprocs,
+            'debugworker': debug > 2
+        }
         self.log = LogHandler()
 
     @contextmanager
