@@ -189,12 +189,11 @@ class LaCapsuleCommand(cmd.Cmd):
 class LaArchiveCommand(cmd.Cmd):
     """Upload a file to Long Access
 
-    Usage: lacli archive upload [-n <np>] [<archive>] [<capsule>]
+    Usage: lacli archive upload [-n <np>] [<index>] [<capsule>]
            lacli archive list
-           lacli archive status <archive>
+           lacli archive status <index>
            lacli archive create <dirname> -t <title>
-           lacli archive extract [-o <dirname>] [<archive>] [<key>]
-           lacli archive status [<upload-index>]
+           lacli archive extract [-o <dirname>] [<index>] [<key>]
            lacli archive --help
            lacli archive
 
@@ -238,8 +237,8 @@ class LaArchiveCommand(cmd.Cmd):
         line = []
         if 'upload' in options and options['upload']:
             line.append("upload")
-            if options['<archive>']:
-                line.append(options['<archive>'])
+            if options['<index>']:
+                line.append(options['<index>'])
             if options['<capsule>']:
                 line.append(options['<capsule>'])
         elif options['list']:
@@ -251,24 +250,24 @@ class LaArchiveCommand(cmd.Cmd):
                 line.append('"'+options['--title']+'"')
         elif options['status']:
             line.append("status")
-            line.append(options['<archive>'])
+            line.append(options['<index>'])
         return " ".join(line)
 
-    @command(archive=int, capsule=int)
-    def do_upload(self, archive=1, capsule=1):
+    @command(index=int, capsule=int)
+    def do_upload(self, index=1, capsule=1):
         """
-        Usage: upload [<archive>] [<capsule>]
+        Usage: upload [<index>] [<capsule>]
         """
         docs = list(self.cache._for_adf('archives').iteritems())
 
         if capsule <= 0:
             print "Invalid capsule"
-        elif archive <= 0 or len(docs) < archive:
+        elif index <= 0 or len(docs) < index:
             print "No such archive."
         else:
             capsule -= 1
-            fname = docs[archive-1][0]
-            docs = docs[archive-1][1]
+            fname = docs[index-1][0]
+            docs = docs[index-1][1]
             archive = docs['archive']
             link = docs['links']
             path = ''
@@ -368,17 +367,17 @@ class LaArchiveCommand(cmd.Cmd):
         else:
             print "No prepared archives."
 
-    @command(archive=int)
-    def do_status(self, archive=1):
+    @command(index=int)
+    def do_status(self, index=1):
         """
-        Usage: status <archive>
+        Usage: status <index>
         """
         docs = list(self.cache._for_adf('archives').iteritems())
-        if archive <= 0 or len(docs) < archive:
+        if index <= 0 or len(docs) < index:
             print "No such archive"
         else:
-            fname = docs[archive-1][0]
-            upload = docs[archive-1][1]
+            fname = docs[index-1][0]
+            upload = docs[index-1][1]
             if not upload['links'].upload:
                 if upload['links'].download:
                     print "status: complete"
@@ -398,14 +397,14 @@ class LaArchiveCommand(cmd.Cmd):
                                       exc_info=True)
                     print "error: " + str(e)
 
-    @command(archive=str, key=None)
-    def do_extract(self, archive=0, key=None):
-        archives = self.cache.archives()
+    @command(index=str, key=None)
+    def do_extract(self, index=1, key=None):
+        docs = list(self.cache._for_adf('archives').iteritems())
         path = None
-        if archive < 0 or len(archives) <= archive:
+        if index <= 0 or len(docs) < index:
             print "No such archive."
         else:
-            archive = archives[archive]
+            archive = docs[index-1][1]['archive']
             cert = self.cache.certs().get(archive.title)
             if cert:
                 link = self.cache.links().get(archive.title)
