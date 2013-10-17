@@ -191,7 +191,7 @@ class LaArchiveCommand(cmd.Cmd):
 
     Usage: lacli archive upload [-n <np>] [<archive>] [<capsule>]
            lacli archive list
-           lacli archive complete <archive>
+           lacli archive status <archive>
            lacli archive create <dirname> -t <title>
            lacli archive extract [-o <dirname>] [<archive>] [<key>]
            lacli archive status [<upload-index>]
@@ -249,8 +249,8 @@ class LaArchiveCommand(cmd.Cmd):
             line.append(options['<dirname>'])
             if options['--title']:
                 line.append('"'+options['--title']+'"')
-        elif options['complete']:
-            line.append("complete")
+        elif options['status']:
+            line.append("status")
             line.append(options['<archive>'])
         return " ".join(line)
 
@@ -270,9 +270,9 @@ class LaArchiveCommand(cmd.Cmd):
             fname = docs[archive-1][0]
             docs = docs[archive-1][1]
             archive = docs['archive']
-            link = self.cache.links().get(archive.title)
+            link = docs['links']
             path = ''
-            if link and hasattr(link, 'local'):
+            if link.local:
                 parsed = urlparse(link.local)
                 if parsed.scheme == 'file':
                     if os.path.exists(parsed.path):
@@ -304,11 +304,14 @@ class LaArchiveCommand(cmd.Cmd):
                             status = self.session.upload_status(saved['link'])
                             if status['status'] == "error":
                                 print "status: error"
+                                break
                             elif status['status'] == "completed":
                                 print "status: completed"
-                                cert = self.cache.save_cert(saved, status)
+                                fname = saved['fname']
+                                cert = self.cache.save_cert(fname, status)
                                 print "Certificate:\n"
                                 print cert
+                                break
                             else:
                                 for i in xrange(30):
                                     time.sleep(1)
@@ -366,27 +369,34 @@ class LaArchiveCommand(cmd.Cmd):
             print "No prepared archives."
 
     @command(archive=int)
-    def do_complete(self, archive=1):
+    def do_status(self, archive=1):
         """
-        Usage: upload [<archive>] [<capsule>]
+        Usage: status <archive>
         """
-        uploads = self.cache.uploads()
-        if archive <= 0 or len(uploads) < archive:
-            print "No such upload pending."
+        docs = list(self.cache._for_adf('archives').iteritems())
+        if archive <= 0 or len(docs) < archive:
+            print "No such archive"
         else:
-            upload = uploads[archive-1]
-            try:
-                url = upload['link']
-                status = self.session.upload_status(url)
-                print "status:", status['status']
-                if status['status'] == "completed":
-                    cert = self.cache.save_cert(upload, status)
-                    print "Certificate:\n"
-                    print cert
-            except Exception as e:
-                getLogger().debug("exception while checking status",
-                                  exc_info=True)
-                print "error: " + str(e)
+            fname = docs[archive-1][0]
+            upload = docs[archive-1][1]
+            if not upload['links'].upload:
+                if upload['links'].download:
+                    print "status: complete"
+                else:
+                    print "status: local"
+            else:
+                try:
+                    url = upload['links'].upload
+                    status = self.session.upload_status(url)
+                    print "status:", status['status']
+                    if status['status'] == "completed":
+                        cert = self.cache.save_cert(fname, status)
+                        print "Certificate:\n"
+                        print cert
+                except Exception as e:
+                    getLogger().debug("exception while checking status",
+                                      exc_info=True)
+                    print "error: " + str(e)
 
     @command(archive=str, key=None)
     def do_extract(self, archive=0, key=None):

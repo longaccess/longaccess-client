@@ -83,14 +83,14 @@ class Cache(object):
             'archive': docs['archive']
         }
 
-    def save_cert(self, upload, status):
+    def save_cert(self, fname, status):
         assert 'archive_key' in status, "no archive key"
         docs = []
-        with open(upload['fname']) as _upload:
+        with open(fname) as _upload:
             docs = load_archive(_upload)
         docs['links'].download = status['archive_key']
         docs_list = list(docs.itervalues())
-        with open(upload['fname'], 'w') as _upload:
+        with open(fname, 'w') as _upload:
             make_adf(docs_list, out=_upload)
 
         # write cert out separately
