@@ -16,5 +16,6 @@ setup(version=unicode(__version__),
       [console_scripts]
       lacli = lacli.main:main
       ladec = lacli.cipher.dec:main
-      """
+      """,
+      package_data={'lacli': ['data/certificate.html']}
       )

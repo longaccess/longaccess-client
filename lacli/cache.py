@@ -134,7 +134,7 @@ class Cache(object):
         key = b2a_hex(docs['cert'].key).upper()
         hk = pairs(fours(pairs(iter(key))), " . ")
 
-        return resource_string(__name__, "certificate.html").format(
+        return resource_string(__name__, "data/certificate.html").format(
             aid=docs['links'].download,
             keyB=next(hk),
             keyC=next(hk),
