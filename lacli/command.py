@@ -278,7 +278,7 @@ class LaArchiveCommand(cmd.Cmd):
            lacli archive list
            lacli archive status <index>
            lacli archive create <dirname> -t <title>
-           lacli archive extract [-o <dirname>] [-f <cert>] <path> <cert_id>
+           lacli archive extract [-o <dirname>] <path> (<cert_id>|-f <cert>)
            lacli archive delete <index> [<srm>...]
            lacli archive --help
 
@@ -345,9 +345,11 @@ class LaArchiveCommand(cmd.Cmd):
                 line.append(quote(options['--out']))
             else:
                 line.append(os.getcwd())
-            line.append(options['<cert_id>'])
             if options['--cert']:
+                line.append("dummy")
                 line.append(quote(options['--cert']))
+            else:
+                line.append(options['<cert_id>'])
         elif options['delete']:
             line.append("delete")
             line.append(options["<index>"])
@@ -517,6 +519,7 @@ class LaArchiveCommand(cmd.Cmd):
         """
         if cert_file:
             certs = self.cache.certs([cert_file])
+            cert_id = next(certs.iterkeys())
         else:
             certs = self.cache.certs()
 
