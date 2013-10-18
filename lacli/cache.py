@@ -11,7 +11,6 @@ from lacli.archive import dump_archive, archive_slug
 from lacli.exceptions import InvalidArchiveError
 from lacli.decorators import contains
 from urlparse import urlunparse
-from StringIO import StringIO
 from tempfile import NamedTemporaryFile
 from binascii import b2a_hex
 from itertools import izip, imap
@@ -102,27 +101,27 @@ class Cache(object):
             'archive': docs['archive']
         }
 
-    def save_cert(self, fname, status):
+    def upload_complete(self, fname, status):
         assert 'archive_key' in status, "no archive key"
         docs = []
         with open(fname) as _upload:
             docs = load_archive(_upload)
         docs['links'].download = status['archive_key']
-        docs_list = list(docs.itervalues())
         with open(fname, 'w') as _upload:
-            make_adf(docs_list, out=_upload)
+            make_adf(list(docs.itervalues()), out=_upload)
+        return docs
 
-        # write cert out separately
-        docs['links'] = Links(download=status['archive_key'])
-        docs_list = list(docs.itervalues())
+    def save_cert(self, docs):
         fname = archive_slug(docs['archive'])
         tmpargs = {'delete': False,
                    'dir': self._cache_dir('certs', write=True)}
         with NamedTemporaryFile(prefix=fname, suffix=".adf", **tmpargs) as f:
-            make_adf(docs_list, out=f)
-        cert_pretty = StringIO()
-        make_adf(list(docs.itervalues()), pretty=True, out=cert_pretty)
+            make_adf(list(docs.itervalues()), out=f)
         return docs['links'].download
+
+    def import_cert(self, fname):
+        with open(fname) as cert:
+            return self.save_cert(load_archive(cert))
 
     def _printable_cert(self, docs):
         archive = docs['archive']

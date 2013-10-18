@@ -353,7 +353,7 @@ class LaArchiveCommand(cmd.Cmd):
 
                     if saved and not self.batch:
                         print ""
-                        print "Upload complete, waiting for verification"
+                        print "Upload finished, waiting for verification"
                         print "Press Ctrl-C to check manually later"
                         while True:
                             status = self.session.upload_status(saved['link'])
@@ -363,7 +363,8 @@ class LaArchiveCommand(cmd.Cmd):
                             elif status['status'] == "completed":
                                 print "status: completed"
                                 fname = saved['fname']
-                                cert = self.cache.save_cert(fname, status)
+                                cert = self.cache.save_cert(
+                                    self.upload_complete(fname, status))
                                 print "Certificate", cert, "saved.\n"
                                 print " ".join(("Use lacli certificate list",
                                                 "to see your certificates, or",
@@ -448,7 +449,8 @@ class LaArchiveCommand(cmd.Cmd):
                     status = self.session.upload_status(url)
                     print "status:", status['status']
                     if status['status'] == "completed":
-                        cert = self.cache.save_cert(fname, status)
+                        cert = self.cache.save_cert(
+                            self.cache.upload_complete(fname, status))
                         print "Certificate", cert, "saved.\n"
                         print " ".join(("Use lacli certificate list",
                                         "to see your certificates, or",
