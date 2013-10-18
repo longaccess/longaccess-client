@@ -11,7 +11,6 @@ from lacli.upload import Upload
 from lacli.archive import restore_archive
 from lacli.adf import archive_size
 from lacli.decorators import command
-from time import strftime
 from urlparse import urlparse
 
 
@@ -227,11 +226,6 @@ class LaArchiveCommand(cmd.Cmd):
         self.cache = cache
         self.debug = prefs['command']['debug']
         self.nprocs = None
-        self._var = {}
-        self._default_var = {
-            'archive_title': lambda: strftime("%x archive"),
-            'output_directory': os.getcwd()
-            }
 
     def setopt(self, options):
         try:
