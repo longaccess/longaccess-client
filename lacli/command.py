@@ -5,89 +5,14 @@ import glob
 import pyaml
 import sys
 import time
-import shlex
 from pipes import quote
-from docopt import docopt, DocoptExit
-from lacli.log import getLogger, setupLogging
+from lacli.log import getLogger
 from lacli.upload import Upload
 from lacli.archive import restore_archive
 from lacli.adf import archive_size
+from lacli.decorators import command
 from time import strftime
 from urlparse import urlparse
-from functools import wraps
-from lacli.main import __doc__
-
-
-def command(**types):
-    """ Decorator to parse command options with docopt and
-        validate the types.
-    """
-    def decorate(func):
-        @wraps(func)
-        def wrap(self, line):
-            kwargs = {}
-            try:
-                opts = docopt(func.__doc__, shlex.split(line))
-                for opt, val in opts.iteritems():
-                    kw = opt.strip('<>')
-                    if val and kw in types:
-                        kwargs[kw] = types[kw](val)
-            except ValueError as e:
-                print "error: invalid value:", shlex.split(e.message).pop()
-                print func.__doc__
-                return
-            except DocoptExit as e:
-                print e
-                return
-            func(self, **kwargs)
-        return wrap
-    return decorate
-
-
-class LaCommand(cmd.Cmd):
-    prompt = 'lacli> '
-    archive = None
-    capsule = None
-    certificate = None
-
-    def __init__(self, session, cache, prefs):
-        cmd.Cmd.__init__(self)
-        setupLogging(prefs['command']['debug'])
-        self.archive = LaArchiveCommand(session, cache, prefs)
-        self.capsule = LaCapsuleCommand(session, cache, prefs)
-        self.certificate = LaCertsCommand(session, cache, prefs)
-
-    def do_EOF(self, line):
-        print
-        return True
-
-    def dispatch(self, subcmd, options):
-        options.insert(0, subcmd)
-        if not hasattr(self, subcmd):
-            print(__doc__)
-            raise SystemExit
-        subcmd = getattr(self, subcmd)
-        try:
-            line = subcmd.makecmd(docopt(subcmd.__doc__, options))
-            self.dispatch_one(subcmd, line)
-        except DocoptExit as e:
-            print e
-            return
-
-    def dispatch_one(self, subcmd, line, interactive=False):
-        if line:
-            subcmd.onecmd(line)
-        elif interactive:
-            subcmd.cmdloop()
-
-    def do_archive(self, line):
-        self.dispatch_one(self.archive, line, True)
-
-    def do_capsule(self, line):
-        self.dispatch_one(self.capsule, line, True)
-
-    def do_certificate(self, line):
-        self.dispatch_one(self.certificate, line, True)
 
 
 class LaCertsCommand(cmd.Cmd):

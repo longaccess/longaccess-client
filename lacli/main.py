@@ -24,8 +24,11 @@ Options:
 
 import sys
 import os
-from docopt import docopt
-from lacli.command import LaCommand
+import cmd
+
+from lacli.log import setupLogging
+from docopt import docopt, DocoptExit
+from lacli.command import LaCapsuleCommand, LaCertsCommand, LaArchiveCommand
 from lacli import __version__
 from lacli.api import Api
 from lacli.cache import Cache
@@ -64,6 +67,52 @@ def settings(options):
     if options['<command>']:
         prefs[options['<command>']] = options['<args>']
     return (prefs, Cache(os.path.expanduser(options['--home'])))
+
+
+class LaCommand(cmd.Cmd):
+    prompt = 'lacli> '
+    archive = None
+    capsule = None
+    certificate = None
+
+    def __init__(self, session, cache, prefs):
+        cmd.Cmd.__init__(self)
+        setupLogging(prefs['command']['debug'])
+        self.archive = LaArchiveCommand(session, cache, prefs)
+        self.capsule = LaCapsuleCommand(session, cache, prefs)
+        self.certificate = LaCertsCommand(session, cache, prefs)
+
+    def do_EOF(self, line):
+        print
+        return True
+
+    def dispatch(self, subcmd, options):
+        options.insert(0, subcmd)
+        if not hasattr(self, subcmd):
+            print(__doc__)
+            raise SystemExit
+        subcmd = getattr(self, subcmd)
+        try:
+            line = subcmd.makecmd(docopt(subcmd.__doc__, options))
+            self.dispatch_one(subcmd, line)
+        except DocoptExit as e:
+            print e
+            return
+
+    def dispatch_one(self, subcmd, line, interactive=False):
+        if line:
+            subcmd.onecmd(line)
+        elif interactive:
+            subcmd.cmdloop()
+
+    def do_archive(self, line):
+        self.dispatch_one(self.archive, line, True)
+
+    def do_capsule(self, line):
+        self.dispatch_one(self.capsule, line, True)
+
+    def do_certificate(self, line):
+        self.dispatch_one(self.certificate, line, True)
 
 
 def main(args=sys.argv[1:]):

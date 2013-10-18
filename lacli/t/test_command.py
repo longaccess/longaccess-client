@@ -31,7 +31,7 @@ class CommandTest(TestCase):
     def test_do_archive_with_title(self, mock_stdout):
         cache = Mock(prepare=Mock(return_value='True'))
         cli = self._makeit(Mock(), cache, self.prefs)
-        cli.onecmd('archive create {} -t baz'.format(self.home))
+        cli.onecmd('archive create {} baz'.format(self.home))
         cache.prepare.assert_called_with("baz", self.home)
         self.assertThat(mock_stdout.getvalue(),
                         Contains('archive prepared'))
@@ -40,14 +40,14 @@ class CommandTest(TestCase):
     def test_do_archive_exception(self, mock_stdout):
         cache = Mock(prepare=Mock(side_effect=Exception("foo")))
         cli = self._makeit(Mock(), cache, self.prefs)
-        cli.onecmd('archive create {} -t baz'.format(self.home))
+        cli.onecmd('archive create {} baz'.format(self.home))
         self.assertThat(mock_stdout.getvalue(),
                         Contains('error: foo'))
 
     @patch('sys.stdout', new_callable=StringIO)
     def test_do_archive_unexist(self, mock_stdout):
         cli = self._makeit(Mock(), Mock(), self.prefs)
-        cli.onecmd('archive create /tmp/doesnotexistisay')
+        cli.onecmd('archive create /tmp/doesnotexistisay foo')
         self.assertEqual('The specified folder does not exist.\n',
                          mock_stdout.getvalue())
 
@@ -55,7 +55,7 @@ class CommandTest(TestCase):
     def test_do_archive_list_none(self, out):
         cache = Mock(archives=Mock(return_value=[]))
         cli = self._makeit(Mock(), cache, self.prefs)
-        cli.onecmd('archive create')
+        cli.onecmd('archive list')
         self.assertEqual('No available archives.\n', out.getvalue())
 
     @patch('sys.stdout', new_callable=StringIO)
@@ -65,7 +65,7 @@ class CommandTest(TestCase):
         cache = Mock(archives=Mock(return_value=[Archive(
             title="foo", description='', tags=[], meta=meta)]))
         cli = self._makeit(Mock(), cache, self.prefs)
-        cli.onecmd('archive create')
+        cli.onecmd('archive list')
         self.assertThat(out.getvalue(),
                         Contains('Prepared archives:\n1) foo'))
 
@@ -78,7 +78,7 @@ class CommandTest(TestCase):
         prefs = self.prefs
         prefs['command']['verbose'] = True
         cli = self._makeit(Mock(), cache, self.prefs)
-        cli.onecmd('archive create')
+        cli.onecmd('archive list')
         self.assertThat(out.getvalue(),
                         Contains('!archive'))
 
@@ -90,7 +90,7 @@ class CommandTest(TestCase):
                 cache = Mock(archives=Mock(return_value=[Archive(
                     title="foo", description='', tags=[], meta=meta)]))
                 cli = self._makeit(Mock(), cache, self.prefs)
-                cli.onecmd('archive create')
+                cli.onecmd('archive list')
                 self.assertThat(out.getvalue(),
                                 Contains('Prepared archives:\n1) foo [//'
                                          + size[1]))
@@ -102,12 +102,6 @@ class CommandTest(TestCase):
 
     def test_do_status_error(self):
         from lacli.cache import Cache
-        with _temp_home() as home:
-            cli = self._makeit(Mock(), Cache(home), self.prefs)
-            with patch('sys.stdout', new_callable=StringIO) as out:
-                cli.onecmd('archive list')
-                self.assertThat(out.getvalue(),
-                                Contains('No available archives'))
         cli = self._makeit(Mock(), Cache(self.home), self.prefs)
         with patch('sys.stdout', new_callable=StringIO) as out:
             cli.onecmd('archive status foobar')
@@ -275,34 +269,6 @@ class CommandTest(TestCase):
             cli.archive._var['output_directory'] = 'foo'
             cli.onecmd('archive restore')
             self.assertThat(out.getvalue(), Contains('error: foo'))
-
-    def test_do_list_exception(self):
-        with patch('sys.stdout', new_callable=StringIO) as out:
-            s = Mock(capsules=Mock(side_effect=Exception("foo")))
-            cli = self._makeit(s, Mock(), self.prefs, Mock())
-            cli.onecmd('capsule list')
-            self.assertEqual("error: foo\n", out.getvalue())
-
-    def test_list_capsules(self):
-        with patch('sys.stdout', new_callable=StringIO) as out:
-            s = Mock(capsules=Mock(return_value=()))
-            cli = self._makeit(s, Mock(), self.prefs, Mock())
-            cli.onecmd('capsule list')
-            self.assertEqual("No available capsules.\n", out.getvalue())
-
-    def test_list_capsules_some(self):
-        with patch('sys.stdout', new_callable=StringIO) as out:
-            s = Mock(capsules=Mock(return_value=({'title': 'foo', 'a': 'b'},)))
-            cli = self._makeit(s, Mock(), self.prefs, Mock())
-            cli.onecmd('capsule list')
-            r = '''\
-Available capsules:
-title     :       foo
-a         :         b
-
-
-'''
-            self.assertEqual(r, out.getvalue())
 
     @patch('sys.stdin', new_callable=StringIO)
     def test_do_archive(self, mock_stdin):
