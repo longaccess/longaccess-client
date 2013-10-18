@@ -3,22 +3,22 @@ Feature: prepare archive command
     Background: setup the command configuration
         Given the home directory is "/tmp/test"
 
-    Scenario: I list prepared archives without having any
+    Scenario: I list available archives without having any
         Given the command line arguments "archive create"
         When I run console script "lacli"
-        Then I see "No prepared archives."
+        Then I see "No available archives."
 
-    Scenario: I list prepared archives
+    Scenario: I list available archives
         Given the command line arguments "archive create"
         And I have 1 prepared archive titled "foo"
         When I run console script "lacli"
-        Then I see "Prepared archives:"
+        Then I see "Available archives:"
 
-    Scenario: I list prepared archives with title
+    Scenario: I list available archives with title
         Given the command line arguments "archive create"
-        And I have 1 prepared archive titled "foo"
+        And I have 1 available archive titled "foo"
         When I run console script "lacli"
-        Then I see "Prepared archives:"
+        Then I see "Available archives:"
         And I see "1) foo"
 
     Scenario: I prepare a new archive but give a non-existent directory
@@ -37,7 +37,7 @@ Feature: prepare archive command
         And the command line arguments "archive create -t foo {foo}"
         When I run console script "lacli"
         Then I see "archive prepared"
-        And there is a prepared archive titled "foo"
+        And there is an archive titled "foo"
 
     Scenario: I prepare a new archive but it fails due to unreadable files
         Given an empty folder "foo"

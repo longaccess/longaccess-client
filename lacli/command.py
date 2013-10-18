@@ -476,7 +476,7 @@ class LaArchiveCommand(cmd.Cmd):
                         pyaml.dump(doc, sys.stdout)
                     print
         else:
-            print "No prepared archives."
+            print "No available archives."
 
     @command(index=int)
     def do_status(self, index=1):

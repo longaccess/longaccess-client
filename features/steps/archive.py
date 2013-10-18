@@ -5,12 +5,12 @@ from behave import step
 from tempfile import NamedTemporaryFile
 
 
-@step(u'I have 1 prepared archive')
+@step(u'I have 1 available archive')
 def one_archive(context):
-    context.execute_steps(u'Given I have 1 prepared archive titled "foo"')
+    context.execute_steps(u'Given I have 1 available archive titled "foo"')
 
 
-@step(u'I have 1 prepared archive titled "{title}"')
+@step(u'I have 1 available archive titled "{title}"')
 def one_archive_titled(context, title):
     d = os.path.join(context.environ['HOME'], ".longaccess/archives")
     if not os.path.isdir(d):
@@ -100,7 +100,7 @@ def upload_status(context, status):
         context.mock_api.test('uploadComplete', 'longaccessmock')
 
 
-@step(u'there is a prepared archive titled "{title}"')
+@step(u'there is an archive titled "{title}"')
 def exists_archive_titled(context, title):
     context.execute_steps(u"""
         Given the command line arguments "archive create"

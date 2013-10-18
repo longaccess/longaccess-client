@@ -56,7 +56,7 @@ class CommandTest(TestCase):
         cache = Mock(archives=Mock(return_value=[]))
         cli = self._makeit(Mock(), cache, self.prefs)
         cli.onecmd('archive create')
-        self.assertEqual('No prepared archives.\n', out.getvalue())
+        self.assertEqual('No available archives.\n', out.getvalue())
 
     @patch('sys.stdout', new_callable=StringIO)
     def test_do_archive_list_some(self, out):
@@ -105,9 +105,9 @@ class CommandTest(TestCase):
         with _temp_home() as home:
             cli = self._makeit(Mock(), Cache(home), self.prefs)
             with patch('sys.stdout', new_callable=StringIO) as out:
-                cli.onecmd('archive status')
+                cli.onecmd('archive list')
                 self.assertThat(out.getvalue(),
-                                Contains('No pending uploads'))
+                                Contains('No available archives'))
         cli = self._makeit(Mock(), Cache(self.home), self.prefs)
         with patch('sys.stdout', new_callable=StringIO) as out:
             cli.onecmd('archive status foobar')
