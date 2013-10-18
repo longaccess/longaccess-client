@@ -120,10 +120,10 @@ class CommandTest(TestCase):
             patch('sys.stdout', new_callable=StringIO),
             patch('lacli.command.urlparse'),
                 ) as (out, urlparse):
-            uploads = cli.archive.cache.archives(category='uploads')
+            uploads = cli.archive.cache._for_adf('archives')
             urlparse.return_value = Mock(scheme='gopher', path=self.home)
-            for seq, archive in enumerate(uploads):
-                    if archive.title == 'My pending upload':
+            for seq, archive in enumerate(uploads.itervalues()):
+                    if archive['archive'].title == 'My pending upload':
                         cli.onecmd('archive status {}'.format(seq+1))
             self.assertThat(out.getvalue(),
                             Contains('error:'))
@@ -134,7 +134,7 @@ class CommandTest(TestCase):
         with patch('sys.stdout', new_callable=StringIO) as out:
             cli.onecmd('archive status')
             self.assertThat(out.getvalue(),
-                            Contains('Pending uploads'))
+                            Contains('Usage:'))
 
     def test_do_put_error(self):
         from lacli.cache import Cache

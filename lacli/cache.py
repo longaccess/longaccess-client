@@ -61,24 +61,6 @@ class Cache(object):
                 except InvalidArchiveError:
                     getLogger().debug(fn, exc_info=True)
 
-    @contains(list)
-    def archives(self, full=False, category='archives'):
-        for docs in self._for_adf(category).itervalues():
-            if full:
-                yield docs
-            else:
-                yield docs['archive']
-
-    @contains(list)
-    def uploads(self):
-        for fname, docs in self._for_adf('archives').iteritems():
-            if 'links' in docs and hasattr(docs['links'], 'upload'):
-                yield {
-                    'fname': fname,
-                    'link': docs['links'].upload,
-                    'archive': docs['archive']
-                }
-
     def prepare(self, title, folder, fmt='zip', cb=None):
         archive = Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)))
         cert = Certificate()
