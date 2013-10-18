@@ -17,7 +17,7 @@ class ApiErrorException(BaseAppException):
 
 
 class ApiUnavailableException(BaseAppException):
-    msg = "server not found"
+    msg = "resource not found"
 
 
 class ApiAuthException(BaseAppException):
