@@ -148,13 +148,14 @@ class CommandTest(TestCase):
         with patch('sys.stdout', new_callable=StringIO) as out:
             cli.onecmd('archive upload foobar')
             self.assertThat(out.getvalue(),
-                            Contains('No such archive'))
+                            Contains('error: invalid value'))
         with patch('sys.stdout', new_callable=StringIO) as out:
-            for seq, archive in enumerate(cli.archive.cache.archives()):
-                if archive.title == 'My 2013 vacation':
+            archives = cli.archive.cache._for_adf('archives')
+            for seq, archive in enumerate(archives.itervalues()):
+                if archive['archive'].title == 'My 2013 vacation':
                     cli.onecmd('archive upload {}'.format(seq+1))
             self.assertThat(out.getvalue(),
-                            Contains('File /path/to/archive not found.'))
+                            Contains('upload is already completed'))
 
     def test_do_put_not_found(self):
         from lacli.cache import Cache
