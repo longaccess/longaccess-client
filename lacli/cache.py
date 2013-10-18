@@ -122,7 +122,7 @@ class Cache(object):
             make_adf(docs_list, out=f)
         cert_pretty = StringIO()
         make_adf(list(docs.itervalues()), pretty=True, out=cert_pretty)
-        return cert_pretty.getvalue()
+        return docs['links'].download
 
     def _printable_cert(self, docs):
         archive = docs['archive']

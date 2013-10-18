@@ -364,8 +364,11 @@ class LaArchiveCommand(cmd.Cmd):
                                 print "status: completed"
                                 fname = saved['fname']
                                 cert = self.cache.save_cert(fname, status)
-                                print "Certificate:\n"
-                                print cert
+                                print "Certificate", cert, "saved.\n"
+                                print " ".join(("Use lacli certificate list",
+                                                "to see your certificates, or",
+                                                "lacli certificate --help for",
+                                                "more options"))
                                 break
                             else:
                                 for i in xrange(30):
@@ -446,8 +449,11 @@ class LaArchiveCommand(cmd.Cmd):
                     print "status:", status['status']
                     if status['status'] == "completed":
                         cert = self.cache.save_cert(fname, status)
-                        print "Certificate:\n"
-                        print cert
+                        print "Certificate", cert, "saved.\n"
+                        print " ".join(("Use lacli certificate list",
+                                        "to see your certificates, or",
+                                        "lacli certificate --help for",
+                                        "more options"))
                 except Exception as e:
                     getLogger().debug("exception while checking status",
                                       exc_info=True)
