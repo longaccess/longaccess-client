@@ -1,5 +1,4 @@
 import os
-import time
 
 from testtools import TestCase
 from testtools.matchers import Contains
@@ -28,38 +27,11 @@ class CommandTest(TestCase):
     def test_command(self):
         assert self._makeit(Mock(), Mock(), self.prefs)
 
-    def test_temp_var(self):
-        cli = self._makeit(Mock(), Mock(), self.prefs)
-        cli.archive._var['foo'] = 'ham'
-        cli.archive._default_var['none'] = 'some'
-        cli.archive._default_var['acid'] = lambda: "funk"
-        with cli.archive.temp_var(foo='spam', bar='baz', none=None, acid=None):
-            self.assertEqual(cli.archive._var['foo'], 'spam')
-            self.assertEqual(cli.archive._var['bar'], 'baz')
-            self.assertEqual(cli.archive._var['none'], 'some')
-            self.assertEqual(cli.archive._var['acid'], 'funk')
-        self.assertEqual(cli.archive._var['foo'], 'ham')
-        assert 'bar' not in cli.archive._var
-        assert 'none' not in cli.archive._var
-        assert 'acid' not in cli.archive._var
-
-    @patch('sys.stdout', new_callable=StringIO)
-    def test_do_archive_no_title(self, mock_stdout):
-        cache = Mock(prepare=Mock(return_value='True'))
-        cli = self._makeit(Mock(), cache, self.prefs)
-        with cli.archive.temp_var(archive_title=None):
-            cli.onecmd('archive create ' + self.home)
-        cache.prepare.assert_called_with(
-            time.strftime("%x archive"), self.home)
-        self.assertThat(mock_stdout.getvalue(),
-                        Contains('archive prepared'))
-
     @patch('sys.stdout', new_callable=StringIO)
     def test_do_archive_with_title(self, mock_stdout):
         cache = Mock(prepare=Mock(return_value='True'))
         cli = self._makeit(Mock(), cache, self.prefs)
-        with cli.archive.temp_var(archive_title='baz'):
-            cli.onecmd('archive create ' + self.home)
+        cli.onecmd('archive create {} -t baz'.format(self.home))
         cache.prepare.assert_called_with("baz", self.home)
         self.assertThat(mock_stdout.getvalue(),
                         Contains('archive prepared'))
@@ -68,8 +40,7 @@ class CommandTest(TestCase):
     def test_do_archive_exception(self, mock_stdout):
         cache = Mock(prepare=Mock(side_effect=Exception("foo")))
         cli = self._makeit(Mock(), cache, self.prefs)
-        with cli.archive.temp_var(archive_title='bar'):
-            cli.onecmd('archive create ' + self.home)
+        cli.onecmd('archive create {} -t baz'.format(self.home))
         self.assertThat(mock_stdout.getvalue(),
                         Contains('error: foo'))
 
