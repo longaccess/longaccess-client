@@ -18,7 +18,7 @@ class CommandTest(TestCase):
         super(CommandTest, self).tearDown()
 
     def _makeit(self, *args, **kwargs):
-        from lacli.command import LaCommand
+        from lacli.main import LaCommand
         return LaCommand(*args, **kwargs)
 
     def _makeupload(self, *args, **kwargs):
