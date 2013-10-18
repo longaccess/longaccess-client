@@ -7,8 +7,8 @@ setup(version=unicode(__version__),
       description="The Long Access client",
       long_description=open('README').read(),
       packages=['lacli', 'lacli.t', 'lacli.cipher'],
-      install_requires=['boto', 'python-dateutil', 'filechunkio', 'docopt',
-                        'progressbar', 'logutils', 'requests',
+      install_requires=['boto>=2.13.2', 'python-dateutil', 'filechunkio',
+                        'docopt', 'progressbar', 'logutils', 'requests',
                         'unidecode', 'pycrypto', 'pyaml'],
       tests_require=['testtools'],
       test_suite="lacli.t",
@@ -16,5 +16,6 @@ setup(version=unicode(__version__),
       [console_scripts]
       lacli = lacli.main:main
       ladec = lacli.cipher.dec:main
-      """
+      """,
+      package_data={'lacli': ['data/certificate.html']}
       )

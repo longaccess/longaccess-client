@@ -11,12 +11,12 @@ Feature: upload command
         Then I see "lacli>"
 
     Scenario: I run the command
-        Given the command line arguments "-h"
+        Given the command line arguments "archive -h"
         When I run console script "lacli"
         Then I see "Upload a file to Long Access"
 
     Scenario: I run the command with a different home
-        Given the command line arguments "archive --home /tmp/whatevah"
+        Given the command line arguments "archive create --home /tmp/whatevah"
         And I have 1 prepared archive
         When I run console script "lacli"
         Then I see "No prepared archives."

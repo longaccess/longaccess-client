@@ -38,6 +38,6 @@ keys:
     method: pbkdf2
     input: !!binary "gkrtcb10xlbta9qhnyozj67dgk1f1uluhbf6xcbavhi="
 --- !links
-download: http://download.longaccess.com/x0fs8907494875
+download: 12-345
 local: file:///path/to/archive
 # vi:ft=yaml

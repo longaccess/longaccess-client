@@ -5,12 +5,12 @@ from behave import step
 from tempfile import NamedTemporaryFile
 
 
-@step(u'I have 1 prepared archive')
+@step(u'I have 1 available archive')
 def one_archive(context):
-    context.execute_steps(u'Given I have 1 prepared archive titled "foo"')
+    context.execute_steps(u'Given I have 1 available archive titled "foo"')
 
 
-@step(u'I have 1 prepared archive titled "{title}"')
+@step(u'I have 1 available archive titled "{title}"')
 def one_archive_titled(context, title):
     d = os.path.join(context.environ['HOME'], ".longaccess/archives")
     if not os.path.isdir(d):
@@ -100,10 +100,10 @@ def upload_status(context, status):
         context.mock_api.test('uploadComplete', 'longaccessmock')
 
 
-@step(u'there is a prepared archive titled "{title}"')
+@step(u'there is an archive titled "{title}"')
 def exists_archive_titled(context, title):
     context.execute_steps(u"""
-        Given the command line arguments "archive"
+        Given the command line arguments "archive create"
         When I run console script "lacli"
         Then I see ") {}"
         """.format(title))
@@ -134,16 +134,16 @@ def pending_upload_num(context, num):
 @step(u'I prepare an archive with a file "{title}"')
 def prepare_archive(context, title):
     context.execute_steps(u'''
-        Given an empty folder "{title}"
-        And under "{{{title}}}" an empty file "{title}"
-        And the command line arguments "archive  -t "{title}" {{{title}}}"
+        Given an empty folder "{t}"
+        And under "{{{t}}}" an empty file "{t}"
+        And the command line arguments "archive create  -t "{t}" {{{t}}}"
         When I run console script "lacli"
-        Then I see "archive prepared"'''.format(title=title))
+        Then I see "archive prepared"'''.format(t=title))
 
 
 @step(u'I prepare an archive with a directory "{title}"')
 def prepare_archive_folder(context, title):
     context.execute_steps(u'''
-        Given the command line arguments "archive {title}"
+        Given the command line arguments "archive create {title}"
         When I run console script "lacli"
         Then I see "archive prepared"'''.format(title=title))

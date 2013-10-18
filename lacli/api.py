@@ -148,17 +148,18 @@ class Api(object):
             {
                 'title': archive.title,
                 'description': archive.description or '',
-                'capsule': cs[capsule]['resource_uri'],
-                'size': archive.meta.size,
+                'capsule': cs[capsule]['resource_uri']
             })
         status = self._post(self.endpoints['upload'], data=req_data)
         uri = urljoin(self.url, status['resource_uri'])
+        account = self._get(self.endpoints['account'])
         yield {
             'tokens': self._upload_status(uri, status),
             'uri': uri,
-            'id': status['id']
+            'id': status['id'],
+            'account': account
         }
-        patch = {'status': 'uploaded'}
+        patch = {'status': 'uploaded', 'size': archive.meta.size}
         if auth:
             patch['checksums'] = {}
             if hasattr(auth, 'sha512'):
@@ -168,13 +169,7 @@ class Api(object):
         self._patch(uri, data=json.dumps(patch))
 
     def upload_status(self, uri):
-        try:
-            return next(self._upload_status(uri))
-        except Exception:
-            getLogger().debug(
-                "error requesting upload status from {}".format(uri),
-                exc_info=True)
-            return None
+        return next(self._upload_status(uri))
 
     @contains(list)
     def capsules(self):

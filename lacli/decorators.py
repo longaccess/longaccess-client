@@ -1,3 +1,6 @@
+import shlex
+
+from docopt import docopt, DocoptExit
 from functools import update_wrapper, wraps
 from requests.exceptions import ConnectionError, HTTPError
 from lacli.exceptions import (ApiErrorException, ApiAuthException,
@@ -46,3 +49,29 @@ def contains(cls):
             return cls(func(*args, **kwargs))
         return patched
     return decorator
+
+
+def command(**types):
+    """ Decorator to parse command options with docopt and
+        validate the types.
+    """
+    def decorate(func):
+        @wraps(func)
+        def wrap(self, line):
+            kwargs = {}
+            try:
+                opts = docopt(func.__doc__, shlex.split(line))
+                for opt, val in opts.iteritems():
+                    kw = opt.strip('<>')
+                    if val and kw in types:
+                        kwargs[kw] = types[kw](val)
+            except ValueError as e:
+                print "error: invalid value:", shlex.split(e.message).pop()
+                print func.__doc__
+                return
+            except DocoptExit as e:
+                print e
+                return
+            func(self, **kwargs)
+        return wrap
+    return decorate

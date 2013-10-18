@@ -4,30 +4,30 @@ Feature: restore command
         Given the home directory is "/tmp/test"
 
     Scenario: I restore without having any available archives
-        Given the command line arguments "restore"
+        Given the command line arguments "archive restore"
         When I run console script "lacli"
         Then I see "No such archive."
 
     Scenario: I restore without having any available archives
-        Given the command line arguments "restore -o /tmp"
+        Given the command line arguments "archive restore -o /tmp"
         When I run console script "lacli"
         Then I see "No such archive."
 
     Scenario: I restore a non existent
-        Given the command line arguments "restore 1"
+        Given the command line arguments "archive restore 1"
         When I run console script "lacli"
         Then I see "No such archive."
 
     Scenario: I restore an archive with no cert
         Given I have 1 prepared archive titled "foo"
-        And the command line arguments "restore"
+        And the command line arguments "archive restore"
         When I run console script "lacli"
         Then I see "no matching certificate found"
 
     Scenario: I restore an archive with no local copy
         Given I have 1 prepared archive titled "foo"
         And I have a certificate for the archive with title "foo"
-        And the command line arguments "restore"
+        And the command line arguments "archive restore"
         When I run console script "lacli"
         Then I see "no local copy exists"
 
@@ -35,7 +35,7 @@ Feature: restore command
         Given I have 1 prepared archive titled "foo"
         And I have a certificate for the archive with title "foo"
         And the archive titled "foo" has a link to a local copy
-        And the command line arguments "restore"
+        And the command line arguments "archive restore"
         When I run console script "lacli"
         Then I see "No such file or directory"
 
@@ -44,7 +44,7 @@ Feature: restore command
         And I have a certificate for the archive with title "foo"
         And the archive titled "foo" has a link to a local copy
         And the local copy for "foo" is an empty file
-        And the command line arguments "restore"
+        And the command line arguments "archive restore"
         When I run console script "lacli"
         Then I see "error: File is not a zip file"
 
@@ -53,7 +53,7 @@ Feature: restore command
         And under "{foo}" an empty file "test"
         And I have downloaded an archive containing "{foo}"
         And an empty folder "bar"
-        And the command line arguments "restore -o {bar}"
+        And the command line arguments "archive restore -o {bar}"
         When I run console script "lacli"
         Then I see "archive restored"
         And there is a file "{test}" under "{foo}" 

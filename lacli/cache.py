@@ -1,4 +1,8 @@
 import os
+import shlex
+from pkg_resources import resource_string
+from dateutil.parser import parse as date_parse
+from dateutil.relativedelta import relativedelta as date_delta
 
 from glob import iglob
 from lacli.adf import (load_archive, make_adf, Certificate, Archive,
@@ -8,7 +12,22 @@ from lacli.archive import dump_archive, archive_slug
 from lacli.exceptions import InvalidArchiveError
 from lacli.decorators import contains
 from urlparse import urlunparse
-from StringIO import StringIO
+from tempfile import NamedTemporaryFile
+from binascii import b2a_hex
+from itertools import izip, imap
+from subprocess import check_call
+
+
+def group(it, n, dl):
+    return imap(dl.join, izip(*[it]*n))
+
+
+def pairs(it, dl=""):
+    return group(it, 2, dl)
+
+
+def fours(it, dl=" "):
+    return group(it, 4, dl)
 
 
 class Cache(object):
@@ -42,40 +61,23 @@ class Cache(object):
                 except InvalidArchiveError:
                     getLogger().debug(fn, exc_info=True)
 
-    @contains(list)
-    def archives(self, full=False, category='archives'):
-        for docs in self._for_adf(category).itervalues():
-            if full:
-                yield docs
-            else:
-                yield docs['archive']
-
-    @contains(list)
-    def uploads(self):
-        for fname, docs in self._for_adf('uploads').iteritems():
-            if 'links' in docs and hasattr(docs['links'], 'upload'):
-                yield {
-                    'fname': fname,
-                    'link': docs['links'].upload,
-                    'archive': docs['archive']
-                }
-
     def prepare(self, title, folder, fmt='zip', cb=None):
         archive = Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)))
         cert = Certificate()
-        tmpdir = self._cache_dir('tmp', write=True)
-        name, tmppath, auth = dump_archive(archive, folder, cert, cb, tmpdir)
-        path = os.path.join(self._cache_dir('data', write=True), name)
-        os.rename(tmppath, path)
+        tmpdir = self._cache_dir('data', write=True)
+        name, path, auth = dump_archive(archive, folder, cert, cb, tmpdir)
         link = Links(local=urlunparse(('file', path, '', '', '', '')))
         archive.meta.size = os.path.getsize(path)
-        with self._archive_open(name + ".adf", 'w') as f:
+        tmpargs = {'delete': False,
+                   'dir': self._cache_dir('archives', write=True)}
+        with NamedTemporaryFile(prefix=name, suffix=".adf", **tmpargs) as f:
             make_adf([archive, cert, auth, link], out=f)
 
-    def save_upload(self, docs, upload):
+    def save_upload(self, fname, docs, upload):
         docs['links'].upload = upload['uri']
-        fname = "{}.adf".format(upload['id'])
-        with self._upload_open(fname, 'w') as f:
+        docs['archive'].meta.email = upload['account']['email']
+        docs['archive'].meta.name = upload['account']['displayname']
+        with open(fname, 'w') as f:
             make_adf(list(docs.itervalues()), out=f)
         return {
             'fname': fname,
@@ -83,38 +85,105 @@ class Cache(object):
             'archive': docs['archive']
         }
 
-    def save_cert(self, upload, status):
+    def upload_complete(self, fname, status):
         assert 'archive_key' in status, "no archive key"
         docs = []
-        with open(upload['fname']) as _upload:
+        with open(fname) as _upload:
             docs = load_archive(_upload)
-        docs['links'] = Links(download=status['archive_key'])
-        docs_list = list(docs.itervalues())
+        docs['links'].download = status['archive_key']
+        with open(fname, 'w') as _upload:
+            make_adf(list(docs.itervalues()), out=_upload)
+        return docs
+
+    def save_cert(self, docs):
         fname = archive_slug(docs['archive'])
-        with self._cert_open(fname, 'w') as f:
-            make_adf(docs_list, out=f)
-        getLogger().debug(
-            "removing {}".format(upload['fname']))
-        os.unlink(upload['fname'])
-        cert_pretty = StringIO()
-        make_adf(list(docs.itervalues()), pretty=True, out=cert_pretty)
-        return cert_pretty.getvalue()
+        tmpargs = {'delete': False,
+                   'dir': self._cache_dir('certs', write=True)}
+        with NamedTemporaryFile(prefix=fname, suffix=".adf", **tmpargs) as f:
+            make_adf(list(docs.itervalues()), out=f)
+        return docs['links'].download
 
-    def links(self):
-        return self._by_title('links', iglob(
-            os.path.join(self._cache_dir('archives'), '*.adf')))
+    def import_cert(self, fname):
+        with open(fname) as cert:
+            return self.save_cert(load_archive(cert))
 
-    def certs(self):
-        return self._by_title('cert', iglob(
-            os.path.join(self._cache_dir('certs'), '*.adf')))
+    def _printable_cert(self, docs):
+        archive = docs['archive']
+        cipher = archive.meta.cipher
+        if hasattr(cipher, 'mode'):
+            cipher = cipher.mode
+        created = date_parse(archive.meta.created)
+        expires = created + date_delta(years=30)
+        md5 = b2a_hex(docs['auth'].md5).upper()
+        key = b2a_hex(docs['cert'].key).upper()
+        hk = pairs(fours(pairs(iter(key))), " . ")
+
+        return resource_string(__name__, "data/certificate.html").format(
+            aid=docs['links'].download,
+            keyB=next(hk),
+            keyC=next(hk),
+            keyD=next(hk),
+            keyE=next(hk),
+            name=archive.meta.name,
+            email=archive.meta.email,
+            uploaded=created.strftime("%c"),
+            expires=expires.strftime("%c"),
+            title=archive.title,
+            desc=archive.description,
+            md5=" . ".join(fours(pairs(iter(md5)))),
+            fmt=archive.meta.format,
+            cipher=cipher)
+
+    def shred_file(self, fname, srm=None):
+        commands = []
+        if srm:
+            commands.append(srm)
+        else:
+            commands.append('srm')
+            commands.append('shred')
+            commands.append('gshred')
+            commands.append('sdelete')
+        for command in commands:
+            try:
+                args = shlex.split(command)
+                args.append(fname)
+                if 0 == check_call(args):
+                    getLogger().debug("success running {}".format(command))
+                    if os.path.exists(fname):
+                        os.unlink(fname)
+            except Exception:
+                getLogger().debug("error running {}".format(command),
+                                  exc_info=True)
+
+    def shred_cert(self, aid, countdown=[], srm=None):
+        for fname, docs in self._for_adf('certs').iteritems():
+            if 'links' in docs and aid == docs['links'].download:
+                for a in countdown:
+                    pass
+                self.shred_file(fname, srm)
+                return fname
+
+    def print_cert(self, aid):
+        for fname, docs in self._for_adf('certs').iteritems():
+            if 'links' in docs and aid == docs['links'].download:
+                html = 'longaccess-{}.html'.format(aid)
+                with open(html, 'w') as f:
+                    f.write(self._printable_cert(docs))
+                yml = 'longaccess-{}.yaml'.format(aid)
+                with open(yml, 'w') as f:
+                    make_adf([docs['archive'], docs['cert'],
+                              docs['links'], docs['auth']], out=f, pretty=True)
+                return (html, yml)
 
     @contains(dict)
-    def _by_title(self, key, fs):
-        for f in fs:
+    def certs(self, files=[]):
+        if not files:
+            files = iglob(os.path.join(self._cache_dir('certs'), '*.adf'))
+        for f in files:
             with open(f) as fh:
                 try:
                     docs = load_archive(fh)
-                    if key in docs:
-                        yield (docs['archive'].title, docs[key])
+                    if 'links' in docs and docs['links'].download:
+                        yield (docs['links'].download, docs)
                 except InvalidArchiveError:
                     getLogger().debug(f, exc_info=True)

@@ -102,12 +102,19 @@ class Meta(BaseYAMLObject):
     size = None
     format = None
     cipher = None
+    email = None
+    name = None
 
-    def __init__(self, format, cipher, size=None, created=None):
+    def __init__(self, format, cipher, size=None, created=None,
+                 email=None, name=None):
         self.format = format
         self.cipher = cipher
         if size:
             self.size = size
+        if email:
+            self.email = email
+        if name:
+            self.name = name
         if created:
             self.created = created
         else:
@@ -280,30 +287,20 @@ def make_adf(archive=None, canonical=False, out=None, pretty=False):
     if not hasattr(archive, '__getitem__'):
         archive = [archive]
     if pretty:
-        out.write("---".join(map(pyaml.dump, archive)))
+        out.write("--- ".join(map(pyaml.dump, archive)))
         return
     return yaml.safe_dump_all(archive, out, canonical=canonical)
 
 
-def archive_short_desc(archive):
-    """
-    >>> meta = Meta('zip', Cipher(mode='aes-256-ctr'), size=1024)
-    >>> archive = Archive('foo', meta)
-    >>> archive_short_desc(archive)
-    'foo [zip/aes-256-ctr/1KiB]'
-    """
+def archive_size(archive):
     size = ""
     if archive.meta.size:
         kib = archive.meta.size // 1024
         mib = kib // 1024
         if not kib:
-            size = "/{}B".format(archive.meta.size)
+            size = "{}B".format(archive.meta.size)
         elif not mib:
-            size = "/{}KiB".format(kib)
+            size = "{}KiB".format(kib)
         else:
-            size = "/{}MiB".format(mib)
-    cipher = archive.meta.cipher
-    if hasattr(cipher, 'mode'):
-        cipher = cipher.mode
-    return "{} [{}/{}{}]".format(
-        archive.title, archive.meta.format, cipher, size)
+            size = "{}MiB".format(mib)
+    return size

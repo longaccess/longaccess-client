@@ -1,5 +1,5 @@
 --- !archive
-title: milos 2013
+title: My pending upload
 description: My 2013 vacation in Milos
 meta:
   format: zip
@@ -10,5 +10,5 @@ tags:
 --- !certificate
 key: !!binary "gkrtcb10xlbta9qhnyozj67dgk1f1uluhbf6xcbavhi="
 --- !links
-download: http://download.longaccess.com/x0fs8907494875
+upload: https://www.longaccess.com/api/v1/upload/123
 # vi:ft=yaml

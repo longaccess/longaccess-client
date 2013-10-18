@@ -34,8 +34,6 @@ def makeprefs():
 dummykey = a2b_hex(
     '824aed71bd74c656ed6bdaa19f2a338faedd824d5fd6e96e85b7fac5c6dabe18')
 
-dummyurl = 'http://download.longaccess.com/x0fs8907494875'
-
 
 @contextmanager
 def _temp_home():

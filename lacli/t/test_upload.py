@@ -1,6 +1,5 @@
 from testtools import TestCase
 from mock import Mock
-from . import makeprefs
 
 
 class UploadTest(TestCase):
@@ -15,4 +14,4 @@ class UploadTest(TestCase):
         return Upload(*args,  **kw)
 
     def test_upload(self):
-        assert self._makeit(Mock(), makeprefs()['upload'])
+        assert self._makeit(Mock(), 4, 4)
