@@ -14,6 +14,8 @@ from urlparse import urlunparse
 from tempfile import NamedTemporaryFile
 from binascii import b2a_hex
 from itertools import izip, imap
+from subprocess import check_call
+from shlex import split
 
 
 def group(it, n, dl):
@@ -149,6 +151,34 @@ class Cache(object):
             md5=" . ".join(fours(pairs(iter(md5)))),
             fmt=archive.meta.format,
             cipher=cipher)
+
+    def shred_file(self, fname, srm=None):
+        commands = []
+        if srm:
+            commands.append(srm)
+        commands.append('srm')
+        commands.append('shred')
+        commands.append('gshred')
+        commands.append('sdelete')
+        for command in commands:
+            try:
+                args = split(command)
+                args.append(fname)
+                if 0 == check_call(args):
+                    getLogger().debug("success running {}".format(command))
+                    if os.path.exists(fname):
+                        os.unlink(fname)
+            except Exception:
+                getLogger().debug("error running {}".format(command),
+                                  exc_info=True)
+
+    def shred_cert(self, aid, countdown=[], srm=None):
+        for fname, docs in self._for_adf('certs').iteritems():
+            if 'links' in docs and aid == docs['links'].download:
+                for a in countdown:
+                    pass
+                self.shred_file(fname, srm)
+                return fname
 
     def print_cert(self, aid):
         for fname, docs in self._for_adf('certs').iteritems():

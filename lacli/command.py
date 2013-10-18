@@ -118,6 +118,7 @@ class LaCertsCommand(cmd.Cmd):
     Usage: lacli certificate list
            lacli certificate export <cert_id>
            lacli certificate import <filename>
+           lacli certificate delete <cert_id> [<srm>...]
            lacli certificate --help
 
     """
@@ -135,6 +136,12 @@ class LaCertsCommand(cmd.Cmd):
         line = []
         if options['list']:
             line.append("list")
+        elif options['delete']:
+            line.append("delete")
+            line.append(options["<cert_id>"])
+            if options['<srm>']:
+                line.append(quote(
+                    " ".join(options["<srm>"])))
         elif options['export']:
             line.append("export")
             line.append(options["<cert_id>"])
@@ -171,6 +178,42 @@ class LaCertsCommand(cmd.Cmd):
                     print
         else:
             print "No available certificates."
+
+    @command(cert_id=str, srm=str)
+    def do_delete(self, cert_id=None, srm=None):
+        """
+        Usage: delete <cert_id> [<srm>]
+        """
+        srmprompt = "\n".join((
+            "WARNING! Insecure deletion attempt.",
+            "Could not find a secure deletion command",
+            "The certificate you are about to delete may still recoverable.",
+            "For more information see: https://ssd.eff.org/tech/deletion"))
+        fileprompt = "\n".join((
+            "Please provide a valid srm command as an option or remove the",
+            "file manually:"))
+
+        def _countdown():
+            print "Deleting certificate", cert_id, "in 5",
+            for num in [4, 3, 2, 1]:
+                sys.stdout.flush()
+                time.sleep(1)
+                sys.stdout.write(", {}".format(num))
+                yield ""
+            print "... deleting"
+
+        fname = self.cache.shred_cert(cert_id, _countdown(), srm)
+        if not fname:
+            print "Certificate not found"
+        elif os.path.exists(fname):
+            if not srm:
+                print srmprompt
+            else:
+                print srm, "failed."
+            print fileprompt
+            print fname
+        else:
+            print "Deleted certificate", cert_id
 
     @command(cert_id=str)
     def do_export(self, cert_id=None):
