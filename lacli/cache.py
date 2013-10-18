@@ -184,10 +184,14 @@ class Cache(object):
     def print_cert(self, aid):
         for fname, docs in self._for_adf('certs').iteritems():
             if 'links' in docs and aid == docs['links'].download:
-                path = 'longaccess-{}.html'.format(aid)
-                with open(path, 'w') as f:
+                html = 'longaccess-{}.html'.format(aid)
+                with open(html, 'w') as f:
                     f.write(self._printable_cert(docs))
-                return path
+                yml = 'longaccess-{}.yaml'.format(aid)
+                with open(yml, 'w') as f:
+                    make_adf([docs['archive'], docs['cert'],
+                              docs['links'], docs['auth']], out=f, pretty=True)
+                return (html, yml)
 
     def links(self):
         return self._by_title('links', iglob(
