@@ -287,7 +287,7 @@ def make_adf(archive=None, canonical=False, out=None, pretty=False):
     if not hasattr(archive, '__getitem__'):
         archive = [archive]
     if pretty:
-        out.write("---".join(map(pyaml.dump, archive)))
+        out.write("--- ".join(map(pyaml.dump, archive)))
         return
     return yaml.safe_dump_all(archive, out, canonical=canonical)
 
