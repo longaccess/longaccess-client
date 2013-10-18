@@ -1,3 +1,27 @@
+"""Upload a file to Long Access
+
+Usage: lacli [--help] [-u <user>] [-p <pass>] [--verbose]
+             [--home <home>] [--debug <level>] [--batch]
+             <command> [<args>...]
+       lacli -i
+
+Commands (run lacli <command> -h for options):
+
+    archive         manage archives
+    capsule         manage capsules
+    certificate     manage certificates
+
+Options:
+    -i, --interactive              interactive mode
+    -u <user>, --user <user>       user name
+    -p <pass>, --password <pass>   user password
+    -d <level>, --debug <level>    debug level, from 0 to 2 [default: 0]
+    --home <home>                  conf/cache dir [default: ~/.longaccess]
+    -v, --verbose                  print verbose information
+    --batch                        be brief, don't ask questions
+    -h, --help                     print this help
+"""
+
 from __future__ import division
 import os
 import cmd
@@ -61,6 +85,9 @@ class LaCommand(cmd.Cmd):
 
     def dispatch(self, subcmd, options):
         options.insert(0, subcmd)
+        if not hasattr(self, subcmd):
+            print(__doc__)
+            raise SystemExit
         subcmd = getattr(self, subcmd)
         try:
             line = subcmd.makecmd(docopt(subcmd.__doc__, options))
