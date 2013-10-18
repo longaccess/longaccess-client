@@ -112,7 +112,7 @@ class CommandTest(TestCase):
         with patch('sys.stdout', new_callable=StringIO) as out:
             cli.onecmd('archive status foobar')
             self.assertThat(out.getvalue(),
-                            Contains('No such upload pending'))
+                            Contains('error: invalid value'))
         apisession = Mock()
         apisession.upload_status.side_effect = Exception('foo')
         cli = self._makeit(apisession, Cache(self.home), self.prefs)

@@ -33,8 +33,9 @@ def command(**types):
                     if val and kw in types:
                         kwargs[kw] = types[kw](val)
             except ValueError as e:
-                print "error: ", e
+                print "error: invalid value:", shlex.split(e.message).pop()
                 print func.__doc__
+                return
             except DocoptExit as e:
                 print e
                 return
