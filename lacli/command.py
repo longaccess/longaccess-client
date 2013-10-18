@@ -117,6 +117,7 @@ class LaCertsCommand(cmd.Cmd):
 
     Usage: lacli certificate list
            lacli certificate export <cert_id>
+           lacli certificate import <filename>
            lacli certificate --help
 
     """
@@ -137,6 +138,9 @@ class LaCertsCommand(cmd.Cmd):
         elif options['export']:
             line.append("export")
             line.append(options["<cert_id>"])
+        elif options['import']:
+            line.append("import")
+            line.append(options["<filename>"])
         return " ".join(line)
 
     def do_EOF(self, line):
@@ -178,6 +182,22 @@ class LaCertsCommand(cmd.Cmd):
             print "Created file", path
         else:
             print "Certificate not found"
+
+    @command(filename=str)
+    def do_import(self, filename=None):
+        """
+        Usage: import <filename>
+        """
+        certs = self.cache.certs([filename])
+        if len(certs) > 0:
+            for key, cert in certs.iteritems():
+                if key in self.cache.certs():
+                    print "Certificate", key, "already exists"
+                else:
+                    print "Imported certificate {}".format(
+                        self.cache.import_cert(filename))
+        else:
+            print "No certificates found in", filename
 
 
 class LaCapsuleCommand(cmd.Cmd):
