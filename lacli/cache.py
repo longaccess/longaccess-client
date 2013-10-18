@@ -1,4 +1,5 @@
 import os
+import shlex
 from pkg_resources import resource_string
 from dateutil.parser import parse as date_parse
 from dateutil.relativedelta import relativedelta as date_delta
@@ -15,7 +16,6 @@ from tempfile import NamedTemporaryFile
 from binascii import b2a_hex
 from itertools import izip, imap
 from subprocess import check_call
-from shlex import split
 
 
 def group(it, n, dl):
@@ -156,13 +156,14 @@ class Cache(object):
         commands = []
         if srm:
             commands.append(srm)
-        commands.append('srm')
-        commands.append('shred')
-        commands.append('gshred')
-        commands.append('sdelete')
+        else:
+            commands.append('srm')
+            commands.append('shred')
+            commands.append('gshred')
+            commands.append('sdelete')
         for command in commands:
             try:
-                args = split(command)
+                args = shlex.split(command)
                 args.append(fname)
                 if 0 == check_call(args):
                     getLogger().debug("success running {}".format(command))

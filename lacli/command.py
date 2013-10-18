@@ -300,6 +300,7 @@ class LaArchiveCommand(cmd.Cmd):
            lacli archive status <index>
            lacli archive create <dirname> -t <title>
            lacli archive extract [-o <dirname>] [-f <cert>] <path> <cert_id>
+           lacli archive delete <index> [<srm>...]
            lacli archive --help
 
     Options:
@@ -368,6 +369,12 @@ class LaArchiveCommand(cmd.Cmd):
             line.append(options['<cert_id>'])
             if options['--cert']:
                 line.append(quote(options['--cert']))
+        elif options['delete']:
+            line.append("delete")
+            line.append(options["<index>"])
+            if options['<srm>']:
+                line.append(quote(
+                    " ".join(options["<srm>"])))
         return " ".join(line)
 
     @command(index=int, capsule=int)
@@ -427,7 +434,7 @@ class LaArchiveCommand(cmd.Cmd):
                                 print "status: completed"
                                 fname = saved['fname']
                                 cert = self.cache.save_cert(
-                                    self.upload_complete(fname, status))
+                                    self.cache.upload_complete(fname, status))
                                 print "Certificate", cert, "saved.\n"
                                 print " ".join(("Use lacli certificate list",
                                                 "to see your certificates, or",
@@ -558,3 +565,65 @@ class LaArchiveCommand(cmd.Cmd):
 
     def complete_put(self, text, line, begidx, endidx):  # pragma: no cover
         return [os.path.basename(x) for x in glob.glob('{}*'.format(line[4:]))]
+
+    @command(index=int, srm=str)
+    def do_delete(self, index=None, srm=None):
+        """
+        Usage: delete <index> [<srm>]
+        """
+        docs = list(self.cache._for_adf('archives').iteritems())
+
+        if index <= 0 or len(docs) < index:
+            print "No such archive."
+        else:
+            fname = docs[index-1][0]
+            docs = docs[index-1][1]
+            archive = docs['archive']
+            link = docs['links']
+            path = ''
+            if link.local:
+                parsed = urlparse(link.local)
+                if parsed.scheme == 'file':
+                    if os.path.exists(parsed.path):
+                        path = parsed.path
+                    else:
+                        print 'File {} not found.'.format(parsed.path)
+                else:
+                    print "url not local: " + link.local
+            else:
+                print "no local copy exists."
+
+        srmprompt = "\n".join((
+            "WARNING! Insecure deletion attempt.",
+            "Could not find a secure deletion command",
+            "The archive you are about to delete may still recoverable.",
+            "For more information see: https://ssd.eff.org/tech/deletion"))
+        fileprompt = "\n".join((
+            "Please provide a valid srm command as an option or remove the",
+            "file(s) manually:"))
+
+        print "Deleting archive", index, "({}) in 5".format(archive.title),
+        for num in [4, 3, 2, 1]:
+            sys.stdout.flush()
+            time.sleep(1)
+            sys.stdout.write(", {}".format(num))
+        print "... deleting"
+
+        self.cache.shred_file(fname, srm)
+        if os.path.exists(fname):
+            if not srm:
+                print srmprompt
+            else:
+                print srm, "failed."
+            print fileprompt
+            print fname
+            if path:
+                print path
+        else:
+            if path:
+                self.cache.shred_file(path, srm)
+            if os.path.exists(path):
+                print "ERROR: Failed to delete archive data:", path
+                print "Please remove manually"
+            else:
+                print "Deleted archive", archive.title
