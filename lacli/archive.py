@@ -80,7 +80,7 @@ def dump_archive(archive, folder, cert, cb=None, tmpdir='/tmp',
 
 
 def _writer(name, folder, cipher, tmpdir, hashobj=None):
-    path = os.path.join(tmpdir, name+".zip")
+    path = os.path.join(tmpdir, name+".zip.crypt")
 
     def _enc(zf):
         print "Encrypting.."
