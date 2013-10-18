@@ -163,11 +163,19 @@ class Cache(object):
         return self._by_title('links', iglob(
             os.path.join(self._cache_dir('archives'), '*.adf')))
 
-    def certs(self):
-        return self._by_title('cert', iglob(
-            os.path.join(self._cache_dir('certs'), '*.adf')))
-
     @contains(dict)
+    def certs(self, files=[]):
+        if not files:
+            files = iglob(os.path.join(self._cache_dir('certs'), '*.adf'))
+        for f in files:
+            with open(f) as fh:
+                try:
+                    docs = load_archive(fh)
+                    if 'links' in docs and docs['links'].download:
+                        yield (docs['links'].download, docs)
+                except InvalidArchiveError:
+                    getLogger().debug(f, exc_info=True)
+
     def _by_title(self, key, fs):
         for f in fs:
             with open(f) as fh:

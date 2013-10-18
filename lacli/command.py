@@ -6,6 +6,7 @@ import pyaml
 import sys
 import time
 import shlex
+from pipes import quote
 from docopt import docopt, DocoptExit
 from lacli.log import getLogger, setupLogging
 from lacli.upload import Upload
@@ -208,7 +209,7 @@ class LaArchiveCommand(cmd.Cmd):
            lacli archive list
            lacli archive status <index>
            lacli archive create <dirname> -t <title>
-           lacli archive extract [-o <dirname>] [<index>] [<key>]
+           lacli archive extract [-o <dirname>] [-f <cert>] <path> <cert_id>
            lacli archive --help
 
     Options:
@@ -216,6 +217,7 @@ class LaArchiveCommand(cmd.Cmd):
         -t <title>, --title <title>         title for prepared archive
         -o <dirname>, --out <dirname>       directory to restore archive
         -c <capsule>, --capsule <capsule>   capsule to upload to [default: 1]
+        -f <cert>, --cert <cert>            certificate file to use
         -h, --help                          this help
 
     """
@@ -266,6 +268,16 @@ class LaArchiveCommand(cmd.Cmd):
         elif options['status']:
             line.append("status")
             line.append(options['<index>'])
+        elif options['extract']:
+            line.append("extract")
+            line.append(options['<path>'])
+            if options['--out']:
+                line.append(quote(options['--out']))
+            else:
+                line.append(os.getcwd())
+            line.append(options['<cert_id>'])
+            if options['--cert']:
+                line.append(quote(options['--cert']))
         return " ".join(line)
 
     @command(index=int, capsule=int)
@@ -414,38 +426,30 @@ class LaArchiveCommand(cmd.Cmd):
                                       exc_info=True)
                     print "error: " + str(e)
 
-    @command(index=str, key=None)
-    def do_extract(self, index=1, key=None):
-        docs = list(self.cache._for_adf('archives').iteritems())
-        path = None
-        if index <= 0 or len(docs) < index:
-            print "No such archive."
+    @command(path=str, dest=str, cert_id=str, cert_file=str)
+    def do_extract(self, path=None, dest=None, cert_id=None, cert_file=None):
+        """
+        Usage: extract <path> <dest> <cert_id> [<cert_file>]
+        """
+        if cert_file:
+            certs = self.cache.certs([cert_file])
         else:
-            archive = docs[index-1][1]['archive']
-            cert = self.cache.certs().get(archive.title)
-            if cert:
-                link = self.cache.links().get(archive.title)
-                if link and link.local:
-                    parsed = urlparse(link.local)
-                    if parsed.scheme == 'file':
-                        path = parsed.path
-                    else:
-                        print "url not local: " + link.local
-                else:
-                    print "no local copy exists yet."
-            else:
-                print "no matching certificate found"
-        if path:
-            if 'output_directory' in self._var:
-                outdir = self._var['output_directory']
-            else:
-                outdir = os.getcwd()
-            try:
+            certs = self.cache.certs()
 
+        if cert_id not in certs:
+            print "no matching certificate found"
+        elif not os.path.isfile(path):
+            print "error: file", path, "does not exist"
+        elif not os.path.isdir(dest):
+            print "output directory", dest, "does not exist"
+        else:
+            cert = certs[cert_id]['cert']
+            archive = certs[cert_id]['archive']
+            try:
                 def _print(f):
                     print "Extracting", f
                 restore_archive(archive, path, cert,
-                                outdir,
+                                dest,
                                 self.cache._cache_dir(
                                     'tmp', write=True), _print)
                 print "archive restored."

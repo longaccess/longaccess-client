@@ -195,6 +195,7 @@ class MPUpload(object):
 
     def __exit__(self, type, value, traceback):
         if value is not None:
+            getLogger().debug("cancelling upload..", exc_info=True)
             if hasattr(self.upload, 'cancel_upload'):
                 self.upload.cancel_upload()
         if self.tempdir is not None:
@@ -274,6 +275,8 @@ class MPUpload(object):
                             # good to know how:
                             md5=part.hash
                         )
+                        getLogger().debug("uploaded multi part key %s/%d",
+                                          key, seq+1)
                     else:
                         self.upload.set_contents_from_file(
                             fp=part,
@@ -282,6 +285,7 @@ class MPUpload(object):
                             md5=part.hash
                         )
                         key = self.upload
+                        getLogger().debug("uploaded single part key %s", key)
                 except Exception as exc:
                     getLogger().debug("exception while uploading part %d",
                                       seq, exc_info=True)
