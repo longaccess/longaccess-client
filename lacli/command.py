@@ -499,7 +499,6 @@ class LaArchiveCommand(cmd.Cmd):
                 try:
                     url = upload['links'].upload
                     status = self.session.upload_status(url)
-                    print "status:", status['status']
                     if status['status'] == "completed":
                         cert = self.cache.save_cert(
                             self.cache.upload_complete(fname, status))
@@ -508,6 +507,8 @@ class LaArchiveCommand(cmd.Cmd):
                                         "to see your certificates, or",
                                         "lacli certificate --help for",
                                         "more options"))
+                    else:
+                        print "upload not complete, status:", status['status']
                 except Exception as e:
                     getLogger().debug("exception while checking status",
                                       exc_info=True)

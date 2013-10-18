@@ -169,13 +169,7 @@ class Api(object):
         self._patch(uri, data=json.dumps(patch))
 
     def upload_status(self, uri):
-        try:
-            return next(self._upload_status(uri))
-        except Exception:
-            getLogger().debug(
-                "error requesting upload status from {}".format(uri),
-                exc_info=True)
-            return None
+        return next(self._upload_status(uri))
 
     @contains(list)
     def capsules(self):
