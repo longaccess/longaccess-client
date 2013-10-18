@@ -1,7 +1,31 @@
+"""Upload a file to Long Access
+
+Usage: lacli [--help] [-u <user>] [-p <pass>] [--verbose]
+             [--home <home>] [--debug <level>] [--batch]
+             <command> [<args>...]
+       lacli -i
+
+Commands (run lacli <command> -h for options):
+
+    archive         manage archives
+    capsule         manage capsules
+    certificate     manage certificates
+
+Options:
+    -i, --interactive              interactive mode
+    -u <user>, --user <user>       user name
+    -p <pass>, --password <pass>   user password
+    -d <level>, --debug <level>    debug level, from 0 to 2 [default: 0]
+    --home <home>                  conf/cache dir [default: ~/.longaccess]
+    -v, --verbose                  print verbose information
+    --batch                        be brief, don't ask questions
+    -h, --help                     print this help
+"""
+
 import sys
 import os
 from docopt import docopt
-from lacli.command import LaCommand, __doc__
+from lacli.command import LaCommand
 from lacli import __version__
 from lacli.api import Api
 from lacli.cache import Cache
