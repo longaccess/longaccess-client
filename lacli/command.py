@@ -541,6 +541,11 @@ class LaArchiveCommand(cmd.Cmd):
         else:
             certs = self.cache.certs()
 
+        path = os.path.expanduser(path)
+        dest = os.path.expanduser(dest)
+        if cert_file:
+            cert_file = os.path.expanduser(cert_file)
+
         if cert_id not in certs:
             print "no matching certificate found"
         elif not os.path.isfile(path):
