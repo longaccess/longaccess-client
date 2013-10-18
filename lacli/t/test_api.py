@@ -1,4 +1,5 @@
 from testtools import TestCase, ExpectedException
+from testtools.matchers import Contains
 from mock import Mock, patch
 from itertools import repeat, izip
 from . import makeprefs
@@ -130,13 +131,13 @@ class ApiTest(TestCase):
         with tmgr as upload:
             data = self._json_request(url, post)
             self.assertTrue('"description": ""' in data)
-            self.assertTrue('"size": 1' in data)
-            for seq, token in izip(xrange(4), upload['tokens']):
+            for seq, token in izip(xrange(3), upload['tokens']):
                 self.assertIn('token_access_key', token)
         data = self._json_request(url+"1/", patch)
-        self.assertTrue('"checksums": ' in data)
-        self.assertTrue('"sha512": "bb"' in data)
-        self.assertTrue('"md5": "aa"' in data)
+        self.assertThat(data, Contains('"checksums": '))
+        self.assertThat(data, Contains('"sha512": "bb"'))
+        self.assertThat(data, Contains('"md5": "aa"'))
+        self.assertThat(data, Contains('"size": 1'))
         status = api.upload_status(url+"1/")
         self.assertTrue('status' in status)
         self.assertEqual('pending', status['status'])
