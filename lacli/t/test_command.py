@@ -53,7 +53,7 @@ class CommandTest(TestCase):
 
     @patch('sys.stdout', new_callable=StringIO)
     def test_do_archive_list_none(self, out):
-        cache = Mock(archives=Mock(return_value=[]))
+        cache = Mock(_for_adf=Mock(return_value=[]))
         cli = self._makeit(Mock(), cache, self.prefs)
         cli.onecmd('archive list')
         self.assertEqual('No available archives.\n', out.getvalue())
@@ -62,7 +62,7 @@ class CommandTest(TestCase):
     def test_do_archive_list_some(self, out):
         from lacli.adf import Archive, Meta
         meta = Meta(format='', size=None, cipher='')
-        cache = Mock(archives=Mock(return_value=[Archive(
+        cache = Mock(_for_adf=Mock(return_value=[Archive(
             title="foo", description='', tags=[], meta=meta)]))
         cli = self._makeit(Mock(), cache, self.prefs)
         cli.onecmd('archive list')

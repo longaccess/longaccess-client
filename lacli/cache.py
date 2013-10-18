@@ -175,10 +175,6 @@ class Cache(object):
                               docs['links'], docs['auth']], out=f, pretty=True)
                 return (html, yml)
 
-    def links(self):
-        return self._by_title('links', iglob(
-            os.path.join(self._cache_dir('archives'), '*.adf')))
-
     @contains(dict)
     def certs(self, files=[]):
         if not files:
@@ -189,15 +185,5 @@ class Cache(object):
                     docs = load_archive(fh)
                     if 'links' in docs and docs['links'].download:
                         yield (docs['links'].download, docs)
-                except InvalidArchiveError:
-                    getLogger().debug(f, exc_info=True)
-
-    def _by_title(self, key, fs):
-        for f in fs:
-            with open(f) as fh:
-                try:
-                    docs = load_archive(fh)
-                    if key in docs:
-                        yield (docs['archive'].title, docs[key])
                 except InvalidArchiveError:
                     getLogger().debug(f, exc_info=True)
