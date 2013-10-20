@@ -35,3 +35,7 @@ spell.*
 node_modules
 robohydra.log
 robohydra/plugins/longaccessmock/tokens.js
+
+#pyinstall
+pyinstall/*.spec
+pyinstall/*.tar.bz2
