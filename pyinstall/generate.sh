@@ -1,15 +1,21 @@
-#! /bin/bash
+#!/bin/sh
 
-if [ "$1" == "" ]; then
+
+if [ "$#" -gt 0 ] ; then
+    PYINST=$1
+else
+    PYINST=$(which pyinstaller)
+fi
+
+if test -z "$PYINST"; then
 	echo "./generate.sh <path to pyinstaller>"
 	exit 1
 fi
 
-PYINST=$1
 BINARY=`which lacli`
 ARCH=`uname`
 
-$PYINST $BINARY
+$PYINST lacli.spec
 
 if [ $? != 0 ] ; then
 	exit $?
