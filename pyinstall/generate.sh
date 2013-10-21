@@ -15,7 +15,7 @@ fi
 BINARY=`which lacli`
 ARCH=`uname`
 
-$PYINST $BINARY
+$PYINST lacli.spec
 
 if [ $? != 0 ] ; then
 	exit $?

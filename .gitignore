@@ -37,5 +37,5 @@ robohydra.log
 robohydra/plugins/longaccessmock/tokens.js
 
 #pyinstall
-pyinstall/*.spec
+pyinstall/install.sh
 pyinstall/*.tar.bz2
