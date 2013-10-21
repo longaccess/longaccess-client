@@ -1,6 +1,7 @@
 
 TARGET="$HOME/local/lib"
 BIN="$HOME/local/bin"
+ARCH=`uname`
 
 echo "========================================"
 echo "Creating $TARGET"
@@ -11,7 +12,17 @@ echo "========================================"
 echo
 echo "Downloading lacli (the Longaccess command line client)"
 echo "from URL and extracting to $TARGET"
-curl -s http://download.longaccess.com/lacli-$VERSION.tar.bz2 | tar xjvf - -C $TARGET 
+curl -s http://download.longaccess.com/lacli-$ARCH-$VERSION.tar.bz2 | tar xjvf - -C $TARGET 
+if [ $? != 0 ] ; then
+    echo "****************************************"
+    echo "ERROR:"
+    echo "    Unable to download or extract http://download.longaccess.com/lacli-$ARCH-$VERSION.tar.bz2"
+    echo "    It is possible that your architecture is not supported by this installer."
+    echo "    You can always install from source: https://github.com/longaccess/longaccess-client"
+    echo "    Please contact team@longaccess.com or open an issue at https://github.com/longaccess/longaccess-client."
+    echo "****************************************"
+    exit 1
+fi
 echo
 echo "========================================"
 echo "Creating symlink $TARGET/lacli/lacli -> $BIN/lacli"
