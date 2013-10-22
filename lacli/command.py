@@ -252,9 +252,9 @@ class LaArchiveCommand(cmd.Cmd):
             line.append("list")
         elif options['create']:
             line.append("create")
-            line.append(options['<dirname>'])
+            line.append(quote(options['<dirname>']))
             if options['--title']:
-                line.append('"'+options['--title']+'"')
+                line.append(quote(options['--title']))
         elif options['status']:
             line.append("status")
             line.append(options['<index>'])
