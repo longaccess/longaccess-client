@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 
 if [ "$#" -gt 0 ] ; then
@@ -13,6 +13,13 @@ if test -z "$PYINST"; then
 fi
 
 BINARY=`which lacli`
+
+if [ -x $BINARY ] ; then
+    # reinstall as .egg to make sure
+    pip uninstall -y lacli
+    pip install --egg ..
+fi
+
 ARCH=`uname -s`-`uname -p`
 
 $PYINST lacli.spec
@@ -30,4 +37,4 @@ echo "#! /bin/sh" > install.sh
 echo "VERSION=\"$VERSION\"" >> install.sh
 cat install.template.sh >> install.sh
 
-# s3cmd put -P install.sh $TARBALL s3://download.longaccess.com/
+[ -x upload.sh ] && ./upload.sh install.sh $TARBALL
