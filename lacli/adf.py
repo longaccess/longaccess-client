@@ -152,11 +152,13 @@ class Links(BaseYAMLObject):
     pending upload API resource.
     """
 
-    def __init__(self, download=None, local=None):
+    def __init__(self, download=None, local=None, upload=None):
         if download:
             self.download = download
         if local:
             self.local = local
+        if upload:
+            self.upload = upload
 
 
 class Cipher(BaseYAMLObject):
@@ -336,6 +338,8 @@ def as_adf_object(dct):
         return Meta(**dct)
     if 'meta' in dct:
         return Archive(**dct)
+    if 'download' in dct or 'upload' in dct or 'local' in dct:
+        return Links(**dct)
     return dct
 
 
