@@ -1,6 +1,9 @@
 import yaml
 import pyaml
 import sys
+import json
+import mmap
+import re
 
 from lacli.cipher import cipher_modes, new_key
 from yaml import SafeLoader
@@ -8,7 +11,6 @@ from yaml import SafeDumper
 from lacli.exceptions import InvalidArchiveError
 from datetime import datetime
 from dateutil.tz import tzutc
-from json import JSONEncoder
 from base64 import b64encode, b64decode
 
 
@@ -247,18 +249,28 @@ add_path_resolver(u'!mac', ["mac"])
 add_path_resolver(u'!signature', ["signature"])
 add_path_resolver(u'!key', ["keys", None])
 
+json_cert_re = re.compile(r"""
+<template><script>var json_certificate='([^']*)';</script></template>
+""")
+
 
 def load_archive(f):
+
+    match = json_cert_re.search(
+        mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ))
     d = {}
-    for o in yaml.load_all(f, Loader=PrettySafeLoader):
-        if isinstance(o, Archive):
-            d['archive'] = o
-        elif isinstance(o, Auth):
-            d['auth'] = o
-        elif isinstance(o, Certificate):
-            d['cert'] = o
-        elif isinstance(o, Links):
-            d['links'] = o
+    if match:  # we have a json encoded cert in this file
+        d = as_adf(match.group(1))
+    else:
+        for o in yaml.load_all(f, Loader=PrettySafeLoader):
+            if isinstance(o, Archive):
+                d['archive'] = o
+            elif isinstance(o, Auth):
+                d['auth'] = o
+            elif isinstance(o, Certificate):
+                d['cert'] = o
+            elif isinstance(o, Links):
+                d['links'] = o
     if 'archive' in d:
         return d
     raise InvalidArchiveError()
@@ -310,7 +322,7 @@ def archive_size(archive):
     return size
 
 
-class ADFEncoder(JSONEncoder):
+class ADFEncoder(json.JSONEncoder):
     def _b64(self, v):
         return {'_base64': b64encode(v)}
 
@@ -325,7 +337,7 @@ class ADFEncoder(JSONEncoder):
         return o.__dict__
 
 
-def as_adf_object(dct):
+def _as_adf_object(dct):
     if '_base64' in dct:
         return b64decode(dct['_base64'])
     if 'key' in dct:
@@ -345,3 +357,7 @@ def as_adf_object(dct):
 
 def as_json(docs):
     return ADFEncoder().encode(docs)
+
+
+def as_adf(data):
+    return json.loads(data, object_hook=_as_adf_object)
