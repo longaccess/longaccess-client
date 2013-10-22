@@ -30,4 +30,4 @@ echo "#! /bin/sh" > install.sh
 echo "VERSION=\"$VERSION\"" >> install.sh
 cat install.template.sh >> install.sh
 
-# s3cmd put -P install.sh $TARBALL s3://download.longaccess.com/
+[ -x upload.sh ] && ./upload.sh install.sh $TARBALL
