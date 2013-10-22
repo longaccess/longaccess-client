@@ -13,7 +13,7 @@ if test -z "$PYINST"; then
 fi
 
 BINARY=`which lacli`
-ARCH=`uname`
+ARCH=`uname -s`-`uname -p`
 
 $PYINST lacli.spec
 

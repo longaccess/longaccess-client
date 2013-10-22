@@ -1,7 +1,7 @@
 
 TARGET="$HOME/local/lib"
 BIN="$HOME/local/bin"
-ARCH=`uname`
+ARCH=`uname -s`-`uname -p`
 
 echo "========================================"
 echo "Creating $TARGET"
