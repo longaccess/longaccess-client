@@ -6,10 +6,13 @@ This is the prototype client program for interacting with the [Longaccess servic
 Installation
 ------------
 
-Download or clone the source repository, create a [`virtualenv`][ve] if needed, and install the client like this:
+We have binary packages for certain platforms, like MacOS X, Linux and FreeBSD. For more information see the [Longaccess downloads page][lad]. For other platforms or purposes you can download or clone the source repository, create a [`virtualenv`][ve] if needed, and install the client via `pip`. E.g.:
 
     pip install https://github.com/longaccess/longaccess-client/tarball/master
-    
+
+Usage
+-----
+
 After installation the program is invoked as `lacli`. Run it with no arguments to see a synopsis of supported usages. In short, there are three basic commands:
 
 * `lacli archive` helps you manage archives
@@ -28,8 +31,8 @@ In order to use the service you must first have a username and password for the 
 1. as global arguments, e.g. `lacli -u user -p pass archive list ...`
 2. as entries in your `.netrc` file. This way you will not have to provide them everytime (but you should keep your `.netrc` safe)
 
-Basic usage
------------
+Example usage
+-------------
 
 An example scenario:
 
@@ -61,6 +64,7 @@ An example scenario:
 
 
 [la]: https://www.longaccess.com "the Longaccess website"
+[lad]: https://downloads.longaccess.com "the Longaccess downloads page"
 [py]: http://www.python.org "the python website"
 [ve]: http://www.virtualenv.org "virtualenv"
 [What is Longaccess?]: https://github.com/longaccess/longaccess-docs/blob/master/what_is_longaccess.md "what is Longaccess?"
