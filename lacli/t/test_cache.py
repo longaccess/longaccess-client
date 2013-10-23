@@ -105,6 +105,24 @@ class CacheTest(TestCase):
             adf = mock_open.return_value.__enter__.return_value.getvalue()
             self.assertEqual(ADF_EXAMPLE_1, adf)
 
+    def test_import_cert(self):
+        import lacli.cache
+        from StringIO import StringIO
+        with nested(
+                patch.object(lacli.cache, 'NamedTemporaryFile', create=True),
+                patch.object(lacli.cache, 'archive_slug', create=True),
+                _temp_home()
+                ) as (mock_open, slug, home):
+            mock_open.return_value.__enter__.return_value = StringIO()
+            slug.return_value = 'foo'
+            cache = self._makeit(home)
+            cert = os.path.join('t', 'data', 'longaccess-74-5N93.html')
+            aid = cache.import_cert(cert)
+            args, kwargs = mock_open.call_args
+            self.assertIn('prefix', kwargs)
+            self.assertEqual('foo', kwargs['prefix'])
+            self.assertEqual('74-5N93', aid)
+
 ADF_EXAMPLE_1 = """!archive
 meta: !meta {cipher: xor, created: now, format: zip}
 title: foo
