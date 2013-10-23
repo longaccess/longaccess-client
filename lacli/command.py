@@ -124,9 +124,8 @@ class LaCertsCommand(cmd.Cmd):
         """
         path = self.cache.print_cert(cert_id)
         if path:
-            print "Created files:"
-            print path[0]
-            print path[1]
+            print "Created file:"
+            print path
         else:
             print "Certificate not found"
 

@@ -170,11 +170,7 @@ class Cache(object):
                 html = 'longaccess-{}.html'.format(aid)
                 with open(html, 'w') as f:
                     f.write(self._printable_cert(docs))
-                yml = 'longaccess-{}.yaml'.format(aid)
-                with open(yml, 'w') as f:
-                    make_adf([docs['archive'], docs['cert'],
-                              docs['links'], docs['auth']], out=f, pretty=True)
-                return (html, yml)
+                return html
 
     @contains(dict)
     def certs(self, files=[]):
