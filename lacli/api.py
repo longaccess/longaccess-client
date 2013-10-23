@@ -156,7 +156,6 @@ class Api(object):
         yield {
             'tokens': self._upload_status(uri, status),
             'uri': uri,
-            'id': status['id'],
             'account': account
         }
         patch = {'status': 'uploaded', 'size': archive.meta.size}
