@@ -124,9 +124,8 @@ class LaCertsCommand(cmd.Cmd):
         """
         path = self.cache.print_cert(cert_id)
         if path:
-            print "Created files:"
-            print path[0]
-            print path[1]
+            print "Created file:"
+            print path
         else:
             print "Certificate not found"
 
@@ -252,9 +251,9 @@ class LaArchiveCommand(cmd.Cmd):
             line.append("list")
         elif options['create']:
             line.append("create")
-            line.append(options['<dirname>'])
+            line.append(quote(options['<dirname>']))
             if options['--title']:
-                line.append('"'+options['--title']+'"')
+                line.append(quote(options['--title']))
         elif options['status']:
             line.append("status")
             line.append(options['<index>'])

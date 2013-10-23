@@ -1,6 +1,9 @@
 import yaml
 import pyaml
 import sys
+import json
+import mmap
+import re
 
 from lacli.cipher import cipher_modes, new_key
 from yaml import SafeLoader
@@ -8,6 +11,7 @@ from yaml import SafeDumper
 from lacli.exceptions import InvalidArchiveError
 from datetime import datetime
 from dateutil.tz import tzutc
+from base64 import b64encode, b64decode
 
 
 class PrettySafeLoader(SafeLoader):
@@ -150,11 +154,13 @@ class Links(BaseYAMLObject):
     pending upload API resource.
     """
 
-    def __init__(self, download=None, local=None):
+    def __init__(self, download=None, local=None, upload=None):
         if download:
             self.download = download
         if local:
             self.local = local
+        if upload:
+            self.upload = upload
 
 
 class Cipher(BaseYAMLObject):
@@ -243,18 +249,28 @@ add_path_resolver(u'!mac', ["mac"])
 add_path_resolver(u'!signature', ["signature"])
 add_path_resolver(u'!key', ["keys", None])
 
+json_cert_re = re.compile(r"""
+<template><script>var json_certificate='([^']*)';</script></template>
+""")
+
 
 def load_archive(f):
+
+    match = json_cert_re.search(
+        mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ))
     d = {}
-    for o in yaml.load_all(f, Loader=PrettySafeLoader):
-        if isinstance(o, Archive):
-            d['archive'] = o
-        elif isinstance(o, Auth):
-            d['auth'] = o
-        elif isinstance(o, Certificate):
-            d['cert'] = o
-        elif isinstance(o, Links):
-            d['links'] = o
+    if match:  # we have a json encoded cert in this file
+        d = as_adf(match.group(1))
+    else:
+        for o in yaml.load_all(f, Loader=PrettySafeLoader):
+            if isinstance(o, Archive):
+                d['archive'] = o
+            elif isinstance(o, Auth):
+                d['auth'] = o
+            elif isinstance(o, Certificate):
+                d['cert'] = o
+            elif isinstance(o, Links):
+                d['links'] = o
     if 'archive' in d:
         return d
     raise InvalidArchiveError()
@@ -304,3 +320,44 @@ def archive_size(archive):
         else:
             size = "{}MiB".format(mib)
     return size
+
+
+class ADFEncoder(json.JSONEncoder):
+    def _b64(self, v):
+        return {'_base64': b64encode(v)}
+
+    def default(self, o):
+        if isinstance(o, (list, dict, str, unicode,
+                          int, float, bool, type(None))):
+            return super(ADFEncoder, self).default(o)
+        if o.yaml_tag == Certificate.yaml_tag:
+            return {'key': self._b64(o.key)}
+        if o.yaml_tag == Auth.yaml_tag:
+            return dict([(k, self._b64(v)) for k, v in o.__dict__.iteritems()])
+        return o.__dict__
+
+
+def _as_adf_object(dct):
+    if '_base64' in dct:
+        return b64decode(dct['_base64'])
+    if 'key' in dct:
+        return Certificate(key=dct['key'])
+    if 'md5' in dct:
+        return Auth(**dct)
+    if 'mode' in dct:
+        return Cipher(**dct)
+    if 'created' in dct:
+        return Meta(**dct)
+    if 'meta' in dct:
+        return Archive(**dct)
+    if 'download' in dct or 'upload' in dct or 'local' in dct:
+        return Links(**dct)
+    return dct
+
+
+def as_json(docs):
+    return ADFEncoder().encode(docs)
+
+
+def as_adf(data):
+    return json.loads(data, object_hook=_as_adf_object)

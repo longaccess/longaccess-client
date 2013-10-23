@@ -6,7 +6,7 @@ from dateutil.relativedelta import relativedelta as date_delta
 
 from glob import iglob
 from lacli.adf import (load_archive, make_adf, Certificate, Archive,
-                       Meta, Links, Cipher)
+                       Meta, Links, Cipher, as_json)
 from lacli.log import getLogger
 from lacli.archive import dump_archive, archive_slug
 from lacli.exceptions import InvalidArchiveError
@@ -119,6 +119,7 @@ class Cache(object):
         hk = pairs(fours(pairs(iter(key))), " . ")
 
         return resource_string(__name__, "data/certificate.html").format(
+            json=as_json(docs),
             aid=docs['links'].download,
             keyB=next(hk),
             keyC=next(hk),
@@ -169,11 +170,7 @@ class Cache(object):
                 html = 'longaccess-{}.html'.format(aid)
                 with open(html, 'w') as f:
                     f.write(self._printable_cert(docs))
-                yml = 'longaccess-{}.yaml'.format(aid)
-                with open(yml, 'w') as f:
-                    make_adf([docs['archive'], docs['cert'],
-                              docs['links'], docs['auth']], out=f, pretty=True)
-                return (html, yml)
+                return html
 
     @contains(dict)
     def certs(self, files=[]):
