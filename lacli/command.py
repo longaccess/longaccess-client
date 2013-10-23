@@ -74,7 +74,7 @@ class LaCertsCommand(cmd.Cmd):
                 size = archive_size(cert['archive'])
                 print "{:>10} {:>6} {:<}".format(
                     id, size, title)
-                if self.verbose:
+                if self.debug > 2:
                     for doc in cert.itervalues():
                         pyaml.dump(doc, sys.stdout)
                     print
@@ -385,11 +385,13 @@ class LaArchiveCommand(cmd.Cmd):
                     cert = archive['signature'].aid
                 elif 'links' in archive and archive['links'].upload:
                     status = "UPLOADED"
+                    if self.verbose:
+                        cert = archive['links'].upload
                 title = archive['archive'].title
                 size = archive_size(archive['archive'])
                 print "{:03d} {:>6} {:>20} {:>10} {:>10}".format(
                     n+1, size, title, status, cert)
-                if self.verbose:
+                if self.debug > 2:
                     for doc in archive.itervalues():
                         pyaml.dump(doc, sys.stdout)
                     print
