@@ -38,7 +38,7 @@ class AdfTest(TestCase):
 
     def test_links(self):
         from lacli.adf import Links, make_adf
-        links = make_adf(Links(download='foo', local='bar'), True)
+        links = make_adf(Links(upload='foo', local='bar'), True)
         self.assertEqual(ADF_TEST_DATA_3, links)
 
     def test_minimal(self):
@@ -97,9 +97,9 @@ ADF_TEST_DATA_2 = """---
 
 ADF_TEST_DATA_3 = """---
 !links {
-  ? !!str "download"
-  : !!str "foo",
   ? !!str "local"
   : !!str "bar",
+  ? !!str "upload"
+  : !!str "foo",
 }
 """
