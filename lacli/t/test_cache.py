@@ -123,6 +123,23 @@ class CacheTest(TestCase):
             self.assertEqual('foo', kwargs['prefix'])
             self.assertEqual('74-5N93', aid)
 
+    def test_upload_complete(self):
+        import lacli.cache
+        cache = self._makeit(self.home)
+        with nested(
+                patch.object(lacli.cache, 'open', create=True),
+                patch.object(lacli.cache, 'load_archive', create=True),
+                patch.object(lacli.cache, 'make_adf', create=True)
+                ) as (mock_open, mock_load, mock_adf):
+            mock_load.return_value = {}
+            ds = cache.upload_complete("foo", {'archive_key': 'bar'})
+            self.assertIn('signature', ds)
+            self.assertEqual('bar', ds['signature'].aid)
+            self.assertEqual('http://longaccess.com/a/', ds['signature'].uri)
+            args, kwargs = mock_adf.call_args
+            self.assertEqual('bar', args[0][0].aid)
+
+
 ADF_EXAMPLE_1 = """!archive
 meta: !meta {cipher: xor, created: now, format: zip}
 title: foo
