@@ -66,14 +66,11 @@ class LaCertsCommand(cmd.Cmd):
         if len(certs):
             for n, cert in enumerate(certs.iteritems()):
                 cert = cert[1]
-                id = ""
-                if 'links' in cert:
-                    if cert['links'].download:
-                        id = cert['links'].download
+                aid = cert['signature'].aid
                 title = cert['archive'].title
                 size = archive_size(cert['archive'])
                 print "{:>10} {:>6} {:<}".format(
-                    id, size, title)
+                    aid, size, title)
                 if self.debug > 2:
                     for doc in cert.itervalues():
                         pyaml.dump(doc, sys.stdout)
