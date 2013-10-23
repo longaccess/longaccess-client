@@ -88,17 +88,13 @@ class CacheTest(TestCase):
         from StringIO import StringIO
         with nested(
                 patch.object(lacli.cache, 'NamedTemporaryFile', create=True),
-                patch.object(lacli.cache, 'load_archive', create=True),
                 patch.object(lacli.cache, 'archive_slug', create=True),
-                _temp_home(),
-                patch('lacli.cache.Cache._cert_open')
-                ) as (mock_open, load, slug, home, cert_open):
+                ) as (mock_open, slug):
             mock_open.return_value.__enter__.return_value = StringIO()
             meta = Meta('zip', 'xor', created='now')
             archive = Archive('foo', meta)
-            load.return_value = {'archive': archive}
             slug.return_value = 'foo'
-            cache = self._makeit(home)
+            cache = self._makeit(self.home)
             cache.save_cert({'archive': archive,
                              'signature': Signature(aid="foo",
                                                     uri="http://baz.com",
