@@ -236,7 +236,27 @@ class MAC(BaseYAMLObject):
 
 
 class Signature(BaseYAMLObject):
+    """
+    >>> sig = Signature('1', 'http://baz.com', 'now')
+    >>> pyaml.dump(sig, sys.stdout)
+    !signature
+    aid: '1'
+    created: now
+    uri: http://baz.com
+    """
     yaml_tag = u'!signature'
+    aid = None
+    uri = None
+    created = None
+
+    def __init__(self, aid, uri, created=None):
+        self.aid = aid
+        self.uri = uri
+        if created:
+            self.created = created
+        else:
+            self.created = datetime.utcnow().replace(
+                microsecond=0, tzinfo=tzutc()).isoformat()
 
 
 def add_path_resolver(tag, keys):

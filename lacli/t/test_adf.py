@@ -41,6 +41,11 @@ class AdfTest(TestCase):
         links = make_adf(Links(upload='foo', local='bar'), True)
         self.assertEqual(ADF_TEST_DATA_3, links)
 
+    def test_signature(self):
+        from lacli.adf import Signature, make_adf
+        sig = make_adf(Signature(aid='bar', uri='foo', created='1'), True)
+        self.assertEqual(ADF_TEST_DATA_4, sig)
+
     def test_minimal(self):
         from lacli.adf import load_archive
 
@@ -100,6 +105,17 @@ ADF_TEST_DATA_3 = """---
   ? !!str "local"
   : !!str "bar",
   ? !!str "upload"
+  : !!str "foo",
+}
+"""
+
+ADF_TEST_DATA_4 = """---
+!signature {
+  ? !!str "aid"
+  : !!str "bar",
+  ? !!str "created"
+  : !!str "1",
+  ? !!str "uri"
   : !!str "foo",
 }
 """
