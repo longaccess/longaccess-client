@@ -291,6 +291,8 @@ def load_archive(f):
                 d['cert'] = o
             elif isinstance(o, Links):
                 d['links'] = o
+            elif isinstance(o, Signature):
+                d['signature'] = o
     if 'archive' in d:
         return d
     raise InvalidArchiveError()
@@ -372,6 +374,8 @@ def _as_adf_object(dct):
         return Archive(**dct)
     if 'download' in dct or 'upload' in dct or 'local' in dct:
         return Links(**dct)
+    if 'aid' in dct:
+        return Signature(**dct)
     return dct
 
 
