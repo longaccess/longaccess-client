@@ -66,15 +66,12 @@ class LaCertsCommand(cmd.Cmd):
         if len(certs):
             for n, cert in enumerate(certs.iteritems()):
                 cert = cert[1]
-                id = ""
-                if 'links' in cert:
-                    if cert['links'].download:
-                        id = cert['links'].download
+                aid = cert['signature'].aid
                 title = cert['archive'].title
                 size = archive_size(cert['archive'])
                 print "{:>10} {:>6} {:<}".format(
-                    id, size, title)
-                if self.verbose:
+                    aid, size, title)
+                if self.debug > 2:
                     for doc in cert.itervalues():
                         pyaml.dump(doc, sys.stdout)
                     print
@@ -380,17 +377,18 @@ class LaArchiveCommand(cmd.Cmd):
                 archive = archive[1]
                 status = "LOCAL"
                 cert = ""
-                if 'links' in archive:
-                    if archive['links'].upload:
-                        status = "UPLOADED"
-                    if archive['links'].download:
-                        status = "COMPLETE"
-                        cert = archive['links'].download
+                if 'signature' in archive:
+                    status = "COMPLETE"
+                    cert = archive['signature'].aid
+                elif 'links' in archive and archive['links'].upload:
+                    status = "UPLOADED"
+                    if self.verbose:
+                        cert = archive['links'].upload
                 title = archive['archive'].title
                 size = archive_size(archive['archive'])
                 print "{:03d} {:>6} {:>20} {:>10} {:>10}".format(
                     n+1, size, title, status, cert)
-                if self.verbose:
+                if self.debug > 2:
                     for doc in archive.itervalues():
                         pyaml.dump(doc, sys.stdout)
                     print

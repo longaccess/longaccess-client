@@ -84,32 +84,64 @@ class CacheTest(TestCase):
 
     def test_save_cert(self):
         import lacli.cache
-        from lacli.adf import Archive, Meta, Links
+        from lacli.adf import Archive, Meta, Signature
         from StringIO import StringIO
         with nested(
                 patch.object(lacli.cache, 'NamedTemporaryFile', create=True),
-                patch.object(lacli.cache, 'load_archive', create=True),
                 patch.object(lacli.cache, 'archive_slug', create=True),
-                patch.object(lacli.cache.os, 'unlink'),
-                _temp_home(),
-                patch('lacli.cache.Cache._cert_open')
-                ) as (mock_open, load, slug, mock_unlink, home, cert_open):
+                ) as (mock_open, slug):
             mock_open.return_value.__enter__.return_value = StringIO()
             meta = Meta('zip', 'xor', created='now')
             archive = Archive('foo', meta)
-            load.return_value = {'archive': archive}
             slug.return_value = 'foo'
-            cache = self._makeit(home)
+            cache = self._makeit(self.home)
             cache.save_cert({'archive': archive,
-                             'links': Links(download="foo")})
+                             'signature': Signature(aid="foo",
+                                                    uri="http://baz.com",
+                                                    created="now")})
             args, kwargs = mock_open.call_args
             self.assertIn('prefix', kwargs)
             self.assertEqual('foo', kwargs['prefix'])
             adf = mock_open.return_value.__enter__.return_value.getvalue()
             self.assertEqual(ADF_EXAMPLE_1, adf)
 
+    def test_import_cert(self):
+        import lacli.cache
+        from StringIO import StringIO
+        with nested(
+                patch.object(lacli.cache, 'NamedTemporaryFile', create=True),
+                patch.object(lacli.cache, 'archive_slug', create=True),
+                _temp_home()
+                ) as (mock_open, slug, home):
+            mock_open.return_value.__enter__.return_value = StringIO()
+            slug.return_value = 'foo'
+            cache = self._makeit(home)
+            cert = os.path.join('t', 'data', 'longaccess-74-5N93.html')
+            aid = cache.import_cert(cert)
+            args, kwargs = mock_open.call_args
+            self.assertIn('prefix', kwargs)
+            self.assertEqual('foo', kwargs['prefix'])
+            self.assertEqual('74-5N93', aid)
+
+    def test_upload_complete(self):
+        import lacli.cache
+        cache = self._makeit(self.home)
+        with nested(
+                patch.object(lacli.cache, 'open', create=True),
+                patch.object(lacli.cache, 'load_archive', create=True),
+                patch.object(lacli.cache, 'make_adf', create=True)
+                ) as (mock_open, mock_load, mock_adf):
+            mock_load.return_value = {}
+            ds = cache.upload_complete("foo", {'archive_key': 'bar'})
+            self.assertIn('signature', ds)
+            self.assertEqual('bar', ds['signature'].aid)
+            self.assertEqual('http://longaccess.com/a/', ds['signature'].uri)
+            args, kwargs = mock_adf.call_args
+            self.assertEqual('bar', args[0][0].aid)
+
+
 ADF_EXAMPLE_1 = """!archive
 meta: !meta {cipher: xor, created: now, format: zip}
 title: foo
---- !links {download: foo}
+--- !signature {aid: foo, created: now, uri: 'http://baz.com'}
 """

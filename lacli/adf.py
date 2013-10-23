@@ -79,7 +79,7 @@ class Auth(BaseYAMLObject):
     ...     doc=load_archive(f)['auth']
     ...     auth = Auth(sha512=doc.sha512)
     ...     auth.sha512.encode('hex')[:10]
-    'd34a686c5c'
+    'd5ad8f4cb5'
     """
     yaml_tag = u'!auth'
 
@@ -156,6 +156,7 @@ class Links(BaseYAMLObject):
 
     def __init__(self, download=None, local=None, upload=None):
         if download:
+            # deprecated, but for compatibility with early client
             self.download = download
         if local:
             self.local = local
@@ -236,7 +237,27 @@ class MAC(BaseYAMLObject):
 
 
 class Signature(BaseYAMLObject):
+    """
+    >>> sig = Signature('1', 'http://baz.com', 'now')
+    >>> pyaml.dump(sig, sys.stdout)
+    !signature
+    aid: '1'
+    created: now
+    uri: http://baz.com
+    """
     yaml_tag = u'!signature'
+    aid = None
+    uri = None
+    created = None
+
+    def __init__(self, aid, uri, created=None):
+        self.aid = aid
+        self.uri = uri
+        if created:
+            self.created = created
+        else:
+            self.created = datetime.utcnow().replace(
+                microsecond=0, tzinfo=tzutc()).isoformat()
 
 
 def add_path_resolver(tag, keys):
@@ -271,6 +292,17 @@ def load_archive(f):
                 d['cert'] = o
             elif isinstance(o, Links):
                 d['links'] = o
+            elif isinstance(o, Signature):
+                d['signature'] = o
+    if 'links' in d and d['links'].download:
+        # fix for early client saving archive id in links section
+        assert 'signature' not in d
+        d['signature'] = Signature(aid=d['links'].download,
+                                   uri='http://longaccess.com/a/')
+        if d['links'].upload or d['links'].local:
+            d['links'].download = None
+        else:
+            del d['links']
     if 'archive' in d:
         return d
     raise InvalidArchiveError()
@@ -288,7 +320,7 @@ def make_adf(archive=None, canonical=False, out=None, pretty=False):
       created: now
       format: zip
     title: title
-    ---!certificate
+    --- !certificate
     key: !!binary |
       /////////////////////w==
     >>> make_adf([archive, cert], out=sys.stdout)
@@ -352,6 +384,8 @@ def _as_adf_object(dct):
         return Archive(**dct)
     if 'download' in dct or 'upload' in dct or 'local' in dct:
         return Links(**dct)
+    if 'aid' in dct:
+        return Signature(**dct)
     return dct
 
 
