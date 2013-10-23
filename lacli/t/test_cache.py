@@ -90,10 +90,9 @@ class CacheTest(TestCase):
                 patch.object(lacli.cache, 'NamedTemporaryFile', create=True),
                 patch.object(lacli.cache, 'load_archive', create=True),
                 patch.object(lacli.cache, 'archive_slug', create=True),
-                patch.object(lacli.cache.os, 'unlink'),
                 _temp_home(),
                 patch('lacli.cache.Cache._cert_open')
-                ) as (mock_open, load, slug, mock_unlink, home, cert_open):
+                ) as (mock_open, load, slug, home, cert_open):
             mock_open.return_value.__enter__.return_value = StringIO()
             meta = Meta('zip', 'xor', created='now')
             archive = Archive('foo', meta)
