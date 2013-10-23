@@ -96,16 +96,20 @@ class Cache(object):
         return docs
 
     def save_cert(self, docs):
+        """
+        write cert documents to the cache directory under a unique filename.
+        """
         fname = archive_slug(docs['archive'])
         tmpargs = {'delete': False,
                    'dir': self._cache_dir('certs', write=True)}
         with NamedTemporaryFile(prefix=fname, suffix=".adf", **tmpargs) as f:
             make_adf(list(docs.itervalues()), out=f)
-        return docs['links'].download
 
     def import_cert(self, fname):
         with open(fname) as cert:
-            return self.save_cert(load_archive(cert))
+            docs = load_archive(cert)
+            self.save_cert(docs)
+            return docs['signature'].aid
 
     def _printable_cert(self, docs):
         archive = docs['archive']
@@ -180,7 +184,7 @@ class Cache(object):
             with open(f) as fh:
                 try:
                     docs = load_archive(fh)
-                    if 'links' in docs and docs['links'].download:
-                        yield (docs['links'].download, docs)
+                    if 'signature' in docs:
+                        yield (docs['signature'].aid, docs)
                 except InvalidArchiveError:
                     getLogger().debug(f, exc_info=True)

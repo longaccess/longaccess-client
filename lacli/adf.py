@@ -156,6 +156,7 @@ class Links(BaseYAMLObject):
 
     def __init__(self, download=None, local=None, upload=None):
         if download:
+            # deprecated, but for compatibility with early client
             self.download = download
         if local:
             self.local = local
@@ -293,6 +294,15 @@ def load_archive(f):
                 d['links'] = o
             elif isinstance(o, Signature):
                 d['signature'] = o
+    if 'links' in d and hasattr(d['links'], 'download'):
+        # fix for early client saving archive id in links section
+        assert 'signature' not in d
+        d['signature'] = Signature(aid=d['links'].download,
+                                   uri='http://longaccess.com/a/')
+        if d['links'].upload or d['links'].local:
+            d['links'].download = None
+        else:
+            del d['links']
     if 'archive' in d:
         return d
     raise InvalidArchiveError()
