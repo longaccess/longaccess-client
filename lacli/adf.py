@@ -79,7 +79,7 @@ class Auth(BaseYAMLObject):
     ...     doc=load_archive(f)['auth']
     ...     auth = Auth(sha512=doc.sha512)
     ...     auth.sha512.encode('hex')[:10]
-    'd34a686c5c'
+    'd5ad8f4cb5'
     """
     yaml_tag = u'!auth'
 
