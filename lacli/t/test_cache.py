@@ -84,7 +84,7 @@ class CacheTest(TestCase):
 
     def test_save_cert(self):
         import lacli.cache
-        from lacli.adf import Archive, Meta, Links
+        from lacli.adf import Archive, Meta, Signature
         from StringIO import StringIO
         with nested(
                 patch.object(lacli.cache, 'NamedTemporaryFile', create=True),
@@ -101,7 +101,9 @@ class CacheTest(TestCase):
             slug.return_value = 'foo'
             cache = self._makeit(home)
             cache.save_cert({'archive': archive,
-                             'links': Links(download="foo")})
+                             'signature': Signature(aid="foo",
+                                                    uri="http://baz.com",
+                                                    created="now")})
             args, kwargs = mock_open.call_args
             self.assertIn('prefix', kwargs)
             self.assertEqual('foo', kwargs['prefix'])
@@ -111,5 +113,5 @@ class CacheTest(TestCase):
 ADF_EXAMPLE_1 = """!archive
 meta: !meta {cipher: xor, created: now, format: zip}
 title: foo
---- !links {download: foo}
+--- !signature {aid: foo, created: now, uri: 'http://baz.com'}
 """
