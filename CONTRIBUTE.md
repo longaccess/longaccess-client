@@ -26,7 +26,9 @@ http://github.com/longaccess/longaccess-client
 Coding Standards
 ----------------
 
-Contributed code should follow the PEP8 python coding standards.
+Contributed code should follow the coding standards specified in the
+CODING-STYLE document included with the software distribution. In general we
+use four spaces for indentation and generally follow [PEP8](http://www.python.org/dev/peps/pep-0008/).
 
 
 Copyright Assignment
