@@ -2,8 +2,8 @@
 import os
 
 from testtools import TestCase
-from . import makeprefs, dummykey
-from shutil import rmtree, copy
+from . import makeprefs
+from shutil import rmtree
 from contextlib import contextmanager
 from tempfile import mkdtemp
 from mock import Mock
@@ -31,30 +31,15 @@ class ArchiveTest(TestCase):
 
     def test_restore(self):
         from lacli.archive import restore_archive
-        from lacli.adf import Archive, Meta, Cipher
-        from lacli.crypt import CryptIO
-        from lacli.cipher import get_cipher
-        from zipfile import ZipFile
-        from shutil import copyfileobj
-        with self._temp_home() as home:
-            cdir = os.path.join(home, 'certs')
-            os.makedirs(cdir)
-            tmpdir = os.path.join(home, 'tmp')
-            os.makedirs(tmpdir)
-            adf = os.path.join(self.home, 'archives', 'sample.adf')
-            copy(adf, cdir)
-            cert = Mock(key=dummykey)
-            archive = Archive('My 2013 vacation',
-                              Meta('zip', Cipher('aes-256-ctr', 1)))
-            zf = os.path.join(tmpdir, 'test.zip')
-            with ZipFile(zf, 'w') as zpf:
-                zpf.write(adf)
-            cf = os.path.join(tmpdir, 'test.zip.crypt')
-            with open(zf):
-                with open(cf, 'w') as dst:
-                    copyfileobj(open(zf),
-                                CryptIO(dst, get_cipher(archive, cert)))
+        from lacli.cache import Cache
+        cache = Cache(self.home)
+        cert = cache.certs()['74-5N93']
+        with self._temp_home() as tmpdir:
             cb = Mock()
-            restore_archive(archive, cf, cert, tmpdir, tmpdir, cb)
+            cfname = os.path.join(
+                self.home, 'data', '2013-10-22-foobar.zip.crypt')
+            restore_archive(
+                cert['archive'], cfname, cert['cert'], tmpdir, tmpdir, cb)
             self.assertEqual(1, cb.call_count)
-            self.assertTrue(os.path.exists(os.path.join(tmpdir, adf)))
+            self.assertTrue(os.path.exists(
+                os.path.join(tmpdir, 'xtQz6ziJ.sh.part')))

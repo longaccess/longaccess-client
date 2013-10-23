@@ -1,0 +1,20 @@
+!certificate
+key: !!binary |
+  Xd36q1kATWluAv6wQNC1znTcSEj+nN6LgFgWu9AdrvA=
+--- !auth
+md5: !!binary |
+  b/RZX2xfsLUN1bdIIhcykA==
+sha512: !!binary |
+  1a2PTLVRBccLC9lcdS9icjzx/I9mbiaEHrEu8p2z8VZ4ASmrh4GdxxCfa976b2+NWuYn+oZUjR0Q
+  wOsBFsbBIw==
+--- !archive
+meta: !meta
+  cipher: !cipher {mode: aes-256-ctr}
+  created: '2013-10-22T12:07:43+00:00'
+  email: kk@longaccess.com
+  format: zip
+  name: ''
+  size: 768
+title: foobar
+--- !links {download: 74-5N93, local: 'file:///home/kouk/.longaccess/data/2013-10-22-foobar.zip.crypt',
+  upload: 'https://www.longaccess.com/api/v1/upload/249/'}
