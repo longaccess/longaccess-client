@@ -39,3 +39,4 @@ robohydra/plugins/longaccessmock/tokens.js
 #pyinstall
 pyinstall/install.sh
 pyinstall/*.tar.bz2
+pyinstall/upload.sh
