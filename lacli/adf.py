@@ -288,7 +288,7 @@ def make_adf(archive=None, canonical=False, out=None, pretty=False):
       created: now
       format: zip
     title: title
-    ---!certificate
+    --- !certificate
     key: !!binary |
       /////////////////////w==
     >>> make_adf([archive, cert], out=sys.stdout)
