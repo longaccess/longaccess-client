@@ -380,12 +380,11 @@ class LaArchiveCommand(cmd.Cmd):
                 archive = archive[1]
                 status = "LOCAL"
                 cert = ""
-                if 'links' in archive:
-                    if archive['links'].upload:
-                        status = "UPLOADED"
-                    if archive['links'].download:
-                        status = "COMPLETE"
-                        cert = archive['links'].download
+                if 'signature' in archive:
+                    status = "COMPLETE"
+                    cert = archive['signature'].aid
+                elif 'links' in archive and archive['links'].upload:
+                    status = "UPLOADED"
                 title = archive['archive'].title
                 size = archive_size(archive['archive'])
                 print "{:03d} {:>6} {:>20} {:>10} {:>10}".format(

@@ -6,7 +6,7 @@ from dateutil.relativedelta import relativedelta as date_delta
 
 from glob import iglob
 from lacli.adf import (load_archive, make_adf, Certificate, Archive,
-                       Meta, Links, Cipher, as_json)
+                       Meta, Links, Cipher, Signature, as_json)
 from lacli.log import getLogger
 from lacli.archive import dump_archive, archive_slug
 from lacli.exceptions import InvalidArchiveError
@@ -86,11 +86,15 @@ class Cache(object):
         }
 
     def upload_complete(self, fname, status):
+        """
+        adds the archive key to the signature part of the ADF file
+        """
         assert 'archive_key' in status, "no archive key"
         docs = []
         with open(fname) as _upload:
             docs = load_archive(_upload)
-        docs['links'].download = status['archive_key']
+        docs['signature'] = Signature(aid=status['archive_key'],
+                                      uri='http://longaccess.com/a/')
         with open(fname, 'w') as _upload:
             make_adf(list(docs.itervalues()), out=_upload)
         return docs
@@ -104,6 +108,7 @@ class Cache(object):
                    'dir': self._cache_dir('certs', write=True)}
         with NamedTemporaryFile(prefix=fname, suffix=".adf", **tmpargs) as f:
             make_adf(list(docs.itervalues()), out=f)
+        return docs['signature'].aid
 
     def import_cert(self, fname):
         with open(fname) as cert:

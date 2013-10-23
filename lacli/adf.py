@@ -294,7 +294,7 @@ def load_archive(f):
                 d['links'] = o
             elif isinstance(o, Signature):
                 d['signature'] = o
-    if 'links' in d and hasattr(d['links'], 'download'):
+    if 'links' in d and d['links'].download:
         # fix for early client saving archive id in links section
         assert 'signature' not in d
         d['signature'] = Signature(aid=d['links'].download,
