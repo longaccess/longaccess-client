@@ -3,7 +3,7 @@ from testtools.matchers import Contains
 from mock import Mock, patch
 from itertools import repeat, izip
 from . import makeprefs
-from lacli.exceptions import ApiAuthException
+from lacli.exceptions import ApiAuthException, ApiErrorException
 import json
 
 
@@ -141,7 +141,7 @@ class ApiTest(TestCase):
         status = api.upload_status(url+"1/")
         self.assertTrue('status' in status)
         self.assertEqual('pending', status['status'])
-        self.assertEqual(None, api.upload_status(url+"1/"))
+        self.assertRaises(ApiErrorException, api.upload_status, url+"1/")
 
 
 LA_UPLOAD_RESPONSE = """{
