@@ -30,11 +30,11 @@ fi
 
 VERSION=`$BINARY --version | cut -d " " -f 2`
 TARBALL="lacli-$ARCH-$VERSION.tar.bz2"
+LATEST="lacli-$ARCH-latest.tar.bz2"
 
 tar cjvf $TARBALL -C ./dist/ lacli
 
-echo "#! /bin/sh" > install.sh
-echo "VERSION=\"$VERSION\"" >> install.sh
-cat install.template.sh >> install.sh
-
-[ -x upload.sh ] && ./upload.sh install.sh $TARBALL
+if [ -x upload.sh ] ; then
+    ./upload.sh install.sh
+    ./upload.sh $TARBALL $LATEST
+fi
