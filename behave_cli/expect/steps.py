@@ -29,7 +29,7 @@ def home_directory(context, directory):
             rmtree(directory)
         os.mkdir(directory)
     else:
-        os.makedir(directory)
+        os.makedirs(directory)
     assert os.path.isdir(directory), "Home directory doesn't exist"
 
 
