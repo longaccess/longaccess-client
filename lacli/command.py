@@ -13,6 +13,8 @@ from lacli.adf import archive_size
 from lacli.decorators import command
 from urlparse import urlparse
 
+from richtext import RichTextUI as UIClass
+ui = UIClass()
 
 class LaCertsCommand(cmd.Cmd):
     """Manage Long Access Certificates
@@ -64,13 +66,18 @@ class LaCertsCommand(cmd.Cmd):
         certs = self.cache._for_adf('certs')
 
         if len(certs):
+            ui.print_certificates_header()
             for n, cert in enumerate(certs.iteritems()):
                 cert = cert[1]
                 aid = cert['signature'].aid
                 title = cert['archive'].title
                 size = archive_size(cert['archive'])
-                print "{:>10} {:>6} {:<}".format(
-                    aid, size, title)
+                ui.print_certificates_line( certificate={
+                        'aid': aid,
+                        'size':size,
+                        'title': title,
+                        'created':cert['archive'].meta.created
+                    })
                 if self.debug > 2:
                     for doc in cert.itervalues():
                         pyaml.dump(doc, sys.stdout)
@@ -370,8 +377,6 @@ class LaArchiveCommand(cmd.Cmd):
         """
         Usage: list
         """
-        from richtext import RichTextUI as UIClass
-        ui = UIClass()
         archives = self.cache._for_adf('archives')
 
         if len(archives):
