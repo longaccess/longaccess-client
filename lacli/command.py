@@ -370,9 +370,12 @@ class LaArchiveCommand(cmd.Cmd):
         """
         Usage: list
         """
+        from richtext import RichTextUI as UIClass
+        ui = UIClass()
         archives = self.cache._for_adf('archives')
 
         if len(archives):
+            ui.print_archives_header()
             for n, archive in enumerate(archives.iteritems()):
                 archive = archive[1]
                 status = "LOCAL"
@@ -386,8 +389,16 @@ class LaArchiveCommand(cmd.Cmd):
                         cert = archive['links'].upload
                 title = archive['archive'].title
                 size = archive_size(archive['archive'])
-                print "{:03d} {:>6} {:>20} {:>10} {:>10}".format(
-                    n+1, size, title, status, cert)
+                ui.print_archives_line(archive = {
+                        'num': n+1,
+                        'size': size,
+                        'title': title,
+                        'status': status,
+                        'cert':cert,
+                        'created':archive['archive'].meta.created
+                    })
+                # print "{:03d} {:>6} {:>20} {:>10} {:>10}".format(
+                #    n+1, size, title, status, cert)
                 if self.debug > 2:
                     for doc in archive.itervalues():
                         pyaml.dump(doc, sys.stdout)
