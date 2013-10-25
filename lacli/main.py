@@ -9,6 +9,7 @@ Commands (run lacli <command> -h for options):
     archive         manage archives
     capsule         manage capsules
     certificate     manage certificates
+    login           configure access credentials
 
 Options:
     -i, --interactive              interactive mode

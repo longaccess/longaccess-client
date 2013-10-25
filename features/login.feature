@@ -10,24 +10,24 @@ Feature: list capsules command
 
     Scenario: I try to login with bad credentials
         Given the API authentication is wrong
-        And the command line arguments "capsule -u test -p test login"
+        And the command line arguments "-u test -p test login"
         When I run console script "lacli"
         Then I see "error: authentication failed"
 
     Scenario: I try to login with bad credentials 2
         Given the API authentication is wrong
         And I store my credentials in "{homedir}/.netrc"
-        And the command line arguments "capsule login"
+        And the command line arguments "login"
         When I run console script "lacli"
         Then I see "error: authentication failed"
 
     Scenario: I try to login with good credentials
-        Given the command line arguments "capsule -u test -p test login"
+        Given the command line arguments "-u test -p test login"
         When I run console script "lacli"
         Then I see "authentication succesfull"
 
     Scenario: I try to login with good credentials 2
         Given I store my credentials in "{homedir}/.netrc"
-        And the command line arguments "capsule login"
+        And the command line arguments "login"
         When I run console script "lacli"
         Then I see "authentication succesfull"
