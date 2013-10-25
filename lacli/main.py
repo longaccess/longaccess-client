@@ -95,7 +95,6 @@ class LaCommand(cmd.Cmd):
         except AttributeError:
             print "Unrecognized command:", subcmd
             print(__doc__)
-            raise SystemExit
         except DocoptExit as e:
             print e
             return
