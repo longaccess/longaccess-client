@@ -12,6 +12,10 @@ class BaseAppException(Exception):
         return self.msg
 
 
+class ApiNoSessionError(BaseAppException):
+    msg = "no session credentials provided."
+
+
 class ApiErrorException(BaseAppException):
     msg = "the server couldn't fulfill your request"
 
