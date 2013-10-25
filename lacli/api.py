@@ -3,6 +3,7 @@ from lacli.log import getLogger
 from lacli.decorators import cached_property, with_api_response, contains
 from netrc import netrc
 from contextlib import contextmanager
+from lacli.exceptions import ApiNoSessionError
 
 import json
 import os
@@ -74,9 +75,13 @@ class Api(object):
         self.url = prefs.get('url')
         if self.url is None:
             prefs['url'] = self.url = API_URL
-        if sessions is None:
-            sessions = RequestsFactory(prefs)
-        self.session = sessions.new_session()
+        try:
+            if sessions is None:
+                sessions = RequestsFactory(prefs)
+            self.session = sessions.new_session()
+        except:
+            getLogger().debug("could not create API session", exc_info=True)
+            raise ApiNoSessionError()
 
     @cached_property
     def root(self):

@@ -3,7 +3,8 @@ from testtools.matchers import Contains
 from mock import Mock, patch
 from itertools import repeat, izip
 from . import makeprefs
-from lacli.exceptions import ApiAuthException, ApiErrorException
+from lacli.exceptions import (ApiAuthException, ApiErrorException,
+                              ApiNoSessionError)
 import json
 
 
@@ -60,6 +61,11 @@ class ApiTest(TestCase):
 
     def test_api(self):
         assert self._makeit(self.prefs, Mock())
+
+    def test_api_nosession(self):
+        self.assertRaises(ApiNoSessionError, self._makeit,
+                          self.prefs,
+                          Mock(new_session=Mock(side_effect=Exception())))
 
     def test_api_no_prefs(self):
         import lacli.api
