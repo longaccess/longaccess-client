@@ -1,5 +1,4 @@
-"""Upload a file to Long Access
-
+"""
 Usage: lacli [--help] [-u <user>] [-p <pass>] [--verbose]
              [--home <home>] [--debug <level>] [--batch]
              <command> [<args>...]
@@ -88,13 +87,14 @@ class LaCommand(cmd.Cmd):
 
     def dispatch(self, subcmd, options):
         options.insert(0, subcmd)
-        if not hasattr(self, subcmd):
-            print(__doc__)
-            raise SystemExit
-        subcmd = getattr(self, subcmd)
         try:
+            subcmd = getattr(self, subcmd)
             line = subcmd.makecmd(docopt(subcmd.__doc__, options))
             self.dispatch_one(subcmd, line)
+        except AttributeError:
+            print "Unrecognized command:", subcmd
+            print(__doc__)
+            raise SystemExit
         except DocoptExit as e:
             print e
             return
