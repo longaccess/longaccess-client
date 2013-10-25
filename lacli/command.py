@@ -12,9 +12,32 @@ from lacli.archive import restore_archive
 from lacli.adf import archive_size
 from lacli.decorators import command
 from urlparse import urlparse
+from abc import ABCMeta, abstractmethod
 
 
-class LaCertsCommand(cmd.Cmd):
+class LaBaseCommand(cmd.Cmd, object):
+    __metaclass__ = ABCMeta
+
+    prompt = 'lacli> '
+
+    def __init__(self, session, cache, prefs, *args, **kwargs):
+        cmd.Cmd.__init__(self, *args, **kwargs)
+        self.session = session
+        self.verbose = prefs['command']['verbose']
+        self.batch = prefs['command']['batch']
+        self.cache = cache
+        self.debug = prefs['command']['debug']
+
+    @abstractmethod
+    def makecmd(self, options):
+        """ Parse docopt style options and return a cmd-style line """
+
+    def do_EOF(self, line):
+        print
+        return True
+
+
+class LaCertsCommand(LaBaseCommand):
     """Manage Long Access Certificates
 
     Usage: lacli certificate list
@@ -25,14 +48,6 @@ class LaCertsCommand(cmd.Cmd):
 
     """
     prompt = 'lacli:certificate> '
-
-    def __init__(self, session, cache, prefs, *args, **kwargs):
-        cmd.Cmd.__init__(self, *args, **kwargs)
-        self.session = session
-        self.verbose = prefs['command']['verbose']
-        self.batch = prefs['command']['batch']
-        self.cache = cache
-        self.debug = prefs['command']['debug']
 
     def makecmd(self, options):
         line = []
@@ -51,10 +66,6 @@ class LaCertsCommand(cmd.Cmd):
             line.append("import")
             line.append(options["<filename>"])
         return " ".join(line)
-
-    def do_EOF(self, line):
-        print
-        return True
 
     @command()
     def do_list(self):
@@ -143,7 +154,7 @@ class LaCertsCommand(cmd.Cmd):
             print "No certificates found in", filename
 
 
-class LaCapsuleCommand(cmd.Cmd):
+class LaCapsuleCommand(LaBaseCommand):
     """Manage Long Access Capsules
 
     Usage: lacli capsule list
@@ -153,23 +164,11 @@ class LaCapsuleCommand(cmd.Cmd):
     """
     prompt = 'lacli:capsule> '
 
-    def __init__(self, session, cache, prefs, *args, **kwargs):
-        cmd.Cmd.__init__(self, *args, **kwargs)
-        self.session = session
-        self.verbose = prefs['command']['verbose']
-        self.batch = prefs['command']['batch']
-        self.cache = cache
-        self.debug = prefs['command']['debug']
-
     def makecmd(self, options):
         line = []
         if options['list']:
             line.append("list")
         return " ".join(line)
-
-    def do_EOF(self, line):
-        print
-        return True
 
     @command()
     def do_list(self):
@@ -192,7 +191,7 @@ class LaCapsuleCommand(cmd.Cmd):
             print "error: " + str(e)
 
 
-class LaArchiveCommand(cmd.Cmd):
+class LaArchiveCommand(LaBaseCommand):
     """Upload a file to Long Access
 
     Usage: lacli archive upload [-n <np>] [<index>] [<capsule>]
@@ -214,13 +213,8 @@ class LaArchiveCommand(cmd.Cmd):
     """
     prompt = 'lacli:archive> '
 
-    def __init__(self, session, cache, prefs, uploader=None, *args, **kwargs):
-        cmd.Cmd.__init__(self, *args, **kwargs)
-        self.session = session
-        self.verbose = prefs['command']['verbose']
-        self.batch = prefs['command']['batch']
-        self.cache = cache
-        self.debug = prefs['command']['debug']
+    def __init__(self, *args, **kwargs):
+        super(LaArchiveCommand, self).__init__(*args, **kwargs)
         self.nprocs = None
 
     def setopt(self, options):
@@ -230,10 +224,6 @@ class LaArchiveCommand(cmd.Cmd):
         except ValueError:
             print "error: illegal value for 'procs' parameter."
             raise
-
-    def do_EOF(self, line):
-        print
-        return True
 
     def makecmd(self, options):
         self.setopt(options)
