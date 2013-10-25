@@ -52,3 +52,24 @@ class CommandTest(TestCase):
         cli.dispatch('login', [])
         self.assertThat(stdout.getvalue(),
                         Contains('authentication succesfull'))
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_do_login(self, stdout):
+        cli = self._makeit(Mock(), Mock, self.prefs)
+        cli.onecmd('login')
+        self.assertThat(stdout.getvalue(),
+                        Contains('authentication succesfull'))
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_do_login_with_creds(self, stdout):
+        cli = self._makeit(Mock(), Mock, self.prefs)
+        cli.onecmd('login username password')
+        self.assertThat(stdout.getvalue(),
+                        Contains('authentication succesfull'))
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_do_login_with_bad_creds(self, stdout):
+        api = Mock()
+        api.set_session_factory.side_effect = Exception()
+        cli = self._makeit(api, Mock, self.prefs)
+        self.assertRaises(Exception, cli.onecmd, 'login username password')

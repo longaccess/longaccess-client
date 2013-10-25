@@ -21,6 +21,15 @@ Feature: list capsules command
         When I run console script "lacli"
         Then I see "error: authentication failed"
 
+    Scenario: I try to login with bad credentials 3
+        Given the API authentication is wrong
+        And I store my credentials in "{homedir}/.netrc"
+        And the command line arguments "-i"
+        When I run console script "lacli"
+        Then I see "lacli> "
+        When I type "login"
+        Then I see "authentication failed"
+
     Scenario: I try to login with good credentials
         Given the command line arguments "-u test -p test login"
         When I run console script "lacli"

@@ -116,6 +116,9 @@ class LaCommand(cmd.Cmd):
     def do_certificate(self, line):
         self.dispatch_one(self.certificate, line, True)
 
+    def do_login(self, line):
+        self.login.onecmd('login ' + line)
+
 
 def main(args=sys.argv[1:]):
     """Main function called by `laput` command.
