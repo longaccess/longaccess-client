@@ -5,7 +5,7 @@ from lacli.command import LaBaseCommand
 class LaLoginCommand(LaBaseCommand):
     """Login to Longaccess
 
-    Usage: lacli login
+    Usage: lacli login [<username> <password>]
     """
     prompt = 'lacli:login> '
 
