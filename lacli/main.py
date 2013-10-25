@@ -29,6 +29,7 @@ import cmd
 from lacli.log import setupLogging
 from docopt import docopt, DocoptExit
 from lacli.command import LaCapsuleCommand, LaCertsCommand, LaArchiveCommand
+from lacli.login import LaLoginCommand
 from lacli import __version__
 from lacli.api import Api
 from lacli.cache import Cache
@@ -81,6 +82,7 @@ class LaCommand(cmd.Cmd):
         self.archive = LaArchiveCommand(session, cache, prefs)
         self.capsule = LaCapsuleCommand(session, cache, prefs)
         self.certificate = LaCertsCommand(session, cache, prefs)
+        self.login = LaLoginCommand(session, cache, prefs)
 
     def do_EOF(self, line):
         print

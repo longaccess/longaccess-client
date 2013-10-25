@@ -51,4 +51,4 @@ class CommandTest(TestCase):
 
         cli.dispatch('login', [])
         self.assertThat(stdout.getvalue(),
-                        Contains('logged in'))
+                        Contains('authentication succesfull'))
