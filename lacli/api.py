@@ -75,10 +75,18 @@ class Api(object):
         self.url = prefs.get('url')
         if self.url is None:
             prefs['url'] = self.url = API_URL
+        self._sessions = sessions
+        self.prefs = prefs
+
+    def set_session_factory(self, sessions):
+        self._sessions = sessions
+
+    @cached_property
+    def session(self):
         try:
-            if sessions is None:
-                sessions = RequestsFactory(prefs)
-            self.session = sessions.new_session()
+            if self._sessions is None:
+                self._sessions = RequestsFactory(self.prefs)
+            return self._sessions.new_session()
         except:
             getLogger().debug("could not create API session", exc_info=True)
             raise ApiNoSessionError()
