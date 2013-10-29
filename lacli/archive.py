@@ -86,26 +86,23 @@ def _writer(name, folder, cipher, tmpdir, hashobj=None):
                'prefix': name}
     dst = NamedTemporaryFile(**tmpargs)
     
-    def _enc(zf):
-        print "Encrypting.."
-        with CryptIO(dst, cipher, hashobj=hashobj) as fdst:
-            copyfileobj(zf, fdst, 1024)
-        dst.close()
-    return (dst.name, _zip(name, folder, tmpdir, _enc))
-
-
-def _zip(name, folder, tmpdir, enc=None):
-    tmpargs = {'prefix': name,
-               'dir': tmpdir}
-    # do it in two passes now as zip can't easily handle streaming
-    with NamedTemporaryFile(**tmpargs) as zf:
-        with ZipFile(zf, 'w', ZIP_DEFLATED, True) as zpf:
-            for root, _, fs in os.walk(folder):
-                for f in (os.path.join(root, f) for f in fs):
-                    path = os.path.join(root, f)
-                    zpf.write(path, os.path.relpath(path, folder))
-                    yield f
-        if enc:
+    def _enc():
+        # do it in two passes now as zip can't easily handle streaming
+        tmpargs = {'prefix': name,
+                   'dir': tmpdir}
+        with NamedTemporaryFile(**tmpargs) as zf:
+            with ZipFile(zf, 'w', ZIP_DEFLATED, True) as zpf:
+                for root, _, fs in os.walk(folder):
+                    for f in (os.path.join(root, f) for f in fs):
+                        path = os.path.join(root, f)
+                        zpf.write(path, os.path.relpath(path, folder))
+                        print f
+                        yield f
             zf.flush()
             zf.seek(0)
-            enc(zf)
+            import pdb; pdb.set_trace()
+            print "Encrypting.."
+            with CryptIO(dst, cipher, hashobj=hashobj) as fdst:
+                copyfileobj(zf, fdst, 1024)
+        dst.close()
+    return (dst.name, _enc())
