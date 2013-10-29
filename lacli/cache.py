@@ -211,3 +211,18 @@ class Cache(object):
         except:
             return None
         
+
+if __name__ == "__main__":
+    import sys
+    import hashlib
+    cache = Cache(os.path.expanduser(os.path.join("~", ".longaccess")))
+    for fname, docs in cache._for_adf('archives').iteritems():
+        path = os.path.join(cache.home, docs['links'].local)
+        with open(path) as f:
+            md5 = hashlib.md5() 
+            while 1:
+                 buf = f.read(16*1024)
+                 if not buf: 
+                     break
+                 md5.update(buf)
+            assert md5.digest() == docs['auth'].md5, path
