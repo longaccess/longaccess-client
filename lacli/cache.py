@@ -170,12 +170,17 @@ class Cache(object):
                                   exc_info=True)
 
     def shred_cert(self, aid, countdown=[], srm=None):
+        path = None
         for fname, docs in self._for_adf('certs').iteritems():
             if 'links' in docs and aid == docs['links'].download:
-                for a in countdown:
-                    pass
-                self.shred_file(fname, srm)
-                return fname
+                path = fname
+            elif 'signature' in docs and aid == docs['signature'].aid:
+                path = fname
+        if path:
+            for a in countdown:
+                pass
+            self.shred_file(path, srm)
+            return path
 
     def print_cert(self, aid):
         for fname, docs in self._for_adf('certs').iteritems():
