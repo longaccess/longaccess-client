@@ -1,5 +1,6 @@
 import os
 import shlex
+from urlparse import urlparse
 from pkg_resources import resource_string
 from dateutil.parser import parse as date_parse
 from dateutil.relativedelta import relativedelta as date_delta
@@ -66,7 +67,7 @@ class Cache(object):
         cert = Certificate()
         tmpdir = self._cache_dir('data', write=True)
         name, path, auth = dump_archive(archive, folder, cert, cb, tmpdir)
-        link = Links(local=urlunparse(('file', path, '', '', '', '')))
+        link = Links(local=pathname2url(os.path.relpath(path, self.home)))
         archive.meta.size = os.path.getsize(path)
         tmpargs = {'delete': False,
                    'dir': self._cache_dir('archives', write=True)}
@@ -196,3 +197,12 @@ class Cache(object):
                         yield (docs['signature'].aid, docs)
                 except InvalidArchiveError:
                     getLogger().debug(f, exc_info=True)
+
+    def data_file(self, link):
+        try:
+            parsed = urlparse(link.local)
+            assert not parsed.scheme or parsed.scheme == 'file'
+            return os.path.join(self.home, parsed.path)
+        except:
+            return None
+        

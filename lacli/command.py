@@ -11,7 +11,6 @@ from lacli.upload import Upload
 from lacli.archive import restore_archive
 from lacli.adf import archive_size
 from lacli.decorators import command
-from urlparse import urlparse
 from abc import ABCMeta, abstractmethod
 
 
@@ -305,26 +304,17 @@ class LaArchiveCommand(LaBaseCommand):
             docs = docs[index-1][1]
             archive = docs['archive']
             link = docs['links']
-            path = ''
-            if link.upload or link.download:
-                print "upload is already completed"
-            elif link.local:
-                parsed = urlparse(link.local)
-                if parsed.scheme == 'file':
-                    if os.path.exists(parsed.path):
-                        path = parsed.path
-                    else:
-                        print 'File {} not found.'.format(parsed.path)
-                else:
-                    print "url not local: " + link.local
-            else:
-                print "no local copy exists."
+            path = self.cache.data_file(link)
 
             auth = None
             if 'auth' in docs:
                 auth = docs['auth']
 
-            if path:
+            if link.upload or link.download:
+                print "upload is already completed"
+            elif not path:
+                print "no local copy exists."
+            elif path:
                 try:
                     saved = None
                     with self.session.upload(capsule, archive, auth) as upload:
@@ -492,25 +482,14 @@ class LaArchiveCommand(LaBaseCommand):
         """
         docs = list(self.cache._for_adf('archives').iteritems())
 
+        fname = path = None
         if index <= 0 or len(docs) < index:
             print "No such archive."
         else:
             fname = docs[index-1][0]
             docs = docs[index-1][1]
             archive = docs['archive']
-            link = docs['links']
-            path = ''
-            if link.local:
-                parsed = urlparse(link.local)
-                if parsed.scheme == 'file':
-                    if os.path.exists(parsed.path):
-                        path = parsed.path
-                    else:
-                        print 'File {} not found.'.format(parsed.path)
-                else:
-                    print "url not local: " + link.local
-            else:
-                print "no local copy exists."
+            path = self.cache.data_file(docs['links'])
 
         srmprompt = "\n".join((
             "WARNING! Insecure deletion attempt.",
@@ -538,9 +517,10 @@ class LaArchiveCommand(LaBaseCommand):
             print fname
             if path:
                 print path
+        elif not os.path.exists(path):
+            print "Deleted archive", archive.title, " but local copy not found:", path
         else:
-            if path:
-                self.cache.shred_file(path, srm)
+            self.cache.shred_file(path, srm)
             if os.path.exists(path):
                 print "ERROR: Failed to delete archive data:", path
                 print "Please remove manually"
