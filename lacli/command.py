@@ -34,7 +34,7 @@ class LaBaseCommand(cmd.Cmd, object):
 
     @property
     def cache(self):
-        return registry.cache
+        return self.registry.cache
 
     @property
     def debug(self):
