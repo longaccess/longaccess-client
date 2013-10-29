@@ -16,7 +16,7 @@ Options:
     -u <user>, --user <user>       user name
     -p <pass>, --password <pass>   user password
     -d <level>, --debug <level>    debug level, from 0 to 2 [default: 0]
-    --home <home>                  conf/cache dir [default: ~/.longaccess]
+    --home <home>                  conf/cache dir [default: {home}]
     -v, --verbose                  print verbose information
     --batch                        be brief, don't ask questions
     -h, --help                     print this help
@@ -126,7 +126,7 @@ class LaCommand(cmd.Cmd):
 def main(args=sys.argv[1:]):
     """Main function called by `laput` command.
     """
-    options = docopt(__doc__,
+    options = docopt(__doc__.format(home=os.path.join('~', '.longaccess')),
                      version='lacli {}'.format(__version__),
                      options_first=True)
     prefs, cache = settings(options)
