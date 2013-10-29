@@ -80,22 +80,18 @@ def dump_archive(archive, folder, cert, cb=None, tmpdir='/tmp',
 
 
 def _writer(name, folder, cipher, tmpdir, hashobj=None):
-    path = os.path.join(tmpdir, name+".zip.crypt")
-
+    tmpargs = {'delete': False,
+               'suffix': ".longaccess",
+               'dir': tmpdir,
+               'prefix': name}
+    dst = NamedTemporaryFile(**tmpargs)
+    
     def _enc(zf):
         print "Encrypting.."
-        tmpargs = {'delete': False,
-                   'suffix': ".crypt",
-                   'dir': tmpdir}
-        with NamedTemporaryFile(prefix=name, **tmpargs) as dst:
-            with CryptIO(dst, cipher, hashobj=hashobj) as fdst:
-                while 1:
-                    buf = zf.read(1024)
-                    if not buf:
-                        break
-                    fdst.write(buf)
-        os.rename(dst.name, path)
-    return (path, _zip(name, folder, tmpdir, _enc))
+        with CryptIO(dst, cipher, hashobj=hashobj) as fdst:
+            copyfileobj(zf, fdst, 1024)
+        dst.close()
+    return (dst.name, _zip(name, folder, tmpdir, _enc))
 
 
 def _zip(name, folder, tmpdir, enc=None):
