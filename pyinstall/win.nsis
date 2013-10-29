@@ -1,0 +1,78 @@
+;--------------------------------
+;Include Modern UI
+
+!include "MUI2.nsh"
+
+;--------------------------------
+;General
+
+;Name and file
+Name "Longaccess CLI"
+OutFile "Longaccess-0.1a2-Win7-64bit.exe"
+
+;Default installation folder
+InstallDir "$LOCALAPPDATA\Longaccess\"
+
+;Get installation folder from registry if available
+InstallDirRegKey HKCU "Software\Longaccess" ""
+
+;Request application privileges for Windows Vista
+RequestExecutionLevel user
+
+;--------------------------------
+;Interface Settings
+
+!define MUI_ABORTWARNING
+
+;--------------------------------
+;Pages
+
+!insertmacro MUI_PAGE_LICENSE "..\LICENSE"
+!insertmacro MUI_PAGE_DIRECTORY
+!insertmacro MUI_PAGE_INSTFILES
+
+!insertmacro MUI_UNPAGE_CONFIRM
+!insertmacro MUI_UNPAGE_INSTFILES
+
+;--------------------------------
+;Languages
+
+!insertmacro MUI_LANGUAGE "English"
+
+;--------------------------------
+;Installer Sections
+
+Section "Install"
+
+SetOutPath "$INSTDIR"
+File /r "dist\lacli"
+
+
+;Store installation folder
+WriteRegStr HKCU "Software\Longaccess" "" $INSTDIR
+
+;Create uninstaller
+WriteUninstaller "$INSTDIR\Uninstall.exe"
+
+;Create shortcuts
+CreateDirectory $SMPROGRAMS\Longaccess
+CreateShortCut "$SMPROGRAMS\Longaccess\Longaccess.lnk" "$INSTDIR\lacli\lacli.exe" "-i" ; use defaults for parameters, icon, etc.
+CreateShortCut "$SMPROGRAMS\Longaccess\Uninstall Longaccess.lnk" "$INSTDIR\Uninstall.exe" ; use defaults for parameters, icon, etc.
+
+SectionEnd
+
+
+;--------------------------------
+;Uninstaller Section
+
+Section "Uninstall"
+
+Delete "$INSTDIR\Uninstall.exe"
+RMDir /r "$INSTDIR"
+Delete "$SMPROGRAMS\Longaccess\Longaccess.lnk"
+Delete "$SMPROGRAMS\Longaccess\Uninstall Longaccess.lnk"
+
+DeleteRegKey /ifempty HKCU "Software\Longaccess"
+
+SectionEnd
+
