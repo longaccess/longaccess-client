@@ -20,13 +20,37 @@ class LaBaseCommand(cmd.Cmd, object):
 
     prompt = 'lacli> '
 
-    def __init__(self, session, cache, prefs, *args, **kwargs):
+    def __init__(self, registry, *args, **kwargs):
         cmd.Cmd.__init__(self, *args, **kwargs)
-        self.session = session
-        self.verbose = prefs['command']['verbose']
-        self.batch = prefs['command']['batch']
-        self.cache = cache
-        self.debug = prefs['command']['debug']
+        self.registry = registry
+
+    @property
+    def verbose(self):
+        return self.registry.prefs['command']['verbose']
+
+    @property
+    def batch(self):
+        return self.registry.prefs['command']['batch']
+
+    @property
+    def cache(self):
+        return registry.cache
+
+    @property
+    def debug(self):
+        return self.registry.prefs['command']['debug']
+
+    @property
+    def prefs(self):
+        return self.registry.prefs
+
+    @property
+    def session(self):
+        return self.registry.session
+
+    @session.setter
+    def session(self, newsession):
+        self.registry.session = newsession
 
     @abstractmethod
     def makecmd(self, options):

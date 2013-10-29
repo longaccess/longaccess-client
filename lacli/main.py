@@ -31,8 +31,9 @@ from docopt import docopt, DocoptExit
 from lacli.command import LaCapsuleCommand, LaCertsCommand, LaArchiveCommand
 from lacli.login import LaLoginCommand
 from lacli import __version__
-from lacli.api import Api
+from lacli.api import RequestsFactory
 from lacli.cache import Cache
+from lacli.registry import LaRegistry
 
 
 def settings(options):
@@ -57,7 +58,8 @@ def settings(options):
             'user': options['--user'],
             'pass': options['--password'],
             'url': os.getenv('LA_API_URL'),
-            'verify': verify
+            'verify': verify,
+            'factory': RequestsFactory
         },
         'command': {
             'debug': debug,
@@ -76,13 +78,14 @@ class LaCommand(cmd.Cmd):
     capsule = None
     certificate = None
 
-    def __init__(self, session, cache, prefs):
+    def __init__(self, cache, prefs):
         cmd.Cmd.__init__(self)
         setupLogging(prefs['command']['debug'])
-        self.archive = LaArchiveCommand(session, cache, prefs)
-        self.capsule = LaCapsuleCommand(session, cache, prefs)
-        self.certificate = LaCertsCommand(session, cache, prefs)
-        self.login = LaLoginCommand(session, cache, prefs)
+        registry = LaRegistry(cache, prefs)
+        self.archive = LaArchiveCommand(registry)
+        self.capsule = LaCapsuleCommand(registry)
+        self.certificate = LaCertsCommand(registry)
+        self.login = LaLoginCommand(registry)
 
     def do_EOF(self, line):
         print
@@ -127,8 +130,7 @@ def main(args=sys.argv[1:]):
                      version='lacli {}'.format(__version__),
                      options_first=True)
     prefs, cache = settings(options)
-    api = Api(prefs['api'])
-    cli = LaCommand(api, cache, prefs)
+    cli = LaCommand(cache, prefs)
     if options['<command>']:
         cli.dispatch(options['<command>'], options['<args>'])
     elif options['--interactive']:

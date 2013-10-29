@@ -1,7 +1,6 @@
-from urlparse import urljoin, urlparse
+from urlparse import urljoin
 from lacli.log import getLogger
 from lacli.decorators import cached_property, with_api_response, contains
-from netrc import netrc
 from contextlib import contextmanager
 from lacli.exceptions import ApiNoSessionError
 
@@ -12,37 +11,41 @@ import os
 API_URL = 'https://www.longaccess.com/api/v1/'
 
 
-class DummyRequestsFactory(object):
+class DummyResponse(object):
+    def __init__(self, response):
+        self.response = response
 
-    class DummyResponse(object):
-        def __init__(self, response):
-            self.response = response
+    def raise_for_status(self):
+        pass
 
-        def raise_for_status(self):
-            pass
+    def json(self):
+        return self.response
 
-        def json(self):
-            return self.response
+class DummySession(object):
+    def __init__(self, response_class):
+        self.response_class = response_class
+        self.get_response = {}
 
-    class DummySession(object):
-        def __init__(self, response_class):
-            self.response_class = response_class
-            self.get_response = {}
+    def get(self, *args, **kwargs):
+        return self.response_class(self.get_response)
 
-        def get(self, *args, **kwargs):
-            return self.response_class(self.get_response)
+    def post(self, *args, **kwargs):
+        """ dummy post method """
 
-        def post(self, *args, **kwargs):
-            """ dummy post method """
+    def patch(self, *args, **kwargs):
+        """ dummy post method """
 
-        def patch(self, *args, **kwargs):
-            """ dummy post method """
+def DummyRequestsFactory(prefs={}):
+    return self.DummySession(self.DummyResponse)
 
-    def new_session(self):
-        return self.DummySession(self.DummyResponse)
-
-
-class RequestsFactory():
+def RequestsFactory(prefs={}):
+    import requests
+    session = requests.Session()
+    if 'user' in prefs and 'pass' in prefs:
+        session.auth = (prefs['user'], prefs['pass'])
+    if 'verify' in prefs:
+        session.verify = prefs['verify']
+    return Api(prefs, session)
 
     def __init__(self, prefs):
         self.prefs = prefs
@@ -50,46 +53,15 @@ class RequestsFactory():
             if os.path.exists(os.path.expanduser('~/.netrc')):
                 self.read_netrc(self.prefs.get('url', API_URL))
 
-    def new_session(self):
-        import requests
-        session = requests.Session()
-        if 'user' in self.prefs and 'pass' in self.prefs:
-            session.auth = (self.prefs['user'], self.prefs['pass'])
-        if 'verify' in self.prefs:
-            session.verify = self.prefs['verify']
-        return session
-
-    def read_netrc(self, url):
-        if not url:
-            return
-        hostname = urlparse(url).hostname
-        for host, creds in netrc().hosts.iteritems():
-            if host == hostname:
-                self.prefs['user'] = creds[0]
-                self.prefs['pass'] = creds[2]
 
 
 class Api(object):
 
-    def __init__(self, prefs, sessions=None):
+    def __init__(self, prefs, session=None):
         self.url = prefs.get('url')
         if self.url is None:
             prefs['url'] = self.url = API_URL
-        self._sessions = sessions
-        self.prefs = prefs
-
-    def set_session_factory(self, sessions):
-        self._sessions = sessions
-
-    @cached_property
-    def session(self):
-        try:
-            if self._sessions is None:
-                self._sessions = RequestsFactory(self.prefs)
-            return self._sessions.new_session()
-        except:
-            getLogger().debug("could not create API session", exc_info=True)
-            raise ApiNoSessionError()
+        self.session = session
 
     @cached_property
     def root(self):
@@ -190,3 +162,7 @@ class Api(object):
         for cs in self._get(url)['objects']:
             yield dict([(k, cs.get(k, None))
                         for k in ['title', 'remaining', 'size']])
+
+    @cached_property
+    def account(self):
+        return self._get(self.endpoints['account'])
