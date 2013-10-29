@@ -39,13 +39,34 @@ RequestExecutionLevel user
 
 !insertmacro MUI_LANGUAGE "English"
 
+Var Extension
+Var ExtDescription
+Var ExtCmd
+Function un.setExtensionVars
+
+StrCpy $Extension ".longaccess"
+StrCpy $ExtDescription "Long Access Data File"
+StrCpy $ExtCmd '"lacli\lalci.exe" archive extract'
+FunctionEnd
+Function setExtensionVars
+
+StrCpy $Extension ".longaccess"
+StrCpy $ExtDescription "Long Access Data File"
+StrCpy $ExtCmd '"lacli\lalci.exe" archive extract'
+FunctionEnd
+
 ;--------------------------------
 ;Installer Sections
 
 Section "Install"
 
 SetOutPath "$INSTDIR"
+Call setExtensionVars
 File /r "dist\lacli"
+
+WriteRegStr HKCR $Extension "" "$ExtDescription"
+WriteRegStr HKCR "$Extension\shell" "" "open"
+WriteRegStr HKCR "$Extension\shell\open\command" "" '"$INSTDIR"\$ExtCmd "%1"'
 
 
 ;Store installation folder
@@ -66,6 +87,7 @@ SectionEnd
 ;Uninstaller Section
 
 Section "Uninstall"
+Call un.setExtensionVars
 
 Delete "$INSTDIR\Uninstall.exe"
 RMDir /r "$INSTDIR"
@@ -73,6 +95,7 @@ Delete "$SMPROGRAMS\Longaccess\Longaccess.lnk"
 Delete "$SMPROGRAMS\Longaccess\Uninstall Longaccess.lnk"
 
 DeleteRegKey /ifempty HKCU "Software\Longaccess"
+DeleteRegKey HKCR $Extension
 
 SectionEnd
 
