@@ -17,8 +17,12 @@ class cached_property(object):
     def __get__(self, obj, cls):
         if obj is None:
             return self
-        obj.__dict__[self.f.__name__] = r = self.f(obj)
-        return r
+        if not self.f.__name__ in obj.__dict__:
+            obj.__dict__[self.f.__name__] = self.f(obj)
+        return obj.__dict__[self.f.__name__]
+
+    def __set__(self, obj, value):
+        obj.__dict__[self.f.__name__] = value
 
 
 def with_api_response(f):
