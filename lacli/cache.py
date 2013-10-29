@@ -11,7 +11,7 @@ from lacli.log import getLogger
 from lacli.archive import dump_archive, archive_slug
 from lacli.exceptions import InvalidArchiveError
 from lacli.decorators import contains
-from urlparse import urlunparse
+from urllib import pathname2url
 from tempfile import NamedTemporaryFile
 from binascii import b2a_hex
 from itertools import izip, imap
@@ -153,10 +153,13 @@ class Cache(object):
             commands.append('shred')
             commands.append('gshred')
             commands.append('sdelete')
+            commands.append('Eraser.exe addtask --schedule=now -q --file={file}')
         for command in commands:
             try:
-                args = shlex.split(command)
-                args.append(fname)
+                newcommand = command.format(file=fname)
+                args = shlex.split(newcommand)
+                if command == newcommand:
+                    args.append(fname)
                 if 0 == check_call(args):
                     getLogger().debug("success running {}".format(command))
                     if os.path.exists(fname):
