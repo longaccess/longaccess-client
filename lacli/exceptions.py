@@ -40,3 +40,11 @@ class WorkerFailureError(BaseAppException):
 
 class InvalidArchiveError(BaseAppException):
     msg = "invalid archive"
+
+
+class DecryptionError(BaseAppException):
+    msg = "Error decrypting file"
+
+    def __init__(self, reason=None):
+        super(DecryptionError, self).__init__()
+        self.reason = reason

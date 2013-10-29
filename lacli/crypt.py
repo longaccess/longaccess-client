@@ -1,5 +1,6 @@
 from io import BufferedIOBase
 from errno import EBADF
+from lacli.exceptions import DecryptionError
 
 READ, WRITE = 1, 2
 
@@ -129,3 +130,7 @@ class CryptIO(BufferedIOBase):
 
     def writable(self):
         return self.mode == WRITE
+
+    def __exit__(self, eType, eValue, eTrace):
+        if eType:
+            raise DecryptionError(eValue)

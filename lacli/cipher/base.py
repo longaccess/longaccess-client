@@ -60,5 +60,5 @@ class CipherBase(object):
 
     def _unpad(self, s):
         num = ord(s[-1])
-        assert num < self.BLOCKSIZE
+        assert num < self.BLOCKSIZE, "plaintext padding error"
         return s[0:-num]
