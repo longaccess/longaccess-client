@@ -221,7 +221,7 @@ class LaArchiveCommand(LaBaseCommand):
            lacli archive list
            lacli archive status <index>
            lacli archive create <dirname> -t <title>
-           lacli archive extract [-o <dirname>] <path> (<cert_id>|-f <cert>)
+           lacli archive extract [-o <dirname>] <path> [<cert_id>|-f <cert>]
            lacli archive delete <index> [<srm>...]
            lacli archive --help
 
@@ -269,15 +269,15 @@ class LaArchiveCommand(LaBaseCommand):
             line.append(options['<index>'])
         elif options['extract']:
             line.append("extract")
-            line.append(options['<path>'])
+            line.append(quote(options['<path>']))
             if options['--out']:
                 line.append(quote(options['--out']))
             else:
-                line.append(os.getcwd())
+                line.append(quote(''))
             if options['--cert']:
                 line.append("dummy")
                 line.append(quote(options['--cert']))
-            else:
+            elif options['<cert_id>']:
                 line.append(options['<cert_id>'])
         elif options['delete']:
             line.append("delete")
@@ -437,7 +437,7 @@ class LaArchiveCommand(LaBaseCommand):
     @command(path=str, dest=str, cert_id=str, cert_file=str)
     def do_extract(self, path=None, dest=None, cert_id=None, cert_file=None):
         """
-        Usage: extract <path> <dest> <cert_id> [<cert_file>]
+        Usage: extract <path> [<dest>] [<cert_id>] [<cert_file>]
         """
         if cert_file:
             certs = self.cache.certs([cert_file])
@@ -446,20 +446,36 @@ class LaArchiveCommand(LaBaseCommand):
             certs = self.cache.certs()
 
         path = os.path.expanduser(path)
-        dest = os.path.expanduser(dest)
+        if dest:
+            dest = os.path.expanduser(dest)
+        elif os.name == 'nt':
+            from win32com.shell import shell
+            pidl, disp, imglist = shell.SHBrowseForFolder(0, None, "Please browse to the folder you want to extract this archive:")
+            dest = shell.SHGetPathFromIDList(pidl)
         if cert_file:
             cert_file = os.path.expanduser(cert_file)
 
-        if cert_id not in certs:
-            print "no matching certificate found"
-        elif not os.path.isfile(path):
+        if not os.path.isfile(path):
             print "error: file", path, "does not exist"
         elif not os.path.isdir(dest):
             print "output directory", dest, "does not exist"
         else:
-            cert = certs[cert_id]['cert']
-            archive = certs[cert_id]['archive']
             try:
+                if cert_id not in certs:
+                    print "No matching certificate found"
+                    if not self.batch:
+                        while cert_id not in certs:
+                            for n, cert in enumerate(certs.iteritems()):
+                                cert = cert[1]
+                                aid = cert['signature'].aid
+                                title = cert['archive'].title
+                                size = archive_size(cert['archive'])
+                                print "{:>10} {:>6} {:<}".format(
+                                    aid, size, title)
+                            cert_id = raw_input("Enter a certificate ID: ")
+                            assert cert_id, "No matching certificate found"
+                cert = certs[cert_id]['cert']
+                archive = certs[cert_id]['archive']
                 def _print(f):
                     print "Extracting", f
                 restore_archive(archive, path, cert,
