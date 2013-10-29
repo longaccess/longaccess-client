@@ -462,8 +462,8 @@ class LaArchiveCommand(LaBaseCommand):
         else:
             try:
                 if cert_id not in certs:
-                    print "No matching certificate found"
                     if not self.batch:
+                        print "Select a certificate:"
                         while cert_id not in certs:
                             for n, cert in enumerate(certs.iteritems()):
                                 cert = cert[1]
@@ -474,6 +474,8 @@ class LaArchiveCommand(LaBaseCommand):
                                     aid, size, title)
                             cert_id = raw_input("Enter a certificate ID: ")
                             assert cert_id, "No matching certificate found"
+                    else: 
+                        print "No matching certificate found."
                 cert = certs[cert_id]['cert']
                 archive = certs[cert_id]['archive']
                 def _print(f):

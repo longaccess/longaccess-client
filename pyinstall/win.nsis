@@ -1,6 +1,6 @@
 ;--------------------------------
 ;Include Modern UI
-
+!include x64.nsh
 !include "MUI2.nsh"
 
 ;--------------------------------
@@ -11,13 +11,13 @@ Name "Longaccess CLI"
 OutFile "Longaccess-0.1a2-Win7-64bit.exe"
 
 ;Default installation folder
-InstallDir "$LOCALAPPDATA\Longaccess\"
+InstallDir "$PROGRAMFILES64\LongaccessCLI\"
 
 ;Get installation folder from registry if available
-InstallDirRegKey HKCU "Software\Longaccess" ""
+InstallDirRegKey HKCU "Software\LongaccessCLI" ""
 
 ;Request application privileges for Windows Vista
-RequestExecutionLevel user
+RequestExecutionLevel admin
 
 ;--------------------------------
 ;Interface Settings
@@ -40,45 +40,51 @@ RequestExecutionLevel user
 !insertmacro MUI_LANGUAGE "English"
 
 Var Extension
-Var ExtDescription
 Var ExtCmd
 Function un.setExtensionVars
 
 StrCpy $Extension ".longaccess"
-StrCpy $ExtDescription "Long Access Data File"
-StrCpy $ExtCmd '"lacli\lalci.exe" archive extract'
+StrCpy $ExtCmd '"$INSTDIR\lacli\lacli.exe" archive extract'
 FunctionEnd
 Function setExtensionVars
 
 StrCpy $Extension ".longaccess"
-StrCpy $ExtDescription "Long Access Data File"
-StrCpy $ExtCmd '"lacli\lalci.exe" archive extract'
+StrCpy $ExtCmd '"$INSTDIR\lacli\lacli.exe" archive extract'
 FunctionEnd
 
 ;--------------------------------
 ;Installer Sections
 
 Section "Install"
+SetRegView 64
+
 
 SetOutPath "$INSTDIR"
 Call setExtensionVars
 File /r "dist\lacli"
 
-WriteRegStr HKCR $Extension "" "$ExtDescription"
-WriteRegStr HKCR "$Extension\shell" "" "open"
-WriteRegStr HKCR "$Extension\shell\open\command" "" '"$INSTDIR"\$ExtCmd "%1"'
+
+WriteRegStr HKCU "Software\Classes\lacli" "DefaultIcon" "$INSTDIR\lacli\lacli.exe"
+WriteRegStr HKCU "Software\Classes\lacli\shell\open" "" "Open with Long Access CLI"
+WriteRegStr HKCU "Software\Classes\lacli\shell\open\command" "" '$ExtCmd "%1"'
+
+WriteRegStr HKCU "Software\LongaccessCLI" "" $INSTDIR
+WriteRegStr HKCU "Software\LongaccessCLI\Capabilities" "ApplicationDescription" "the Longaccess CLI client"
+WriteRegStr HKCU "Software\LongaccessCLI\Capabilities" "ApplicationName" "lacli"
+WriteRegStr HKCU "Software\LongaccessCLI\Capabilities\FileAssociations" $Extension "lacli"
+
+WriteRegStr HKCU "Software\RegisteredApplications" "lacli" "Software\LongaccessCLI\Capabilities"
 
 
-;Store installation folder
-WriteRegStr HKCU "Software\Longaccess" "" $INSTDIR
+WriteRegStr HKCU "Software\Classes\.longaccess\OpenWithProgids" "lacli" ""
 
 ;Create uninstaller
 WriteUninstaller "$INSTDIR\Uninstall.exe"
 
 ;Create shortcuts
-CreateDirectory $SMPROGRAMS\Longaccess
-CreateShortCut "$SMPROGRAMS\Longaccess\Longaccess.lnk" "$INSTDIR\lacli\lacli.exe" "-i" ; use defaults for parameters, icon, etc.
-CreateShortCut "$SMPROGRAMS\Longaccess\Uninstall Longaccess.lnk" "$INSTDIR\Uninstall.exe" ; use defaults for parameters, icon, etc.
+CreateDirectory $SMPROGRAMS\LongaccessCLI
+CreateShortCut "$SMPROGRAMS\LongaccessCLI\LongaccessCLI.lnk" "$INSTDIR\lacli\lacli.exe" "-i" ; use defaults for parameters, icon, etc.
+CreateShortCut "$SMPROGRAMS\LongaccessCLI\Uninstall Longaccess.lnk" "$INSTDIR\Uninstall.exe" ; use defaults for parameters, icon, etc.
 
 SectionEnd
 
@@ -87,15 +93,19 @@ SectionEnd
 ;Uninstaller Section
 
 Section "Uninstall"
+SetRegView 64
+
 Call un.setExtensionVars
 
 Delete "$INSTDIR\Uninstall.exe"
 RMDir /r "$INSTDIR"
-Delete "$SMPROGRAMS\Longaccess\Longaccess.lnk"
-Delete "$SMPROGRAMS\Longaccess\Uninstall Longaccess.lnk"
+Delete "$SMPROGRAMS\LongaccessCLI\Longaccess.lnk"
+Delete "$SMPROGRAMS\LongaccessCLI\Uninstall Longaccess.lnk"
 
-DeleteRegKey /ifempty HKCU "Software\Longaccess"
-DeleteRegKey HKCR $Extension
+DeleteRegKey HKCU "Software\Classes\lacli"
+DeleteRegValue HKCU "Software\RegisteredApplications" "lacli"
+DeleteRegValue HKCU "Software\Classes\.longaccess\OpenWithProgids" "lacli"
+DeleteRegKey HKCU "Software\LongaccessCLI"
 
 SectionEnd
 
