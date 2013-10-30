@@ -218,6 +218,7 @@ if __name__ == "__main__":
     cache = Cache(os.path.expanduser(os.path.join("~", ".longaccess")))
     for fname, docs in cache._for_adf('archives').iteritems():
         path = os.path.join(cache.home, docs['links'].local)
+        if not os.path.exists(path): continue
         with open(path) as f:
             md5 = hashlib.md5() 
             while 1:
