@@ -130,7 +130,7 @@ class Cache(object):
 
         return resource_string(__name__, "data/certificate.html").format(
             json=as_json(docs),
-            aid=docs['links'].download,
+            aid=docs['signature'].aid,
             keyB=next(hk),
             keyC=next(hk),
             keyD=next(hk),
@@ -184,8 +184,7 @@ class Cache(object):
 
     def print_cert(self, aid):
         for fname, docs in self._for_adf('certs').iteritems():
-            if 'links' in docs and aid == docs['links'].download or \
-               'signature' in docs and aid == docs['signature'].aid:
+            if 'signature' in docs and aid == docs['signature'].aid:
                 path = fname
                 html = 'longaccess-{}.html'.format(aid)
                 with open(html, 'w') as f:
