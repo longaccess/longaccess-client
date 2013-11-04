@@ -13,7 +13,7 @@ We have binary packages for certain platforms, like MacOS X, Windows 8 64-bit, L
 Dependencies
 ------------
 
-The prebuilt binary packages are self-container, i.e. they do not have any hard external dependencies. There is however a soft dependency on an external tool to securely delete files from the filesystem, see below for more information. When installing from source most dependencies are automatically installable via `pip`. On some platforms the installation might require manually installing development packages, e.g. on [Fedora Linux][] you might need to install the `python2-devel` package.
+The prebuilt binary packages are self-contained, i.e. they do not have any hard external dependencies. There is however a soft dependency on an external tool to securely delete files from the filesystem, see below for more information. When installing from source most dependencies are automatically installable via `pip`. On some platforms the installation might require manually installing development packages, e.g. on [Fedora Linux][] you might need to install the `python2-devel` package. Additionally if graphical user interface dialogs are desired [PySide][] must be available.
 
 Usage
 -----
@@ -91,4 +91,4 @@ _* or one has not been provided via the optional argument to the `delete` comman
 [sdelete]: http://technet.microsoft.com/en-us/sysinternals/bb897443.aspx "SDelete - Windows sysinternals"
 [Eraser]: http://eraser.heidi.ie/ "Eraser"
 [Fedora]: http://fedoraproject.org "Fedora"
-
+[PySide]: http://pyside.org "PySide is a Python binding of the cross-platform GUI toolkit Qt." 

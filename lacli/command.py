@@ -452,8 +452,6 @@ class LaArchiveCommand(LaBaseCommand):
             from win32com.shell import shell
             pidl, disp, imglist = shell.SHBrowseForFolder(0, None, "Please browse to the folder you want to extract this archive:")
             dest = shell.SHGetPathFromIDList(pidl)
-        if cert_file:
-            cert_file = os.path.expanduser(cert_file)
 
         if not os.path.isfile(path):
             print "error: file", path, "does not exist"
@@ -462,7 +460,7 @@ class LaArchiveCommand(LaBaseCommand):
         else:
             try:
                 if cert_id not in certs:
-                    if not self.batch:
+                    if len(certs) and not self.batch:
                         print "Select a certificate:"
                         while cert_id not in certs:
                             for n, cert in enumerate(certs.iteritems()):
@@ -476,15 +474,35 @@ class LaArchiveCommand(LaBaseCommand):
                             assert cert_id, "No matching certificate found"
                     else: 
                         print "No matching certificate found."
-                cert = certs[cert_id]['cert']
-                archive = certs[cert_id]['archive']
-                def _print(f):
-                    print "Extracting", f
-                restore_archive(archive, path, cert,
-                                dest,
-                                self.cache._cache_dir(
-                                    'tmp', write=True), _print)
-                print "archive restored."
+                cert = archive = None
+                def extract(cert, archive):
+                    def _print(f):
+                        print "Extracting", f
+                    restore_archive(archive, path, cert,
+                                    dest,
+                                    self.cache._cache_dir(
+                                        'tmp', write=True), _print)
+                    print "archive restored."
+                if cert_id in certs:
+                    extract(certs[cert_id]['cert'], certs[cert_id]['archive'])
+                elif os.name == 'nt':
+                    try:
+                       from lacli.views.decrypt import view, app
+                       from lacli.adf import Certificate, Archive, Meta
+                    except ImportError:
+                       view = False
+                    def decrypt(x):
+                       cert = Certificate(x.decode('hex'))
+                       archive = Archive('title', Meta('zip', 'aes-256-ctr'))
+                       extract(cert, archive)
+                    def quit():
+                       view.hide()
+                       app.quit()
+                    if view:
+                       view.rootObject().decrypt.connect(decrypt)
+                       view.engine().quit.connect(quit)
+                       view.show()
+                       app.exec_()
             except Exception as e:
                 getLogger().debug("exception while restoring",
                                   exc_info=True)
