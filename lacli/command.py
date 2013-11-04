@@ -174,7 +174,7 @@ class LaCertsCommand(LaBaseCommand):
                     print "Certificate", key, "already exists"
                 else:
                     print "Imported certificate {}".format(
-                        self.cache.import_cert(filename))
+                        self.cache.import_cert(filename)[0])
         else:
             print "No certificates found in", filename
 
@@ -336,9 +336,12 @@ class LaArchiveCommand(LaBaseCommand):
                             elif status['status'] == "completed":
                                 print "status: completed"
                                 fname = saved['fname']
-                                cert = self.cache.save_cert(
+                                cert, f = self.cache.save_cert(
                                     self.cache.upload_complete(fname, status))
-                                print "Certificate", cert, "saved.\n"
+                                if f:
+                                    print "Certificate", cert, "saved:", f
+                                else:
+                                    print "Certificate", cert, "already exists"
                                 print " ".join(("Use lacli certificate list",
                                                 "to see your certificates, or",
                                                 "lacli certificate --help for",
@@ -422,9 +425,12 @@ class LaArchiveCommand(LaBaseCommand):
                     url = upload['links'].upload
                     status = self.session.upload_status(url)
                     if status['status'] == "completed":
-                        cert = self.cache.save_cert(
+                        cert, f = self.cache.save_cert(
                             self.cache.upload_complete(fname, status))
-                        print "Certificate", cert, "saved.\n"
+                        if f:
+                            print "Certificate", cert, "saved:", f
+                        else:
+                            print "Certificate", cert, "already exists.\n"
                         print " ".join(("Use lacli certificate list",
                                         "to see your certificates, or",
                                         "lacli certificate --help for",

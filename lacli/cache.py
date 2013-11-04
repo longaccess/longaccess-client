@@ -107,15 +107,20 @@ class Cache(object):
         fname = archive_slug(docs['archive'])
         tmpargs = {'delete': False,
                    'dir': self._cache_dir('certs', write=True)}
-        with NamedTemporaryFile(prefix=fname, suffix=".adf", **tmpargs) as f:
-            make_adf(list(docs.itervalues()), out=f)
-        return docs['signature'].aid
+        certs = self.certs()
+        aid = docs['signature'].aid  # let's check if we already have this cert
+        uri = docs['signature'].uri
+        if not aid in certs or uri != certs[aid]['signature'].uri:
+            with NamedTemporaryFile(prefix=fname, suffix=".adf", **tmpargs) as f:
+                make_adf(list(docs.itervalues()), out=f)
+                return (aid, f.name)
+        else:
+            return (aid, None)
 
     def import_cert(self, fname):
         with open(fname) as cert:
             docs = load_archive(cert)
-            self.save_cert(docs)
-            return docs['signature'].aid
+            return self.save_cert(docs)
 
     def _printable_cert(self, docs):
         archive = docs['archive']
