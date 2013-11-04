@@ -450,8 +450,13 @@ class LaArchiveCommand(LaBaseCommand):
             dest = os.path.expanduser(dest)
         elif os.name == 'nt':
             from win32com.shell import shell
-            pidl, disp, imglist = shell.SHBrowseForFolder(0, None, "Please browse to the folder you want to extract this archive:")
+            pidl, disp, imglist = shell.SHBrowseForFolder(
+                0, None, "Where do you want to extract this archive?")
             dest = shell.SHGetPathFromIDList(pidl)
+        elif self.batch:
+            dest = os.path.dirname(path)
+        else:
+            dest = os.getcwd()
 
         if not os.path.isfile(path):
             print "error: file", path, "does not exist"

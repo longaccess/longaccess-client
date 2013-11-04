@@ -45,3 +45,6 @@ pyinstall/upload.sh
 # eclipse, pydev, etc
 .project
 .pydevproject
+
+# qt resource module
+pyinstall/qrc_decrypt.py
