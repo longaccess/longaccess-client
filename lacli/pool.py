@@ -27,6 +27,14 @@ class MPConnection(object):
         self.bucket = token['bucket']
         self.grace = grace
         self.conn = None
+        self.expiration = None
+        if token.get('token_expiration', None):
+            try:
+                self.expiration = dateutil.parser.parse(token['token_expiration'])
+            except ValueError:
+                getLogger().debug("invalid token expiration: %s", self.expiration)
+            except TypeError:
+                getLogger().debug("invalid token expiration: %s", self.expiration)
         if self.uid is None:
             self.uid = self.getconnection().get_canonical_user_id()
 
@@ -47,7 +55,9 @@ class MPConnection(object):
     def timeout(self):
         """ return total number of seconds till
             this connection must be renewed. """
-        expiration = dateutil.parser.parse(self.expiration)
+        if not self.expiration:
+            return None
+        expiration = self.expiration
         now = datetime.utcnow()
         # check if API is timezone aware
         tzinfo = expiration.tzinfo
