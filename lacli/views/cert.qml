@@ -6,7 +6,8 @@ Rectangle {
     height: column1.height
 
     color: "#ffffff"
-    signal decrypt(string model)
+    signal decrypt(string key, string path)
+    property alias folder: key_input.folder
     Column {
         id: column1
         x: 0
@@ -17,9 +18,7 @@ Rectangle {
         }
         KeyInput {
             id: key_input
-
         }
-
         MouseArea {
             id: mousearea1
             width: 100
@@ -35,7 +34,7 @@ Rectangle {
             for (var i=0; i<key_input.model.count; i++) {
                 key += key_input.model.get(i).value
             }
-            rectangle1.decrypt(key)
+            rectangle1.decrypt(key, folder)
             Qt.quit()
 
         }
