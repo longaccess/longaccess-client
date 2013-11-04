@@ -1,32 +1,33 @@
 #!/bin/sh -e
 
-
 if [ "$#" -gt 0 ] ; then
     PYINST=$1
 else
-    PYINST=$(which pyinstaller)
+    PYINST=$(which pyinstaller) || { 
+        echo "pyinstaller not found. Try: ./generate.sh <path to pyinstaller>"
+        exit 1
+    }
 fi
 
-if test -z "$PYINST"; then
-	echo "./generate.sh <path to pyinstaller>"
-	exit 1
+if ! test -x "$PYINST" ; then
+    echo "$PYINST is not executable!"
+    exit 1
 fi
 
-BINARY=`which lacli`
-
-if [ -x $BINARY ] ; then
-    # reinstall as .egg to make sure
+if which lacli >/dev/null 2>&1 ; then
+    # reinstall as .egg
     pip uninstall -y lacli
-    pip install --egg ..
 fi
 
+pip install --egg ..
+
+BINARY=$(which lacli)
 ARCH=`uname -s`-`uname -p`
 
 $PYINST lacli.spec
 
-if [ $? != 0 ] ; then
-	exit $?
-fi
+# don't include files with 444 mode
+chmod -R u+r ./dist
 
 VERSION=`$BINARY --version | cut -d " " -f 2`
 TARBALL="lacli-$ARCH-$VERSION.tar.bz2"
