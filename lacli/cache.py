@@ -127,7 +127,11 @@ class Cache(object):
         cipher = archive.meta.cipher
         if hasattr(cipher, 'mode'):
             cipher = cipher.mode
-        created = date_parse(archive.meta.created)
+        created = archive.meta.created
+        try:
+            created = date_parse(created)
+        except:
+            pass
         expires = created + date_delta(years=30)
         md5 = b2a_hex(docs['auth'].md5).upper()
         key = b2a_hex(docs['cert'].key).upper()

@@ -123,7 +123,7 @@ class Meta(BaseYAMLObject):
             self.created = created
         else:
             self.created = datetime.utcnow().replace(
-                microsecond=0, tzinfo=tzutc()).isoformat()
+                microsecond=0, tzinfo=tzutc())
 
 
 class Format(BaseYAMLObject):
@@ -283,7 +283,7 @@ def load_archive(f):
     if match:  # we have a json encoded cert in this file
         d = as_adf(match.group(1))
     else:
-        for o in yaml.load_all(f, Loader=PrettySafeLoader):
+        for o in yaml.load_all(f, Loader=PrettySafeLoader, tz_aware_datetimes=True):
             if isinstance(o, Archive):
                 d['archive'] = o
             elif isinstance(o, Auth):
@@ -362,6 +362,8 @@ class ADFEncoder(json.JSONEncoder):
         if isinstance(o, (list, dict, str, unicode,
                           int, float, bool, type(None))):
             return super(ADFEncoder, self).default(o)
+        if isinstance(o, datetime):
+            return o.isoformat()
         if o.yaml_tag == Certificate.yaml_tag:
             return {'key': self._b64(o.key)}
         if o.yaml_tag == Auth.yaml_tag:
