@@ -9,7 +9,7 @@ from pipes import quote
 from lacli.log import getLogger
 from lacli.upload import Upload
 from lacli.archive import restore_archive
-from lacli.adf import archive_size
+from lacli.adf import archive_size, Certificate, Archive, Meta
 from lacli.decorators import command
 from abc import ABCMeta, abstractmethod
 
@@ -485,9 +485,10 @@ class LaArchiveCommand(LaBaseCommand):
                                     aid, size, title)
                             cert_id = raw_input("Enter a certificate ID: ")
                             assert cert_id, "No matching certificate found"
-                    else: 
+                    else:
                         print "No matching certificate found."
                 cert = archive = None
+
                 def extract(cert, archive):
                     def _print(f):
                         print "Extracting", f
@@ -500,22 +501,23 @@ class LaArchiveCommand(LaBaseCommand):
                     extract(certs[cert_id]['cert'], certs[cert_id]['archive'])
                 elif os.name == 'nt':
                     try:
-                       from lacli.views.decrypt import view, app
-                       from lacli.adf import Certificate, Archive, Meta
+                        from lacli.views.decrypt import view, app
                     except ImportError:
-                       view = False
+                        view = False
+
                     def decrypt(x):
-                       cert = Certificate(x.decode('hex'))
-                       archive = Archive('title', Meta('zip', 'aes-256-ctr'))
-                       extract(cert, archive)
+                        cert = Certificate(x.decode('hex'))
+                        archive = Archive('title', Meta('zip', 'aes-256-ctr'))
+                        extract(cert, archive)
+
                     def quit():
-                       view.hide()
-                       app.quit()
+                        view.hide()
+                        app.quit()
                     if view:
-                       view.rootObject().decrypt.connect(decrypt)
-                       view.engine().quit.connect(quit)
-                       view.show()
-                       app.exec_()
+                        view.rootObject().decrypt.connect(decrypt)
+                        view.engine().quit.connect(quit)
+                        view.show()
+                        app.exec_()
             except Exception as e:
                 getLogger().debug("exception while restoring",
                                   exc_info=True)
@@ -568,7 +570,8 @@ class LaArchiveCommand(LaBaseCommand):
             if path:
                 print path
         elif not os.path.exists(path):
-            print "Deleted archive", archive.title, " but local copy not found:", path
+            print "Deleted archive", archive.title,
+            print " but local copy not found:", path
         else:
             self.cache.shred_file(path, srm)
             if os.path.exists(path):

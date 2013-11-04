@@ -85,7 +85,7 @@ def _writer(name, folder, cipher, tmpdir, hashobj=None):
                'dir': tmpdir,
                'prefix': name}
     dst = NamedTemporaryFile(**tmpargs)
-    
+
     def _enc():
         # do it in two passes now as zip can't easily handle streaming
         tmpargs = {'prefix': name,
@@ -100,7 +100,6 @@ def _writer(name, folder, cipher, tmpdir, hashobj=None):
                         yield f
             zf.flush()
             zf.seek(0)
-            import pdb; pdb.set_trace()
             print "Encrypting.."
             with CryptIO(dst, cipher, hashobj=hashobj) as fdst:
                 copyfileobj(zf, fdst, 1024)

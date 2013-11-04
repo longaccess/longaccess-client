@@ -56,7 +56,7 @@ class LaLoginCommand(LaBaseCommand):
 
         if email and username and not self.batch:
             if match('y(es)?', raw_input("Save credentials? "), IGNORECASE):
-                 self.registry.save_session(self.username, self.password)
+                self.registry.save_session(self.username, self.password)
 
     @command()
     def do_logout(self):

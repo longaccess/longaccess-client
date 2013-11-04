@@ -159,7 +159,8 @@ class Cache(object):
             commands.append('shred')
             commands.append('gshred')
             commands.append('sdelete')
-            commands.append('Eraser.exe addtask --schedule=now -q --file={file}')
+            commands.append(
+                'Eraser.exe addtask --schedule=now -q --file={file}')
         for command in commands:
             try:
                 newcommand = command.format(file=fname)
@@ -216,7 +217,7 @@ class Cache(object):
             return os.path.join(self.home, parsed.path)
         except:
             return None
-        
+
 
 if __name__ == "__main__":
     import sys
@@ -224,12 +225,13 @@ if __name__ == "__main__":
     cache = Cache(os.path.expanduser(os.path.join("~", ".longaccess")))
     for fname, docs in cache._for_adf('archives').iteritems():
         path = os.path.join(cache.home, docs['links'].local)
-        if not os.path.exists(path): continue
+        if not os.path.exists(path):
+            continue
         with open(path) as f:
-            md5 = hashlib.md5() 
+            md5 = hashlib.md5()
             while 1:
-                 buf = f.read(16*1024)
-                 if not buf: 
-                     break
-                 md5.update(buf)
+                buf = f.read(16*1024)
+                if not buf:
+                    break
+                md5.update(buf)
             assert md5.digest() == docs['auth'].md5, path
