@@ -12,6 +12,10 @@ class BaseAppException(Exception):
         return self.msg
 
 
+class ApiNoSessionError(BaseAppException):
+    msg = "no session credentials provided."
+
+
 class ApiErrorException(BaseAppException):
     msg = "the server couldn't fulfill your request"
 
@@ -36,3 +40,11 @@ class WorkerFailureError(BaseAppException):
 
 class InvalidArchiveError(BaseAppException):
     msg = "invalid archive"
+
+
+class DecryptionError(BaseAppException):
+    msg = "Error decrypting file"
+
+    def __init__(self, reason=None):
+        super(DecryptionError, self).__init__()
+        self.reason = reason

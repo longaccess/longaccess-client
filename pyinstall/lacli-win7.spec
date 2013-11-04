@@ -7,7 +7,7 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
-          name='lacli',
+          name='lacli.exe',
           debug=False,
           strip=None,
           upx=True,

@@ -4,7 +4,7 @@ from docopt import docopt, DocoptExit
 from functools import update_wrapper, wraps
 from requests.exceptions import ConnectionError, HTTPError
 from lacli.exceptions import (ApiErrorException, ApiAuthException,
-                              ApiUnavailableException)
+                              ApiUnavailableException, ApiNoSessionError)
 
 
 class cached_property(object):
@@ -17,11 +17,17 @@ class cached_property(object):
     def __get__(self, obj, cls):
         if obj is None:
             return self
-        obj.__dict__[self.f.__name__] = r = self.f(obj)
-        return r
+        if not self.f.__name__ in obj.__dict__:
+            obj.__dict__[self.f.__name__] = self.f(obj)
+        return obj.__dict__[self.f.__name__]
+
+    def __set__(self, obj, value):
+        obj.__dict__[self.f.__name__] = value
 
 
 def with_api_response(f):
+    """ Decorate a method to capture API related errors
+    """
     @wraps(f)
     def wrap(*args, **kwargs):
         try:
@@ -37,6 +43,8 @@ def with_api_response(f):
                 raise ApiAuthException(e)
             else:
                 raise ApiErrorException(e)
+        except ApiNoSessionError:
+            raise
         except Exception as e:
             raise ApiErrorException(e)
     return wrap

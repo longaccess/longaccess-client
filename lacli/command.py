@@ -11,10 +11,56 @@ from lacli.upload import Upload
 from lacli.archive import restore_archive
 from lacli.adf import archive_size
 from lacli.decorators import command
-from urlparse import urlparse
+from abc import ABCMeta, abstractmethod
 
 
-class LaCertsCommand(cmd.Cmd):
+class LaBaseCommand(cmd.Cmd, object):
+    __metaclass__ = ABCMeta
+
+    prompt = 'lacli> '
+
+    def __init__(self, registry, *args, **kwargs):
+        cmd.Cmd.__init__(self, *args, **kwargs)
+        self.registry = registry
+
+    @property
+    def verbose(self):
+        return self.registry.prefs['command']['verbose']
+
+    @property
+    def batch(self):
+        return self.registry.prefs['command']['batch']
+
+    @property
+    def cache(self):
+        return self.registry.cache
+
+    @property
+    def debug(self):
+        return self.registry.prefs['command']['debug']
+
+    @property
+    def prefs(self):
+        return self.registry.prefs
+
+    @property
+    def session(self):
+        return self.registry.session
+
+    @session.setter
+    def session(self, newsession):
+        self.registry.session = newsession
+
+    @abstractmethod
+    def makecmd(self, options):
+        """ Parse docopt style options and return a cmd-style line """
+
+    def do_EOF(self, line):
+        print
+        return True
+
+
+class LaCertsCommand(LaBaseCommand):
     """Manage Long Access Certificates
 
     Usage: lacli certificate list
@@ -25,14 +71,6 @@ class LaCertsCommand(cmd.Cmd):
 
     """
     prompt = 'lacli:certificate> '
-
-    def __init__(self, session, cache, prefs, *args, **kwargs):
-        cmd.Cmd.__init__(self, *args, **kwargs)
-        self.session = session
-        self.verbose = prefs['command']['verbose']
-        self.batch = prefs['command']['batch']
-        self.cache = cache
-        self.debug = prefs['command']['debug']
 
     def makecmd(self, options):
         line = []
@@ -51,10 +89,6 @@ class LaCertsCommand(cmd.Cmd):
             line.append("import")
             line.append(options["<filename>"])
         return " ".join(line)
-
-    def do_EOF(self, line):
-        print
-        return True
 
     @command()
     def do_list(self):
@@ -143,7 +177,7 @@ class LaCertsCommand(cmd.Cmd):
             print "No certificates found in", filename
 
 
-class LaCapsuleCommand(cmd.Cmd):
+class LaCapsuleCommand(LaBaseCommand):
     """Manage Long Access Capsules
 
     Usage: lacli capsule list
@@ -153,23 +187,11 @@ class LaCapsuleCommand(cmd.Cmd):
     """
     prompt = 'lacli:capsule> '
 
-    def __init__(self, session, cache, prefs, *args, **kwargs):
-        cmd.Cmd.__init__(self, *args, **kwargs)
-        self.session = session
-        self.verbose = prefs['command']['verbose']
-        self.batch = prefs['command']['batch']
-        self.cache = cache
-        self.debug = prefs['command']['debug']
-
     def makecmd(self, options):
         line = []
         if options['list']:
             line.append("list")
         return " ".join(line)
-
-    def do_EOF(self, line):
-        print
-        return True
 
     @command()
     def do_list(self):
@@ -192,14 +214,14 @@ class LaCapsuleCommand(cmd.Cmd):
             print "error: " + str(e)
 
 
-class LaArchiveCommand(cmd.Cmd):
+class LaArchiveCommand(LaBaseCommand):
     """Upload a file to Long Access
 
     Usage: lacli archive upload [-n <np>] [<index>] [<capsule>]
            lacli archive list
            lacli archive status <index>
            lacli archive create <dirname> -t <title>
-           lacli archive extract [-o <dirname>] <path> (<cert_id>|-f <cert>)
+           lacli archive extract [-o <dirname>] <path> [<cert_id>|-f <cert>]
            lacli archive delete <index> [<srm>...]
            lacli archive --help
 
@@ -214,13 +236,8 @@ class LaArchiveCommand(cmd.Cmd):
     """
     prompt = 'lacli:archive> '
 
-    def __init__(self, session, cache, prefs, uploader=None, *args, **kwargs):
-        cmd.Cmd.__init__(self, *args, **kwargs)
-        self.session = session
-        self.verbose = prefs['command']['verbose']
-        self.batch = prefs['command']['batch']
-        self.cache = cache
-        self.debug = prefs['command']['debug']
+    def __init__(self, *args, **kwargs):
+        super(LaArchiveCommand, self).__init__(*args, **kwargs)
         self.nprocs = None
 
     def setopt(self, options):
@@ -230,10 +247,6 @@ class LaArchiveCommand(cmd.Cmd):
         except ValueError:
             print "error: illegal value for 'procs' parameter."
             raise
-
-    def do_EOF(self, line):
-        print
-        return True
 
     def makecmd(self, options):
         self.setopt(options)
@@ -256,15 +269,15 @@ class LaArchiveCommand(cmd.Cmd):
             line.append(options['<index>'])
         elif options['extract']:
             line.append("extract")
-            line.append(options['<path>'])
+            line.append(quote(options['<path>']))
             if options['--out']:
                 line.append(quote(options['--out']))
             else:
-                line.append(os.getcwd())
+                line.append(quote(''))
             if options['--cert']:
                 line.append("dummy")
                 line.append(quote(options['--cert']))
-            else:
+            elif options['<cert_id>']:
                 line.append(options['<cert_id>'])
         elif options['delete']:
             line.append("delete")
@@ -291,26 +304,17 @@ class LaArchiveCommand(cmd.Cmd):
             docs = docs[index-1][1]
             archive = docs['archive']
             link = docs['links']
-            path = ''
-            if link.upload or link.download:
-                print "upload is already completed"
-            elif link.local:
-                parsed = urlparse(link.local)
-                if parsed.scheme == 'file':
-                    if os.path.exists(parsed.path):
-                        path = parsed.path
-                    else:
-                        print 'File {} not found.'.format(parsed.path)
-                else:
-                    print "url not local: " + link.local
-            else:
-                print "no local copy exists."
+            path = self.cache.data_file(link)
 
             auth = None
             if 'auth' in docs:
                 auth = docs['auth']
 
-            if path:
+            if link.upload or link.download:
+                print "upload is already completed"
+            elif not path:
+                print "no local copy exists."
+            elif path:
                 try:
                     saved = None
                     with self.session.upload(capsule, archive, auth) as upload:
@@ -433,7 +437,7 @@ class LaArchiveCommand(cmd.Cmd):
     @command(path=str, dest=str, cert_id=str, cert_file=str)
     def do_extract(self, path=None, dest=None, cert_id=None, cert_file=None):
         """
-        Usage: extract <path> <dest> <cert_id> [<cert_file>]
+        Usage: extract <path> [<dest>] [<cert_id>] [<cert_file>]
         """
         if cert_file:
             certs = self.cache.certs([cert_file])
@@ -442,27 +446,63 @@ class LaArchiveCommand(cmd.Cmd):
             certs = self.cache.certs()
 
         path = os.path.expanduser(path)
-        dest = os.path.expanduser(dest)
-        if cert_file:
-            cert_file = os.path.expanduser(cert_file)
+        if dest:
+            dest = os.path.expanduser(dest)
+        elif os.name == 'nt':
+            from win32com.shell import shell
+            pidl, disp, imglist = shell.SHBrowseForFolder(0, None, "Please browse to the folder you want to extract this archive:")
+            dest = shell.SHGetPathFromIDList(pidl)
 
-        if cert_id not in certs:
-            print "no matching certificate found"
-        elif not os.path.isfile(path):
+        if not os.path.isfile(path):
             print "error: file", path, "does not exist"
         elif not os.path.isdir(dest):
             print "output directory", dest, "does not exist"
         else:
-            cert = certs[cert_id]['cert']
-            archive = certs[cert_id]['archive']
             try:
-                def _print(f):
-                    print "Extracting", f
-                restore_archive(archive, path, cert,
-                                dest,
-                                self.cache._cache_dir(
-                                    'tmp', write=True), _print)
-                print "archive restored."
+                if cert_id not in certs:
+                    if len(certs) and not self.batch:
+                        print "Select a certificate:"
+                        while cert_id not in certs:
+                            for n, cert in enumerate(certs.iteritems()):
+                                cert = cert[1]
+                                aid = cert['signature'].aid
+                                title = cert['archive'].title
+                                size = archive_size(cert['archive'])
+                                print "{:>10} {:>6} {:<}".format(
+                                    aid, size, title)
+                            cert_id = raw_input("Enter a certificate ID: ")
+                            assert cert_id, "No matching certificate found"
+                    else: 
+                        print "No matching certificate found."
+                cert = archive = None
+                def extract(cert, archive):
+                    def _print(f):
+                        print "Extracting", f
+                    restore_archive(archive, path, cert,
+                                    dest,
+                                    self.cache._cache_dir(
+                                        'tmp', write=True), _print)
+                    print "archive restored."
+                if cert_id in certs:
+                    extract(certs[cert_id]['cert'], certs[cert_id]['archive'])
+                elif os.name == 'nt':
+                    try:
+                       from lacli.views.decrypt import view, app
+                       from lacli.adf import Certificate, Archive, Meta
+                    except ImportError:
+                       view = False
+                    def decrypt(x):
+                       cert = Certificate(x.decode('hex'))
+                       archive = Archive('title', Meta('zip', 'aes-256-ctr'))
+                       extract(cert, archive)
+                    def quit():
+                       view.hide()
+                       app.quit()
+                    if view:
+                       view.rootObject().decrypt.connect(decrypt)
+                       view.engine().quit.connect(quit)
+                       view.show()
+                       app.exec_()
             except Exception as e:
                 getLogger().debug("exception while restoring",
                                   exc_info=True)
@@ -478,25 +518,14 @@ class LaArchiveCommand(cmd.Cmd):
         """
         docs = list(self.cache._for_adf('archives').iteritems())
 
+        fname = path = None
         if index <= 0 or len(docs) < index:
             print "No such archive."
         else:
             fname = docs[index-1][0]
             docs = docs[index-1][1]
             archive = docs['archive']
-            link = docs['links']
-            path = ''
-            if link.local:
-                parsed = urlparse(link.local)
-                if parsed.scheme == 'file':
-                    if os.path.exists(parsed.path):
-                        path = parsed.path
-                    else:
-                        print 'File {} not found.'.format(parsed.path)
-                else:
-                    print "url not local: " + link.local
-            else:
-                print "no local copy exists."
+            path = self.cache.data_file(docs['links'])
 
         srmprompt = "\n".join((
             "WARNING! Insecure deletion attempt.",
@@ -524,9 +553,10 @@ class LaArchiveCommand(cmd.Cmd):
             print fname
             if path:
                 print path
+        elif not os.path.exists(path):
+            print "Deleted archive", archive.title, " but local copy not found:", path
         else:
-            if path:
-                self.cache.shred_file(path, srm)
+            self.cache.shred_file(path, srm)
             if os.path.exists(path):
                 print "ERROR: Failed to delete archive data:", path
                 print "Please remove manually"

@@ -1,5 +1,6 @@
 import os
 import shlex
+from urlparse import urlparse
 from pkg_resources import resource_string
 from dateutil.parser import parse as date_parse
 from dateutil.relativedelta import relativedelta as date_delta
@@ -11,7 +12,7 @@ from lacli.log import getLogger
 from lacli.archive import dump_archive, archive_slug
 from lacli.exceptions import InvalidArchiveError
 from lacli.decorators import contains
-from urlparse import urlunparse
+from urllib import pathname2url
 from tempfile import NamedTemporaryFile
 from binascii import b2a_hex
 from itertools import izip, imap
@@ -66,7 +67,7 @@ class Cache(object):
         cert = Certificate()
         tmpdir = self._cache_dir('data', write=True)
         name, path, auth = dump_archive(archive, folder, cert, cb, tmpdir)
-        link = Links(local=urlunparse(('file', path, '', '', '', '')))
+        link = Links(local=pathname2url(os.path.relpath(path, self.home)))
         archive.meta.size = os.path.getsize(path)
         tmpargs = {'delete': False,
                    'dir': self._cache_dir('archives', write=True)}
@@ -129,7 +130,7 @@ class Cache(object):
 
         return resource_string(__name__, "data/certificate.html").format(
             json=as_json(docs),
-            aid=docs['links'].download,
+            aid=docs['signature'].aid,
             keyB=next(hk),
             keyC=next(hk),
             keyD=next(hk),
@@ -153,10 +154,13 @@ class Cache(object):
             commands.append('shred')
             commands.append('gshred')
             commands.append('sdelete')
+            commands.append('Eraser.exe addtask --schedule=now -q --file={file}')
         for command in commands:
             try:
-                args = shlex.split(command)
-                args.append(fname)
+                newcommand = command.format(file=fname)
+                args = shlex.split(newcommand)
+                if command == newcommand:
+                    args.append(fname)
                 if 0 == check_call(args):
                     getLogger().debug("success running {}".format(command))
                     if os.path.exists(fname):
@@ -166,16 +170,22 @@ class Cache(object):
                                   exc_info=True)
 
     def shred_cert(self, aid, countdown=[], srm=None):
+        path = None
         for fname, docs in self._for_adf('certs').iteritems():
             if 'links' in docs and aid == docs['links'].download:
-                for a in countdown:
-                    pass
-                self.shred_file(fname, srm)
-                return fname
+                path = fname
+            elif 'signature' in docs and aid == docs['signature'].aid:
+                path = fname
+        if path:
+            for a in countdown:
+                pass
+            self.shred_file(path, srm)
+            return path
 
     def print_cert(self, aid):
         for fname, docs in self._for_adf('certs').iteritems():
-            if 'links' in docs and aid == docs['links'].download:
+            if 'signature' in docs and aid == docs['signature'].aid:
+                path = fname
                 html = 'longaccess-{}.html'.format(aid)
                 with open(html, 'w') as f:
                     f.write(self._printable_cert(docs))
@@ -193,3 +203,28 @@ class Cache(object):
                         yield (docs['signature'].aid, docs)
                 except InvalidArchiveError:
                     getLogger().debug(f, exc_info=True)
+
+    def data_file(self, link):
+        try:
+            parsed = urlparse(link.local)
+            assert not parsed.scheme or parsed.scheme == 'file'
+            return os.path.join(self.home, parsed.path)
+        except:
+            return None
+        
+
+if __name__ == "__main__":
+    import sys
+    import hashlib
+    cache = Cache(os.path.expanduser(os.path.join("~", ".longaccess")))
+    for fname, docs in cache._for_adf('archives').iteritems():
+        path = os.path.join(cache.home, docs['links'].local)
+        if not os.path.exists(path): continue
+        with open(path) as f:
+            md5 = hashlib.md5() 
+            while 1:
+                 buf = f.read(16*1024)
+                 if not buf: 
+                     break
+                 md5.update(buf)
+            assert md5.digest() == docs['auth'].md5, path

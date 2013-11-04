@@ -80,36 +80,29 @@ def dump_archive(archive, folder, cert, cb=None, tmpdir='/tmp',
 
 
 def _writer(name, folder, cipher, tmpdir, hashobj=None):
-    path = os.path.join(tmpdir, name+".zip.crypt")
-
-    def _enc(zf):
-        print "Encrypting.."
-        tmpargs = {'delete': False,
-                   'suffix': ".crypt",
+    tmpargs = {'delete': False,
+               'suffix': ".longaccess",
+               'dir': tmpdir,
+               'prefix': name}
+    dst = NamedTemporaryFile(**tmpargs)
+    
+    def _enc():
+        # do it in two passes now as zip can't easily handle streaming
+        tmpargs = {'prefix': name,
                    'dir': tmpdir}
-        with NamedTemporaryFile(prefix=name, **tmpargs) as dst:
-            with CryptIO(dst, cipher, hashobj=hashobj) as fdst:
-                while 1:
-                    buf = zf.read(1024)
-                    if not buf:
-                        break
-                    fdst.write(buf)
-        os.rename(dst.name, path)
-    return (path, _zip(name, folder, tmpdir, _enc))
-
-
-def _zip(name, folder, tmpdir, enc=None):
-    tmpargs = {'prefix': name,
-               'dir': tmpdir}
-    # do it in two passes now as zip can't easily handle streaming
-    with NamedTemporaryFile(**tmpargs) as zf:
-        with ZipFile(zf, 'w', ZIP_DEFLATED, True) as zpf:
-            for root, _, fs in os.walk(folder):
-                for f in (os.path.join(root, f) for f in fs):
-                    path = os.path.join(root, f)
-                    zpf.write(path, os.path.relpath(path, folder))
-                    yield f
-        if enc:
+        with NamedTemporaryFile(**tmpargs) as zf:
+            with ZipFile(zf, 'w', ZIP_DEFLATED, True) as zpf:
+                for root, _, fs in os.walk(folder):
+                    for f in (os.path.join(root, f) for f in fs):
+                        path = os.path.join(root, f)
+                        zpf.write(path, os.path.relpath(path, folder))
+                        print f
+                        yield f
             zf.flush()
             zf.seek(0)
-            enc(zf)
+            import pdb; pdb.set_trace()
+            print "Encrypting.."
+            with CryptIO(dst, cipher, hashobj=hashobj) as fdst:
+                copyfileobj(zf, fdst, 1024)
+        dst.close()
+    return (dst.name, _enc())

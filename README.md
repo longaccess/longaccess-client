@@ -6,9 +6,14 @@ This is the prototype client program for interacting with the [Longaccess servic
 Installation
 ------------
 
-We have binary packages for certain platforms, like MacOS X, Linux and FreeBSD. For more information see the [Longaccess downloads page][lad]. For other platforms or purposes you can download or clone the source repository, create a [`virtualenv`][ve] if needed, and install the client via `pip`. E.g.:
+We have binary packages for certain platforms, like MacOS X, Windows 8 64-bit, Linux and FreeBSD. For more information see the [Longaccess downloads page][lad]. For other platforms or purposes you can download or clone the source repository, create a [`virtualenv`][ve] if needed, and install the client via `pip`. E.g.:
 
     pip install https://github.com/longaccess/longaccess-client/tarball/master
+
+Dependencies
+------------
+
+The prebuilt binary packages are self-contained, i.e. they do not have any hard external dependencies. There is however a soft dependency on an external tool to securely delete files from the filesystem, see below for more information. When installing from source most dependencies are automatically installable via `pip`. On some platforms the installation might require manually installing development packages, e.g. on [Fedora Linux][] you might need to install the `python2-devel` package. Additionally if graphical user interface dialogs are desired [PySide][] must be available.
 
 Usage
 -----
@@ -63,8 +68,27 @@ An example scenario:
     $
 
 
+Secure removal
+--------------
+
+When removing archives and certificates from the disk the program supports [secure deletion][sd] through an external program. In case a suitable removal program cannot be found<sup>*</sup> the client will complain and give further instructions. Currently we automatically support the following tools, if they are available on the system path:
+
+* [srm][] (Mac, Unix)
+* [shred][] (Unix)
+* [sdelete][] (Windows, proprietary)
+* [Eraser][] (Windows, open-source)
+
+_* or one has not been provided via the optional argument to the `delete` command._
+
 [la]: https://www.longaccess.com "the Longaccess website"
 [lad]: https://downloads.longaccess.com "the Longaccess downloads page"
 [py]: http://www.python.org "the python website"
 [ve]: http://www.virtualenv.org "virtualenv"
 [What is Longaccess?]: https://github.com/longaccess/longaccess-docs/blob/master/what_is_longaccess.md "what is Longaccess?"
+[sd]: https://ssd.eff.org/tech/deletion "Secure deletion - EFF"
+[srm]: http://en.wikipedia.org/wiki/Srm_(Unix) "SRM (Unix) - Wikipedia"
+[shred]: http://en.wikipedia.org/wiki/Shred_(Unix) "Shred (Unix) - Wikipedia"
+[sdelete]: http://technet.microsoft.com/en-us/sysinternals/bb897443.aspx "SDelete - Windows sysinternals"
+[Eraser]: http://eraser.heidi.ie/ "Eraser"
+[Fedora]: http://fedoraproject.org "Fedora"
+[PySide]: http://pyside.org "PySide is a Python binding of the cross-platform GUI toolkit Qt." 
