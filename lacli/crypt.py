@@ -132,5 +132,6 @@ class CryptIO(BufferedIOBase):
         return self.mode == WRITE
 
     def __exit__(self, eType, eValue, eTrace):
+        super(CryptIO, self).__exit__(eType, eValue, eTrace)
         if eType:
             raise DecryptionError(eValue)

@@ -99,3 +99,28 @@ class CryptIOTest(TestCase):
             c.write(d)
         c.flush()
         self.assertEqual(500, len(f.getvalue()))
+
+    def test_write_context(self):
+        import StringIO
+        f = StringIO.StringIO()
+        ciph = self._makecipher()
+        ciph.flush = Mock(return_value='0'*32)
+        c = self._makeit(f, ciph, mode='wb')
+        d = '0' * 100
+        with c:
+            for _ in range(5):
+                c.write(d)
+        self.assertEqual(532, len(f.getvalue()))
+
+    def test_hashobj(self):
+        import StringIO
+        from hashlib import md5
+        f = StringIO.StringIO()
+        d = '0' * 100
+        ciph = self._makecipher()
+        ciph.flush = Mock(return_value='0'*32)
+        c = self._makeit(f, ciph, mode='wb', hashobj=md5())
+        with c:
+            for _ in range(4):
+                c.write(d)
+        self.assertEqual("93e84d29d7eb3ed55bd9adc243b06904", c.hashobj.digest().encode('hex'))
