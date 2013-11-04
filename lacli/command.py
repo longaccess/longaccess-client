@@ -127,6 +127,8 @@ class LaCertsCommand(LaBaseCommand):
             "file manually:"))
 
         def _countdown():
+            if self.batch:
+                return
             print "Deleting certificate", cert_id, "in 5",
             for num in [4, 3, 2, 1]:
                 sys.stdout.flush()
@@ -541,12 +543,13 @@ class LaArchiveCommand(LaBaseCommand):
             "Please provide a valid srm command as an option or remove the",
             "file(s) manually:"))
 
-        print "Deleting archive", index, "({}) in 5".format(archive.title),
-        for num in [4, 3, 2, 1]:
-            sys.stdout.flush()
-            time.sleep(1)
-            sys.stdout.write(", {}".format(num))
-        print "... deleting"
+        if not self.batch:
+            print "Deleting archive", index, "({}) in 5".format(archive.title),
+            for num in [4, 3, 2, 1]:
+                sys.stdout.flush()
+                time.sleep(1)
+                sys.stdout.write(", {}".format(num))
+            print "... deleting"
 
         self.cache.shred_file(fname, srm)
         if os.path.exists(fname):
