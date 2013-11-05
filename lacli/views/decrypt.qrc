@@ -1,9 +1,9 @@
 <!DOCTYPE RCC><RCC version="1.0">
-   <qresource>
-<file>Button.qml</file>
-<file>IdRow.qml</file>
-<file>KeyInput.qml</file>
-<file>KeyRow.qml</file>
-<file>cert.qml</file>
-   </qresource>
+ <qresource prefix="/ui">
+  <file>Button.qml</file>
+  <file>IdRow.qml</file>
+  <file>KeyInput.qml</file>
+  <file>KeyRow.qml</file>
+  <file>cert.qml</file>
+ </qresource>
 </RCC>

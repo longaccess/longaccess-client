@@ -7,6 +7,7 @@ Column {
     IdRow { }
     property alias button: button1
     property alias model: mymodel
+    property alias folder: text_input1.text
 
 
     ListView {
@@ -58,19 +59,46 @@ Column {
             }
         }
     }
+Row{
+    Rectangle {
+        width: text_input1.width
+        height: text_input1.height
+        color: "#dbd6d6"
+        border.color: "#000000"
+        TextInput {
+            id: text_input1
+            width: 200
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.verticalCenter: parent.verticalCenter
+            focus: true
+            font.pointSize: 12
+            onTextChanged: button1.rowChanged()
+        }
+        border.width: 1
+    }
+
+    Button {
+        id: button2
+        text: "Browse"
+        enabled: true
+        Connections {
+            onButtonClicked: text_input1.text = destsel.getDirectory()
+        }
+        font.pixelSize: 10
+        radius: 2
+    }
+}
 
     Button {
         id: button1
         text: "Decrypt"
         signal rowChanged()
         onRowChanged: {
-            enabled = true
+            enabled = destsel.dirExists(text_input1.text)
             for (var i=0; i< mymodel.count; i++) {
                 if (!mymodel.get(i).complete)
                     enabled = false
             }
-
-
         }
     }
 

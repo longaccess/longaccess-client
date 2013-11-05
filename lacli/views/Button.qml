@@ -5,7 +5,8 @@ Rectangle {
 
     property alias text: textItem.text
     property bool enabled: false
-
+    property alias radius: button.radius
+    property alias font: textItem.font
     signal buttonClicked()
 
     width: textItem.width + 40; height: textItem.height + 10

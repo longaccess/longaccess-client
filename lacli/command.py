@@ -456,11 +456,6 @@ class LaArchiveCommand(LaBaseCommand):
         path = os.path.expanduser(path)
         if dest:
             dest = os.path.expanduser(dest)
-        elif os.name == 'nt':
-            from win32com.shell import shell
-            pidl, disp, imglist = shell.SHBrowseForFolder(
-                0, None, "Where do you want to extract this archive?")
-            dest = shell.SHGetPathFromIDList(pidl)
         elif self.batch:
             dest = os.path.dirname(path)
         else:
@@ -487,7 +482,6 @@ class LaArchiveCommand(LaBaseCommand):
                             assert cert_id, "No matching certificate found"
                     else:
                         print "No matching certificate found."
-                cert = archive = None
 
                 def extract(cert, archive):
                     def _print(f):
@@ -499,25 +493,28 @@ class LaArchiveCommand(LaBaseCommand):
                     print "archive restored."
                 if cert_id in certs:
                     extract(certs[cert_id]['cert'], certs[cert_id]['archive'])
-                elif os.name == 'nt':
+                else:
                     try:
                         from lacli.views.decrypt import view, app
-                    except ImportError:
-                        view = False
+                        def decrypt(x):
+                            cert = Certificate(x.decode('hex'))
+                            archive = Archive('title', Meta('zip', 'aes-256-ctr'))
+                            extract(cert, archive)
 
-                    def decrypt(x):
-                        cert = Certificate(x.decode('hex'))
-                        archive = Archive('title', Meta('zip', 'aes-256-ctr'))
-                        extract(cert, archive)
+                        def quit():
+                            view.hide()
+                            app.quit()
 
-                    def quit():
-                        view.hide()
-                        app.quit()
-                    if view:
                         view.rootObject().decrypt.connect(decrypt)
                         view.engine().quit.connect(quit)
                         view.show()
                         app.exec_()
+                    except ImportError as e:
+                        getLogger().debug("Key input gui unavailable", exc_info=True)
+                        print "Key input gui unavailable."
+                    except Exception:
+                        pass
+
             except Exception as e:
                 getLogger().debug("exception while restoring",
                                   exc_info=True)

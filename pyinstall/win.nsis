@@ -8,7 +8,6 @@
 
 ;Name and file
 Name "Longaccess CLI"
-OutFile "Longaccess-0.1a2-Win7-64bit.exe"
 
 ;Default installation folder
 InstallDir "$PROGRAMFILES64\LongaccessCLI\"
