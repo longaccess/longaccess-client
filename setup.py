@@ -20,5 +20,20 @@ setup(version=__version__,
       lacli = lacli.main:main
       ladec = lacli.cipher.dec:main
       """,
-      package_data={'lacli': ['data/certificate.html']}
+      package_data={'lacli': ['data/certificate.html']},
+      classifiers=[
+          'Development Status :: 4 - Beta',
+          'Intended Audience :: Developers',
+          'Intended Audience :: System Administrators',
+          'Intended Audience :: Information Technology',
+          'Natural Language :: English',
+          'License :: OSI Approved :: Apache Software License',
+          'Operating System :: OS Independent',
+          'Programming Language :: Python',
+          'Programming Language :: Python :: 2',
+          'Programming Language :: Python :: 2.6',
+          'Programming Language :: Python :: 2.7',
+          'Topic :: System :: Archiving',
+          'Topic :: Utilities',
+      ],
       )
