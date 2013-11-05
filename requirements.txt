@@ -1,0 +1,11 @@
+--global-option "--without-libyaml" -e hg+https://bitbucket.org/zigg/pyyaml#egg=pyyaml
+Unidecode==0.04.14
+boto==2.14.0
+docopt==0.6.1
+filechunkio==1.5
+logutils==0.3.3
+progressbar==2.3
+pycrypto==2.6
+python-dateutil==2.1
+requests==2.0.0
+pyaml==13.07.1
