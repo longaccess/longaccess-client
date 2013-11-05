@@ -456,11 +456,6 @@ class LaArchiveCommand(LaBaseCommand):
         path = os.path.expanduser(path)
         if dest:
             dest = os.path.expanduser(dest)
-        elif os.name == 'nt':
-            from win32com.shell import shell
-            pidl, disp, imglist = shell.SHBrowseForFolder(
-                0, None, "Where do you want to extract this archive?")
-            dest = shell.SHGetPathFromIDList(pidl)
         elif self.batch:
             dest = os.path.dirname(path)
         else:
