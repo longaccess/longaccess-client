@@ -287,7 +287,11 @@ def load_archive(f):
         except Exception as e:
             raise InvalidArchiveError(e)
     else:
-        for o in yaml.load_all(f, Loader=PrettySafeLoader, tz_aware_datetimes=True):
+        try:
+            os = yaml.load_all(f, Loader=PrettySafeLoader, tz_aware_datetimes=True)
+        except TypeError:
+            os = yaml.load_all(f, Loader=PrettySafeLoader)
+        for o in os:
             if isinstance(o, Archive):
                 d['archive'] = o
             elif isinstance(o, Auth):
