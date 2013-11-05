@@ -6,7 +6,7 @@ This is the prototype client program for interacting with the [Longaccess servic
 Installation
 ------------
 
-We have binary packages for certain platforms, like MacOS X, Windows 8 64-bit, Linux and FreeBSD. For more information see the [Longaccess downloads page][lad]. For other platforms or purposes you can download or clone the source repository, create a [`virtualenv`][ve] if needed, and install the client via `pip`. E.g.:
+We have binary packages for certain platforms, like MacOS X, Windows 8 64-bit, Linux and FreeBSD. For more information see the [Longaccess downloads page][lad]. For other platforms or purposes you can download or clone the source repository, create a [virtualenv][ve] if needed, and install the client via `pip`. E.g.:
 
     pip install https://github.com/longaccess/longaccess-client/tarball/master
 
