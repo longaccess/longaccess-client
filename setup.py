@@ -1,7 +1,7 @@
 from setuptools import setup
 from lacli import __version__
 
-setup(version=unicode(__version__),
+setup(version=__version__,
       name="lacli",
       author="Konstantinos Koukopoulos",
       author_email='kk@longaccess.com',
