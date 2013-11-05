@@ -11,6 +11,7 @@ from yaml import SafeDumper
 from lacli.exceptions import InvalidArchiveError
 from datetime import datetime
 from dateutil.tz import tzutc
+from dateutil.parser import parse as date_parse
 from base64 import b64encode, b64decode
 
 
@@ -123,7 +124,7 @@ class Meta(BaseYAMLObject):
             self.created = created
         else:
             self.created = datetime.utcnow().replace(
-                microsecond=0, tzinfo=tzutc()).isoformat()
+                microsecond=0, tzinfo=tzutc())
 
 
 class Format(BaseYAMLObject):
@@ -281,9 +282,12 @@ def load_archive(f):
         mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ))
     d = {}
     if match:  # we have a json encoded cert in this file
-        d = as_adf(match.group(1))
+        try:
+            d = as_adf(match.group(1))
+        except Exception as e:
+            raise InvalidArchiveError(e)
     else:
-        for o in yaml.load_all(f, Loader=PrettySafeLoader):
+        for o in yaml.load_all(f, Loader=PrettySafeLoader, tz_aware_datetimes=True):
             if isinstance(o, Archive):
                 d['archive'] = o
             elif isinstance(o, Auth):
@@ -362,6 +366,8 @@ class ADFEncoder(json.JSONEncoder):
         if isinstance(o, (list, dict, str, unicode,
                           int, float, bool, type(None))):
             return super(ADFEncoder, self).default(o)
+        if isinstance(o, datetime):
+            return o.isoformat()
         if o.yaml_tag == Certificate.yaml_tag:
             return {'key': self._b64(o.key)}
         if o.yaml_tag == Auth.yaml_tag:
@@ -370,6 +376,9 @@ class ADFEncoder(json.JSONEncoder):
 
 
 def _as_adf_object(dct):
+    """
+    May throw parse error for dates
+    """
     if '_base64' in dct:
         return b64decode(dct['_base64'])
     if 'key' in dct:
@@ -378,14 +387,16 @@ def _as_adf_object(dct):
         return Auth(**dct)
     if 'mode' in dct:
         return Cipher(**dct)
-    if 'created' in dct:
-        return Meta(**dct)
     if 'meta' in dct:
         return Archive(**dct)
     if 'download' in dct or 'upload' in dct or 'local' in dct:
         return Links(**dct)
-    if 'aid' in dct:
-        return Signature(**dct)
+    if 'created' in dct:
+        dct['created'] = date_parse(dct['created'])
+        if 'aid' in dct:
+            return Signature(**dct)
+        else:
+            return Meta(**dct)
     return dct
 
 

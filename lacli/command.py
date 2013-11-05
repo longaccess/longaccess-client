@@ -9,7 +9,7 @@ from pipes import quote
 from lacli.log import getLogger
 from lacli.upload import Upload
 from lacli.archive import restore_archive
-from lacli.adf import archive_size
+from lacli.adf import archive_size, Certificate, Archive, Meta
 from lacli.decorators import command
 from abc import ABCMeta, abstractmethod
 
@@ -127,6 +127,8 @@ class LaCertsCommand(LaBaseCommand):
             "file manually:"))
 
         def _countdown():
+            if self.batch:
+                return
             print "Deleting certificate", cert_id, "in 5",
             for num in [4, 3, 2, 1]:
                 sys.stdout.flush()
@@ -172,7 +174,7 @@ class LaCertsCommand(LaBaseCommand):
                     print "Certificate", key, "already exists"
                 else:
                     print "Imported certificate {}".format(
-                        self.cache.import_cert(filename))
+                        self.cache.import_cert(filename)[0])
         else:
             print "No certificates found in", filename
 
@@ -334,9 +336,12 @@ class LaArchiveCommand(LaBaseCommand):
                             elif status['status'] == "completed":
                                 print "status: completed"
                                 fname = saved['fname']
-                                cert = self.cache.save_cert(
+                                cert, f = self.cache.save_cert(
                                     self.cache.upload_complete(fname, status))
-                                print "Certificate", cert, "saved.\n"
+                                if f:
+                                    print "Certificate", cert, "saved:", f
+                                else:
+                                    print "Certificate", cert, "already exists"
                                 print " ".join(("Use lacli certificate list",
                                                 "to see your certificates, or",
                                                 "lacli certificate --help for",
@@ -420,9 +425,12 @@ class LaArchiveCommand(LaBaseCommand):
                     url = upload['links'].upload
                     status = self.session.upload_status(url)
                     if status['status'] == "completed":
-                        cert = self.cache.save_cert(
+                        cert, f = self.cache.save_cert(
                             self.cache.upload_complete(fname, status))
-                        print "Certificate", cert, "saved.\n"
+                        if f:
+                            print "Certificate", cert, "saved:", f
+                        else:
+                            print "Certificate", cert, "already exists.\n"
                         print " ".join(("Use lacli certificate list",
                                         "to see your certificates, or",
                                         "lacli certificate --help for",
@@ -477,9 +485,10 @@ class LaArchiveCommand(LaBaseCommand):
                                     aid, size, title)
                             cert_id = raw_input("Enter a certificate ID: ")
                             assert cert_id, "No matching certificate found"
-                    else: 
+                    else:
                         print "No matching certificate found."
                 cert = archive = None
+
                 def extract(cert, archive):
                     def _print(f):
                         print "Extracting", f
@@ -492,22 +501,23 @@ class LaArchiveCommand(LaBaseCommand):
                     extract(certs[cert_id]['cert'], certs[cert_id]['archive'])
                 elif os.name == 'nt':
                     try:
-                       from lacli.views.decrypt import view, app
-                       from lacli.adf import Certificate, Archive, Meta
+                        from lacli.views.decrypt import view, app
                     except ImportError:
-                       view = False
+                        view = False
+
                     def decrypt(x):
-                       cert = Certificate(x.decode('hex'))
-                       archive = Archive('title', Meta('zip', 'aes-256-ctr'))
-                       extract(cert, archive)
+                        cert = Certificate(x.decode('hex'))
+                        archive = Archive('title', Meta('zip', 'aes-256-ctr'))
+                        extract(cert, archive)
+
                     def quit():
-                       view.hide()
-                       app.quit()
+                        view.hide()
+                        app.quit()
                     if view:
-                       view.rootObject().decrypt.connect(decrypt)
-                       view.engine().quit.connect(quit)
-                       view.show()
-                       app.exec_()
+                        view.rootObject().decrypt.connect(decrypt)
+                        view.engine().quit.connect(quit)
+                        view.show()
+                        app.exec_()
             except Exception as e:
                 getLogger().debug("exception while restoring",
                                   exc_info=True)
@@ -541,12 +551,13 @@ class LaArchiveCommand(LaBaseCommand):
             "Please provide a valid srm command as an option or remove the",
             "file(s) manually:"))
 
-        print "Deleting archive", index, "({}) in 5".format(archive.title),
-        for num in [4, 3, 2, 1]:
-            sys.stdout.flush()
-            time.sleep(1)
-            sys.stdout.write(", {}".format(num))
-        print "... deleting"
+        if not self.batch:
+            print "Deleting archive", index, "({}) in 5".format(archive.title),
+            for num in [4, 3, 2, 1]:
+                sys.stdout.flush()
+                time.sleep(1)
+                sys.stdout.write(", {}".format(num))
+            print "... deleting"
 
         self.cache.shred_file(fname, srm)
         if os.path.exists(fname):
@@ -559,7 +570,8 @@ class LaArchiveCommand(LaBaseCommand):
             if path:
                 print path
         elif not os.path.exists(path):
-            print "Deleted archive", archive.title, " but local copy not found:", path
+            print "Deleted archive", archive.title,
+            print " but local copy not found:", path
         else:
             self.cache.shred_file(path, srm)
             if os.path.exists(path):

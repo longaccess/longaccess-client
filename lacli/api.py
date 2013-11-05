@@ -21,6 +21,7 @@ class DummyResponse(object):
     def json(self):
         return self.response
 
+
 class DummySession(object):
     def __init__(self, response_class):
         self.response_class = response_class
@@ -35,8 +36,10 @@ class DummySession(object):
     def patch(self, *args, **kwargs):
         """ dummy post method """
 
+
 def DummyRequestsFactory(prefs={}):
     return self.DummySession(self.DummyResponse)
+
 
 def RequestsFactory(prefs={}):
     import requests
@@ -52,7 +55,6 @@ def RequestsFactory(prefs={}):
         if self.prefs.get('user') is None:
             if os.path.exists(os.path.expanduser('~/.netrc')):
                 self.read_netrc(self.prefs.get('url', API_URL))
-
 
 
 class Api(object):
