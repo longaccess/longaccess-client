@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 from lacli import __version__
 
 setup(version=__version__,
@@ -9,7 +9,7 @@ setup(version=__version__,
       long_description=open('README').read(),
       url='http://github.com/longaccess/longaccess-client/',
       license='Apache',
-      packages=['lacli', 'lacli.t', 'lacli.cipher'],
+      packages=find_packages(exclude=['features*', '*.t']),
       install_requires=['boto>=2.13.2', 'python-dateutil', 'filechunkio',
                         'docopt', 'progressbar', 'logutils', 'requests',
                         'unidecode', 'pycrypto', 'pyaml'],
