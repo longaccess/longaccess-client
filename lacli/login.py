@@ -55,7 +55,7 @@ class LaLoginCommand(LaBaseCommand):
             print "authentication failed"
 
         if email and username and not self.batch:
-            if match('y(es)?', raw_input("Save credentials? "), IGNORECASE):
+            if match('y(es)?', self.input("Save credentials? "), IGNORECASE):
                 self.registry.save_session(self.username, self.password)
 
     @command()

@@ -59,6 +59,10 @@ class LaBaseCommand(cmd.Cmd, object):
         print
         return True
 
+    def input(self, prompt=""):
+        sys.stdout.write(prompt)
+        return sys.stdin.readline()
+
 
 class LaCertsCommand(LaBaseCommand):
     """Manage Long Access Certificates
