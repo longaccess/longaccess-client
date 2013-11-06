@@ -33,7 +33,7 @@ class LaRegistry(object):
                     return (creds[0], creds[2])
         except:
             getLogger().debug("Couldn't read from netrc", exc_info=True)
-            return (None, None)
+        return (None, None)
 
     def save_session(self, *args):
         self._saved_session = tuple(args)
