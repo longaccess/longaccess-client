@@ -40,3 +40,24 @@ Feature: list capsules command
         And the command line arguments "login"
         When I run console script "lacli"
         Then I see "authentication succesfull"
+
+    Scenario: I try to login with username and password
+        Given the command line arguments "login test test"
+        When I run console script "lacli"
+        Then I see "authentication succesfull"
+        And I see "Save credentials?"
+
+    Scenario: I try to login with username
+        Given the command line arguments "login test"
+        When I run console script "lacli"
+        Then I see "Password: "
+        When I type "test"
+        Then I see "authentication succesfull"
+        And I see "Save credentials?"
+
+    Scenario: I try to login with username and bad pass
+        Given the command line arguments "login test"
+        When I run console script "lacli"
+        Then I see "Password: "
+        When I type "wtf"
+        Then I see "authentication failed"

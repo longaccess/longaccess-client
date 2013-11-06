@@ -1,8 +1,8 @@
 from lacli.decorators import command
 from lacli.command import LaBaseCommand
 from lacli.log import getLogger
-from lacli.exceptions import ApiNoSessionError
 from re import match, IGNORECASE
+from getpass import getpass
 
 
 class LaLoginCommand(LaBaseCommand):
@@ -13,11 +13,13 @@ class LaLoginCommand(LaBaseCommand):
     prompt = 'lacli:login> '
 
     def makecmd(self, options):
+        cmd = ["login"]
         if options['<username>']:
-            return " ".join(["login",
-                             options['<username>'],
-                             options['<password>']])
-        return "login"
+            cmd.append(options['<username>'])
+            if options['<password>']:
+                cmd.append(options['<password>'])
+
+        return " ".join(cmd)
 
     @property
     def username(self):
@@ -38,12 +40,16 @@ class LaLoginCommand(LaBaseCommand):
     @command(username=str, password=str)
     def do_login(self, username=None, password=None):
         """
-        Usage: login [<username> <password>]
+        Usage: login [<username>] [<password>]
         """
         if username:
             self.username = username
-            self.password = password
+            if password:
+                self.password = password
+            elif not self.batch:
+                self.password = getpass("Password: ")
 
+        # replace session for all commands
         self.session = self.registry.new_session()
 
         email = None
@@ -65,3 +71,4 @@ class LaLoginCommand(LaBaseCommand):
         """
         self.username = None
         self.password = None
+        self.registry.session = None
