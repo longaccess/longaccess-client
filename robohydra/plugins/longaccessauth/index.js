@@ -17,6 +17,7 @@ exports.getBodyParts = function(config, modules) {
                                 creds = b64creds.toString().split(":");
                             modules.assert.equal(creds.length, 2, "client sent invalid basic auth");
                             if (creds[0] == "test" && creds[1] == "test")
+                                res.authuser_name = creds[0]
                                 return next(req, res);
                         } else if (!res.hasOwnProperty('authfail'))
                                 return next(req, res);

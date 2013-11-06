@@ -108,11 +108,11 @@ exports.getBodyParts = function(config, modules) {
             new RoboHydraHead({
                 path: apiPrefix + '/account/',
                 handler: function(req, res, next) {
-                    modules.assert.ok(res.hasOwnProperty('authuser'),
-                        "client asked for account without logging in")
+                    modules.assert.ok(res.hasOwnProperty('authuser_name'),
+                        "client asked for account without providing username")
                     res.write(JSON.stringify({
                         displayname: '',
-                        email: res.authuser,
+                        email: res.authuser_name,
                     }));
                     res.end();
                 }
