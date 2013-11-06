@@ -6,6 +6,9 @@ from lacli.log import getLogger
 from lacli.decorators import cached_property
 
 
+API_URL = 'https://www.longaccess.com/api/v1/'
+
+
 class LaRegistry(object):
     cache = None
     prefs = None
@@ -14,11 +17,13 @@ class LaRegistry(object):
     def __init__(self, cache, prefs):
         self.cache = cache
         self.prefs = prefs
-        self.session = self.prefs['api']['factory'](prefs)
+        self.session = self.new_session()
 
     def new_session(self, prefs=None):
         if not prefs:
             prefs = self.prefs['api']
+        if prefs.get('url') is None:
+            prefs['url'] = API_URL
         if not prefs['user']:
             prefs['user'] = self._saved_session[0]
             prefs['pass'] = self._saved_session[1]
@@ -26,7 +31,7 @@ class LaRegistry(object):
 
     @cached_property
     def _saved_session(self):
-        hostname = urlparse(self.session.url).hostname
+        hostname = urlparse(self.prefs['api']['url']).hostname
         try:
             for host, creds in netrc().hosts.iteritems():
                 if host == hostname:
