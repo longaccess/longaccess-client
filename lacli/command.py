@@ -496,9 +496,11 @@ class LaArchiveCommand(LaBaseCommand):
                 else:
                     try:
                         from lacli.views.decrypt import view, app
+
                         def decrypt(x):
                             cert = Certificate(x.decode('hex'))
-                            archive = Archive('title', Meta('zip', 'aes-256-ctr'))
+                            archive = Archive(
+                                'title', Meta('zip', 'aes-256-ctr'))
                             extract(cert, archive)
 
                         def quit():
@@ -510,7 +512,8 @@ class LaArchiveCommand(LaBaseCommand):
                         view.show()
                         app.exec_()
                     except ImportError as e:
-                        getLogger().debug("Key input gui unavailable", exc_info=True)
+                        getLogger().debug("Key input gui unavailable",
+                                          exc_info=True)
                         print "Key input gui unavailable."
                     except Exception:
                         pass
