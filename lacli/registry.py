@@ -14,9 +14,10 @@ class LaRegistry(object):
     prefs = None
     session = None
 
-    def __init__(self, cache, prefs):
+    def __init__(self, cache, prefs, cmd):
         self.cache = cache
         self.prefs = prefs
+        self.cmd = cmd
         self.session = self.new_session()
 
     def new_session(self, prefs=None):

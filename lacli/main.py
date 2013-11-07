@@ -77,11 +77,12 @@ class LaCommand(cmd.Cmd):
     archive = None
     capsule = None
     certificate = None
+    login = None
 
     def __init__(self, cache, prefs):
         cmd.Cmd.__init__(self)
         setupLogging(prefs['command']['debug'])
-        registry = LaRegistry(cache, prefs)
+        registry = LaRegistry(cache, prefs, self)
         self.archive = LaArchiveCommand(registry)
         self.capsule = LaCapsuleCommand(registry)
         self.certificate = LaCertsCommand(registry)
