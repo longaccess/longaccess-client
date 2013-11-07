@@ -12,7 +12,7 @@ def one_archive(context):
 
 @step(u'I have 1 available archive titled "{title}"')
 def one_archive_titled(context, title):
-    d = os.path.join(context.environ['HOME'], ".longaccess/archives")
+    d = os.path.join(context.environ['HOME'], "Longaccess/archives")
     if not os.path.isdir(d):
         os.makedirs(d)
     context.archive = NamedTemporaryFile(dir=d, suffix='.adf')
@@ -27,14 +27,14 @@ def archive_copy(context, title):
     context.archive.write(make_adf([
         Archive(title, Meta('zip', 'aes-256-ctr')),
         Links(local='file://' + os.path.join(context.environ['HOME'],
-                                             ".longaccess/data/test"))]))
+                                             "Longaccess/data/test"))]))
     context.archive.flush()
 
 
 @step(u'the local copy for "{title}" is an empty file')
 def archive_copy_empty(context, title):
     assert context.archive
-    datadir = os.path.join(context.environ['HOME'], ".longaccess/data")
+    datadir = os.path.join(context.environ['HOME'], "Longaccess/data")
     if not os.path.exists(datadir):
         os.makedirs(datadir)
     with open(os.path.join(datadir, 'test'), 'w'):
@@ -44,7 +44,7 @@ def archive_copy_empty(context, title):
 @step(u'I have a certificate for the archive with title "{title}"')
 def archive_cert(context, title):
     assert context.archive
-    d = os.path.join(context.environ['HOME'], ".longaccess/certs")
+    d = os.path.join(context.environ['HOME'], "Longaccess/certs")
     if not os.path.isdir(d):
         os.makedirs(d)
     context.cert = NamedTemporaryFile(dir=d, suffix='.adf')
@@ -57,9 +57,9 @@ def archive_cert(context, title):
 def downloaded_archive(context, folder):
     prepare_archive_folder(context, folder)
     from glob import glob
-    aglob = os.path.join(context.environ['HOME'], ".longaccess/archives/*")
+    aglob = os.path.join(context.environ['HOME'], "Longaccess/archives/*")
     af = glob(aglob).pop()
-    d = os.path.join(context.environ['HOME'], ".longaccess/certs")
+    d = os.path.join(context.environ['HOME'], "Longaccess/certs")
     if not os.path.isdir(d):
         os.makedirs(d)
     from shutil import copy
@@ -76,9 +76,9 @@ def num_pending_uploads(context, num):
 def pending_upload(context, title):
     prepare_archive(context, title)
     from glob import glob
-    aglob = os.path.join(context.environ['HOME'], ".longaccess/archives/*")
+    aglob = os.path.join(context.environ['HOME'], "Longaccess/archives/*")
     af = glob(aglob).pop()
-    d = os.path.join(context.environ['HOME'], ".longaccess/uploads")
+    d = os.path.join(context.environ['HOME'], "Longaccess/uploads")
     if not os.path.isdir(d):
         os.makedirs(d)
     assert(context.mock_api)
@@ -112,7 +112,7 @@ def exists_archive_titled(context, title):
 @step(u'there is a completed certificate')
 def exists_certificate(context):
     from glob import glob
-    files = glob(os.path.join(context.environ['HOME'], ".longaccess/certs/*"))
+    files = glob(os.path.join(context.environ['HOME'], "Longaccess/certs/*"))
     assert len(files) > 0, "there is a certificate"
     from lacli.adf import load_archive
     docs = {}
@@ -127,7 +127,7 @@ def exists_certificate(context):
 @step(u'there are {num} pending uploads')
 def pending_upload_num(context, num):
     from glob import glob
-    aglob = os.path.join(context.environ['HOME'], ".longaccess/uploads/*")
+    aglob = os.path.join(context.environ['HOME'], "Longaccess/uploads/*")
     assert len(glob(aglob)) == int(num)
 
 

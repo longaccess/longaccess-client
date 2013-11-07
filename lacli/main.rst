@@ -27,7 +27,7 @@ Batch operation
 
 without batch operation:
 
->>> prefs, cache = settings({'--home': 'tmp'})
+>>> prefs, cache = settings({'--home': '/tmp'})
 >>> prefs['command']['batch']
 
 with batch operation:

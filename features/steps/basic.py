@@ -1,3 +1,5 @@
+import os
+
 from behave import step
 from urlparse import urlparse
 
@@ -14,3 +16,10 @@ def my_store_in_netrc(context, file):
     context.execute_steps(u"""
         Given I store my credentials for "{}" in "{}"
         """.format(p.hostname, file))
+
+
+@step(u'the Longaccess directory exists in HOME')
+def make_longaccess(context):
+    d = os.path.join(context.environ['HOME'], "Longaccess")
+    if not os.path.isdir(d):
+        os.makedirs(d)

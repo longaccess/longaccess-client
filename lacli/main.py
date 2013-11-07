@@ -41,9 +41,6 @@ default_home = os.path.join('~', 'Longaccess')
 
 def settings(options):
     """
-        >>> prefs, cache = settings({'--home': 'foo/bar'})
-        >>> cache.home
-        'foo/bar'
         >>> prefs, cache = settings({'--home': '/tmp', '--debug': 2})
         >>> cache.home
         '/tmp'
@@ -87,6 +84,22 @@ def settings(options):
     if not home or not os.path.isdir(home):
         if batch:
             sys.exit("{} does not exist!".format(home))
+        else:
+            while not home or not os.path.isdir(os.path.expanduser(home)):
+                if not home:
+                    print "Enter directory for Longaccess data? [{}]: ".format(
+                        default_home)
+                    home = sys.stdin.readline().strip() or default_home
+                elif os.path.isfile(home):
+                    print "{} is not a directory.".format(home)
+                    print "Enter directory for Longaccess data? : "
+                    home = sys.stdin.readline().strip()
+                else:
+                    print home, "does not exist."
+                    print "Should I create it? (yes/no): "
+                    if sys.stdin.readline().strip().lower() != 'yes':
+                        sys.exit('Unable to proceed without home directory')
+                    os.makedirs(os.path.expanduser(home))
 
     return (prefs, Cache(os.path.expanduser(home)))
 
