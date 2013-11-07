@@ -36,11 +36,12 @@ from lacli.cache import Cache
 from lacli.registry import LaRegistry
 
 
-def settings(options):
-    debug = 0
+default_home = os.path.join('~', 'Longaccess')
 
+
+def settings(options):
     try:
-        debug = int(options['--debug'])
+        debug = int(options.get('--debug', 0))
     except ValueError:
         print "error: illegal value for 'debug' parameter."
         raise
@@ -49,27 +50,28 @@ def settings(options):
     if '0' == os.getenv('LA_API_VERIFY'):
         verify = False
 
-    batch = options['--batch']
+    batch = options.get('--batch')
     if not batch and os.getenv('LA_BATCH_OPERATION'):
         batch = True
 
     prefs = {
         'api': {
-            'user': options['--user'],
-            'pass': options['--password'],
+            'user': options.get('--user'),
+            'pass': options.get('--password'),
             'url': os.getenv('LA_API_URL'),
             'verify': verify,
             'factory': RequestsFactory
         },
         'command': {
             'debug': debug,
-            'verbose': options['--verbose'],
-            'batch': options['--batch']
+            'verbose': options.get('--verbose'),
+            'batch': batch
         },
     }
-    if options['<command>']:
-        prefs[options['<command>']] = options['<args>']
-    return (prefs, Cache(os.path.expanduser(options['--home'])))
+    if options.get('<command>'):
+        prefs[options['<command>']] = options.get('<args>')
+
+    return (prefs, Cache(os.path.expanduser(options.get('--home', default_home))))
 
 
 class LaCommand(cmd.Cmd):
@@ -127,7 +129,7 @@ class LaCommand(cmd.Cmd):
 def main(args=sys.argv[1:]):
     """Main function called by `laput` command.
     """
-    options = docopt(__doc__.format(home=os.path.join('~', '.longaccess')),
+    options = docopt(__doc__.format(home=default_home),
                      version='lacli {}'.format(__version__),
                      options_first=True)
     prefs, cache = settings(options)
