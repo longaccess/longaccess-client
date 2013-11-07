@@ -83,3 +83,20 @@ def command(**types):
             func(self, **kwargs)
         return wrap
     return decorate
+
+
+class login(object):
+    def __init__(self, f):
+        self.f = f
+
+    def __get__(self, obj, cls):
+        prefs = obj.registry.session.prefs
+
+        @wraps(self.f)
+        def wrap(*args, **kwargs):
+            if not prefs.get('pass'):
+                obj.registry.cmd.do_login(
+                    prefs.get('user') or '')
+            if obj.registry.prefs['api'].get('user'):
+                self.f(obj, *args, **kwargs)
+        return wrap

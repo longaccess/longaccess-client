@@ -50,6 +50,7 @@ class Api(object):
 
     def __init__(self, prefs, session=None):
         self.url = prefs.get('url')
+        self.prefs = prefs
         self.session = session
 
     @cached_property

@@ -18,8 +18,9 @@ The prebuilt binary packages are self-contained, i.e. they do not have any hard 
 Usage
 -----
 
-After installation the program is invoked as `lacli`. Run it with no arguments to see a synopsis of supported usages. In short, there are three basic commands:
+After installation the program is invoked as `lacli`. Run it with no arguments to see a synopsis of supported usages. In short, there are four basic commands:
 
+* `lacli login` set up credentials to use with other commands
 * `lacli archive` helps you manage archives
 * `lacli certificate` helps you manage certificates
 * `lacli capsules` let's you view your available capsules 
@@ -33,8 +34,9 @@ Authentication
 
 In order to use the service you must first have a username and password for the service. You can provide them to the program in two ways:
 
-1. as global arguments, e.g. `lacli -u user -p pass archive list ...`
+1. as global arguments, e.g. `lacli -u user -p pass archive list ...`. If a password is not provided you will be prompted for one.
 2. as entries in your `.netrc` file. This way you will not have to provide them everytime (but you should keep your `.netrc` safe)
+3. by using the `login` command. If authentication is succesfull you will be prompted to save the credentials in `.netrc` as above for future use. If interactive the credentials will be used for subsequent commands.
 
 Example usage
 -------------
@@ -42,6 +44,10 @@ Example usage
 An example scenario:
 
 
+    $ lacli login your@email.com
+    Password:
+    authentication succesfull as your@email.com
+    Save credentials? y
     $ lacli archive list
     No available archives.
     $ lacli archive create /home/kouk/toread -t documents

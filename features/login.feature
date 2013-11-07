@@ -1,4 +1,4 @@
-Feature: list capsules command
+Feature: login command
 
     Background: setup the command configuration
         Given the home directory is "/tmp/test"
@@ -50,6 +50,16 @@ Feature: list capsules command
     Scenario: I try to login with username
         Given the command line arguments "login test"
         When I run console script "lacli"
+        Then I see "Password: "
+        When I type "test"
+        Then I see "authentication succesfull"
+        And I see "Save credentials?"
+
+    Scenario: I try to login with nothing
+        Given the command line arguments "login"
+        When I run console script "lacli"
+        Then I see "Username"
+        When I type "test"
         Then I see "Password: "
         When I type "test"
         Then I see "authentication succesfull"
