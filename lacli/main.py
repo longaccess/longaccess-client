@@ -40,6 +40,18 @@ default_home = os.path.join('~', 'Longaccess')
 
 
 def settings(options):
+    """
+        >>> prefs, cache = settings({'--home': 'foo/bar'})
+        >>> cache.home
+        'foo/bar'
+        >>> prefs, cache = settings({'--home': '/tmp', '--debug': 2})
+        >>> cache.home
+        '/tmp'
+        >>> prefs['command']['debug']
+        2
+        >>> prefs['api']['verify']
+        True
+    """
     try:
         debug = int(options.get('--debug', 0))
     except ValueError:
@@ -71,7 +83,12 @@ def settings(options):
     if options.get('<command>'):
         prefs[options['<command>']] = options.get('<args>')
 
-    return (prefs, Cache(os.path.expanduser(options.get('--home', default_home))))
+    home = options.get('--home', default_home)
+    if not home or not os.path.isdir(home):
+        if batch:
+            sys.exit("{} does not exist!".format(home))
+
+    return (prefs, Cache(os.path.expanduser(home)))
 
 
 class LaCommand(cmd.Cmd):
