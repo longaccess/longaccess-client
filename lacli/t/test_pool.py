@@ -1,5 +1,5 @@
 from testtools import TestCase
-from mock import Mock, MagicMock
+from mock import MagicMock, patch
 
 
 class MPConnectionTest(TestCase):
@@ -14,7 +14,7 @@ class MPConnectionTest(TestCase):
         return MPConnection(*args,  **kw)
 
     def _token(self, uid=None):
-        return { 
+        return {
             'token_access_key': None,
             'token_secret_key': None,
             'token_session': None,
@@ -30,8 +30,12 @@ class MPConnectionTest(TestCase):
         conn = self._makeit(self._token("lala"), 4)
         self.assertEqual(None, conn.timeout())
 
-    def test_timeout_parse_error(self):
+    @patch('lacli.pool.getLogger', create=True)
+    def test_timeout_parse_error(self, log):
         token = self._token("lala")
         token['token_expiration'] = "foobar"
         conn = self._makeit(token, 4)
         self.assertEqual(None, conn.timeout())
+        log.assert_called_with()
+        log.return_value.debug.assert_called_with(
+            'invalid token expiration: %s', 'foobar')

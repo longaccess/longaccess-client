@@ -11,13 +11,14 @@ def setup():
     setupLogging(2)
 
 
-def makeprefs():
+def makeprefs(factory=None):
     return {
         'api': {
             'user': 'foo',
             'pass': 'bar',
             'url': 'http://baz.com',
-            'verify': True
+            'verify': True,
+            'factory': factory
         },
         'upload': {
             'timeout': 1200,

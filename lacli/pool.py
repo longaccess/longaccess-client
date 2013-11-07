@@ -30,11 +30,14 @@ class MPConnection(object):
         self.expiration = None
         if token.get('token_expiration', None):
             try:
-                self.expiration = dateutil.parser.parse(token['token_expiration'])
+                self.expiration = dateutil.parser.parse(
+                    token['token_expiration'])
             except ValueError:
-                getLogger().debug("invalid token expiration: %s", self.expiration)
+                getLogger().debug("invalid token expiration: %s",
+                                  token['token_expiration'])
             except TypeError:
-                getLogger().debug("invalid token expiration: %s", self.expiration)
+                getLogger().debug("invalid token expiration: %s",
+                                  token['token_expiration'])
         if self.uid is None:
             self.uid = self.getconnection().get_canonical_user_id()
 

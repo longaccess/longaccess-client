@@ -1,4 +1,4 @@
-Feature: list capsules command
+Feature: login command
 
     Background: setup the command configuration
         Given the home directory is "/tmp/test"
@@ -12,14 +12,14 @@ Feature: list capsules command
         Given the API authentication is wrong
         And the command line arguments "-u test -p test login"
         When I run console script "lacli"
-        Then I see "error: authentication failed"
+        Then I see "authentication failed"
 
     Scenario: I try to login with bad credentials 2
         Given the API authentication is wrong
         And I store my credentials in "{homedir}/.netrc"
         And the command line arguments "login"
         When I run console script "lacli"
-        Then I see "error: authentication failed"
+        Then I see "authentication failed"
 
     Scenario: I try to login with bad credentials 3
         Given the API authentication is wrong
@@ -40,3 +40,34 @@ Feature: list capsules command
         And the command line arguments "login"
         When I run console script "lacli"
         Then I see "authentication succesfull"
+
+    Scenario: I try to login with username and password
+        Given the command line arguments "login test test"
+        When I run console script "lacli"
+        Then I see "authentication succesfull"
+        And I see "Save credentials?"
+
+    Scenario: I try to login with username
+        Given the command line arguments "login test"
+        When I run console script "lacli"
+        Then I see "Password: "
+        When I type "test"
+        Then I see "authentication succesfull"
+        And I see "Save credentials?"
+
+    Scenario: I try to login with nothing
+        Given the command line arguments "login"
+        When I run console script "lacli"
+        Then I see "Username"
+        When I type "test"
+        Then I see "Password: "
+        When I type "test"
+        Then I see "authentication succesfull"
+        And I see "Save credentials?"
+
+    Scenario: I try to login with username and bad pass
+        Given the command line arguments "login test"
+        When I run console script "lacli"
+        Then I see "Password: "
+        When I type "wtf"
+        Then I see "authentication failed"

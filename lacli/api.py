@@ -2,13 +2,8 @@ from urlparse import urljoin
 from lacli.log import getLogger
 from lacli.decorators import cached_property, with_api_response, contains
 from contextlib import contextmanager
-from lacli.exceptions import ApiNoSessionError
 
 import json
-import os
-
-
-API_URL = 'https://www.longaccess.com/api/v1/'
 
 
 class DummyResponse(object):
@@ -38,7 +33,7 @@ class DummySession(object):
 
 
 def DummyRequestsFactory(prefs={}):
-    return self.DummySession(self.DummyResponse)
+    return DummySession(DummyResponse)
 
 
 def RequestsFactory(prefs={}):
@@ -50,19 +45,12 @@ def RequestsFactory(prefs={}):
         session.verify = prefs['verify']
     return Api(prefs, session)
 
-    def __init__(self, prefs):
-        self.prefs = prefs
-        if self.prefs.get('user') is None:
-            if os.path.exists(os.path.expanduser('~/.netrc')):
-                self.read_netrc(self.prefs.get('url', API_URL))
-
 
 class Api(object):
 
     def __init__(self, prefs, session=None):
         self.url = prefs.get('url')
-        if self.url is None:
-            prefs['url'] = self.url = API_URL
+        self.prefs = prefs
         self.session = session
 
     @cached_property

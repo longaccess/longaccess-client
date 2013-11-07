@@ -1,8 +1,8 @@
 from lacli.decorators import command
 from lacli.command import LaBaseCommand
 from lacli.log import getLogger
-from lacli.exceptions import ApiNoSessionError
 from re import match, IGNORECASE
+from getpass import getpass
 
 
 class LaLoginCommand(LaBaseCommand):
@@ -13,11 +13,13 @@ class LaLoginCommand(LaBaseCommand):
     prompt = 'lacli:login> '
 
     def makecmd(self, options):
+        cmd = ["login"]
         if options['<username>']:
-            return " ".join(["login",
-                             options['<username>'],
-                             options['<password>']])
-        return "login"
+            cmd.append(options['<username>'])
+            if options['<password>']:
+                cmd.append(options['<password>'])
+
+        return " ".join(cmd)
 
     @property
     def username(self):
@@ -38,12 +40,25 @@ class LaLoginCommand(LaBaseCommand):
     @command(username=str, password=str)
     def do_login(self, username=None, password=None):
         """
-        Usage: login [<username> <password>]
+        Usage: login [<username>] [<password>]
         """
+
+        save = (self.username, self.password)
+
         if username:
             self.username = username
+            self.password = None
+
+        if password:
             self.password = password
 
+        if not self.username and not self.batch:
+            self.username = self.input("Username/email: ")
+
+        if not self.password and not self.batch:
+            self.password = getpass("Password: ")
+
+        # replace session for all commands
         self.session = self.registry.new_session()
 
         email = None
@@ -51,12 +66,15 @@ class LaLoginCommand(LaBaseCommand):
             email = self.session.account['email']
             print "authentication succesfull as", email
         except:
+            self.username = self.password = None
             getLogger().debug("auth failure", exc_info=True)
             print "authentication failed"
 
-        if email and username and not self.batch:
-            if match('y(es)?', raw_input("Save credentials? "), IGNORECASE):
-                self.registry.save_session(self.username, self.password)
+        if email and not self.batch:
+            if self.username != save[0] or self.password != save[1]:
+                if match('y(es)?$',
+                         self.input("Save credentials? "), IGNORECASE):
+                    self.registry.save_session(self.username, self.password)
 
     @command()
     def do_logout(self):
@@ -65,3 +83,4 @@ class LaLoginCommand(LaBaseCommand):
         """
         self.username = None
         self.password = None
+        self.registry.session = None

@@ -10,7 +10,7 @@ from lacli.log import getLogger
 from lacli.upload import Upload
 from lacli.archive import restore_archive
 from lacli.adf import archive_size, Certificate, Archive, Meta
-from lacli.decorators import command
+from lacli.decorators import command, login
 from abc import ABCMeta, abstractmethod
 
 
@@ -58,6 +58,12 @@ class LaBaseCommand(cmd.Cmd, object):
     def do_EOF(self, line):
         print
         return True
+
+    def input(self, prompt=""):
+        sys.stdout.write(prompt)
+        line = sys.stdin.readline()
+        if line:
+            return line.strip()
 
 
 class LaCertsCommand(LaBaseCommand):
@@ -195,6 +201,7 @@ class LaCapsuleCommand(LaBaseCommand):
             line.append("list")
         return " ".join(line)
 
+    @login
     @command()
     def do_list(self):
         """
@@ -289,6 +296,7 @@ class LaArchiveCommand(LaBaseCommand):
                     " ".join(options["<srm>"])))
         return " ".join(line)
 
+    @login
     @command(index=int, capsule=int)
     def do_upload(self, index=1, capsule=1):
         """
@@ -404,6 +412,7 @@ class LaArchiveCommand(LaBaseCommand):
         else:
             print "No available archives."
 
+    @login
     @command(index=int)
     def do_status(self, index=1):
         """
@@ -496,9 +505,11 @@ class LaArchiveCommand(LaBaseCommand):
                 else:
                     try:
                         from lacli.views.decrypt import view, app
+
                         def decrypt(x):
                             cert = Certificate(x.decode('hex'))
-                            archive = Archive('title', Meta('zip', 'aes-256-ctr'))
+                            archive = Archive(
+                                'title', Meta('zip', 'aes-256-ctr'))
                             extract(cert, archive)
 
                         def quit():
@@ -510,7 +521,8 @@ class LaArchiveCommand(LaBaseCommand):
                         view.show()
                         app.exec_()
                     except ImportError as e:
-                        getLogger().debug("Key input gui unavailable", exc_info=True)
+                        getLogger().debug("Key input gui unavailable",
+                                          exc_info=True)
                         print "Key input gui unavailable."
                     except Exception:
                         pass

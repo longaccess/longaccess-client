@@ -106,12 +106,14 @@ class Cache(object):
         """
         fname = archive_slug(docs['archive'])
         tmpargs = {'delete': False,
-                   'dir': self._cache_dir('certs', write=True)}
+                   'dir': self._cache_dir('certs', write=True),
+                   'suffix': ".adf",
+                   'prefix': fname}
         certs = self.certs()
         aid = docs['signature'].aid  # let's check if we already have this cert
         uri = docs['signature'].uri
         if not aid in certs or uri != certs[aid]['signature'].uri:
-            with NamedTemporaryFile(prefix=fname, suffix=".adf", **tmpargs) as f:
+            with NamedTemporaryFile(**tmpargs) as f:
                 make_adf(list(docs.itervalues()), out=f)
                 return (aid, f.name)
         else:
@@ -195,7 +197,6 @@ class Cache(object):
     def print_cert(self, aid):
         for fname, docs in self._for_adf('certs').iteritems():
             if 'signature' in docs and aid == docs['signature'].aid:
-                path = fname
                 html = 'longaccess-{}.html'.format(aid)
                 with open(html, 'w') as f:
                     f.write(self._printable_cert(docs))
@@ -224,7 +225,6 @@ class Cache(object):
 
 
 if __name__ == "__main__":
-    import sys
     import hashlib
     cache = Cache(os.path.expanduser(os.path.join("~", ".longaccess")))
     for fname, docs in cache._for_adf('archives').iteritems():

@@ -288,7 +288,8 @@ def load_archive(f):
             raise InvalidArchiveError(e)
     else:
         try:
-            os = yaml.load_all(f, Loader=PrettySafeLoader, tz_aware_datetimes=True)
+            os = yaml.load_all(f, Loader=PrettySafeLoader,
+                               tz_aware_datetimes=True)
         except TypeError:
             os = yaml.load_all(f, Loader=PrettySafeLoader)
         for o in os:

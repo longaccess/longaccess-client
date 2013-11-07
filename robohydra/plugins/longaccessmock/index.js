@@ -39,9 +39,9 @@ exports.getBodyParts = function(config, modules) {
                         list_endpoint: apiPrefix + "/upload/",
                         schema: apiPrefix + "/upload/schema/"
                     },
-                    user: {
-                        list_endpoint: apiPrefix + "/user/",
-                        schema: apiPrefix + "/user/schema/"
+                    account: {
+                        list_endpoint: apiPrefix + "/account/",
+                        schema: apiPrefix + "/account/schema/"
                     }
                 }
             }),
@@ -103,6 +103,18 @@ exports.getBodyParts = function(config, modules) {
 
                     res.write(JSON.stringify(ret));
                     res.end(); 
+                }
+            }),
+            new RoboHydraHead({
+                path: apiPrefix + '/account/',
+                handler: function(req, res, next) {
+                    ret = {displayname: '', email: ''}
+                    if (res.hasOwnProperty('authuser_name'))
+                        ret['email'] = res.authuser_name;
+                    modules.assert.ok(res.hasOwnProperty('authuser_name'),
+                        "client asked for account without providing username")
+                    res.write(JSON.stringify(ret));
+                    res.end();
                 }
             })
         ],
