@@ -42,12 +42,21 @@ class LaLoginCommand(LaBaseCommand):
         """
         Usage: login [<username>] [<password>]
         """
+
+        save = (self.username, self.password)
+
         if username:
             self.username = username
-            if password:
-                self.password = password
-            elif not self.batch:
-                self.password = getpass("Password: ")
+            self.password = None
+
+        if password:
+            self.password = password
+
+        if not self.username and not self.batch:
+            self.username = self.input("Username/email: ")
+
+        if not self.password and not self.batch:
+            self.password = getpass("Password: ")
 
         # replace session for all commands
         self.session = self.registry.new_session()
@@ -57,12 +66,15 @@ class LaLoginCommand(LaBaseCommand):
             email = self.session.account['email']
             print "authentication succesfull as", email
         except:
+            self.username = self.password = None
             getLogger().debug("auth failure", exc_info=True)
             print "authentication failed"
 
-        if email and username and not self.batch:
-            if match('y(es)?', self.input("Save credentials? "), IGNORECASE):
-                self.registry.save_session(self.username, self.password)
+        if email and not self.batch:
+            if self.username != save[0] or self.password != save[1]:
+                if match('y(es)?$',
+                         self.input("Save credentials? "), IGNORECASE):
+                    self.registry.save_session(self.username, self.password)
 
     @command()
     def do_logout(self):

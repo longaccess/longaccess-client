@@ -25,7 +25,10 @@ class LoginCommandTest(TestCase):
 
     @patch('sys.stdout', new_callable=StringIO)
     def test_do_login(self, stdout):
-        cli = self._makeit(Mock(), Mock, self.prefs)
+        registry = Mock()
+        registry.prefs = self.prefs
+        registry.new_session.return_value.account = {'email': 'foo'}
+        cli = self._makeit(registry)
 
         cli.onecmd('login')
         self.assertThat(stdout.getvalue(),
