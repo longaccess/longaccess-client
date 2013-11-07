@@ -23,3 +23,12 @@ class SettingsTest(TestCase):
         settings = self._makeit()
         settings({})
 
+    def test_home(self):
+        try:
+            settings = self._makeit()
+            settings({
+                '--batch': True,
+                '--home': None
+            })
+        except SystemExit as e:
+            self.assertEqual("None does not exist!", e.message)
