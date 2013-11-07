@@ -15,10 +15,10 @@ FocusScope {
         Rectangle {
             x: 0
             y: 0
-            width: text1.width + 10
+            width: 30
             height: text_input1.height+5
             color: "#000000"
-            radius: 99
+            radius: 0
             border.width: 1
             border.color: "#000000"
 
@@ -48,10 +48,11 @@ FocusScope {
 
             TextInput {
                 id: text_input1
+                cursorVisible: true
                 focus: true
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.verticalCenter: parent.verticalCenter
-                font.pointSize: 12
+                font.pointSize: 15
                 font.family: "Consolas"
                 inputMask: "HH HH HH HH . HH HH HH HH"
 

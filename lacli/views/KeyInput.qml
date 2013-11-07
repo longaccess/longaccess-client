@@ -4,7 +4,7 @@ import QtQuick 1.1
 Column {
     id: column1
     spacing: 20
-    IdRow { }
+    IdRow { visible: false }
     property alias button: button1
     property alias model: mymodel
     property alias folder: text_input1.text
@@ -14,9 +14,10 @@ Column {
 
         boundsBehavior: Flickable.StopAtBounds
         id: list
+        x: 0
         width: 300
         height: 200
-        contentHeight: list.height
+        contentHeight: 166
         contentWidth: list.width
         focus: true
 
@@ -64,10 +65,12 @@ Row{
         width: text_input1.width
         height: text_input1.height
         color: "#dbd6d6"
+        smooth: true
         border.color: "#000000"
         TextInput {
             id: text_input1
             width: 200
+            height: 22
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.verticalCenter: parent.verticalCenter
             focus: true
@@ -85,7 +88,7 @@ Row{
             onButtonClicked: text_input1.text = destsel.getDirectory()
         }
         font.pixelSize: 10
-        radius: 2
+        radius: 0
     }
 }
 
@@ -93,6 +96,7 @@ Row{
         id: button1
         text: "Decrypt"
         signal rowChanged()
+        x: 39
         onRowChanged: {
             enabled = destsel.dirExists(text_input1.text)
             for (var i=0; i< mymodel.count; i++) {

@@ -14,10 +14,20 @@ Rectangle {
         y: 0
         spacing: 10
         Text {
-            text: "Please input the key from your certificate:"
+            width: 300
+            height: 44
+            text: "Enter Certificate Key"
+            font.family: "Arial"
+            font.bold: true
+            font.pixelSize: 19
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignHCenter
         }
         KeyInput {
             id: key_input
+            width: 300
+            height: 241
+            spacing: 29
         }
         MouseArea {
             id: mousearea1
