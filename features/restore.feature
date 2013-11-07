@@ -2,6 +2,7 @@ Feature: restore command
 
     Background: setup the command configuration
         Given the home directory is "/tmp/test"
+        And the Longaccess directory exists in HOME
 
     Scenario: I restore without having any available archives
         Given the command line arguments "archive restore"

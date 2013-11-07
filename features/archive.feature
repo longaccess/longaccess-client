@@ -2,6 +2,7 @@ Feature: prepare archive command
 
     Background: setup the command configuration
         Given the home directory is "/tmp/test"
+        And the Longaccess directory exists in HOME
 
     Scenario: I list available archives without having any
         Given the command line arguments "archive create"

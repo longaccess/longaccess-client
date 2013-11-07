@@ -2,6 +2,7 @@ Feature: status command
 
     Background: setup the command configuration
         Given the home directory is "/tmp/test"
+        And the Longaccess directory exists in HOME
         And the mock API "longaccessmock"
         And the environment variable "LA_API_URL" is "{api_url}path/to/api"
 
