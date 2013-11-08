@@ -504,9 +504,9 @@ class LaArchiveCommand(LaBaseCommand):
                     extract(certs[cert_id]['cert'], certs[cert_id]['archive'])
                 else:
                     try:
-                        from lacli.views.decrypt import view, app
-
+                        from lacli.views.decrypt import view, app, window
                         def decrypt(x):
+                            import pdb; pdb.set_trace()
                             cert = Certificate(x.decode('hex'))
                             archive = Archive(
                                 'title', Meta('zip', 'aes-256-ctr'))
@@ -518,7 +518,7 @@ class LaArchiveCommand(LaBaseCommand):
 
                         view.rootObject().decrypt.connect(decrypt)
                         view.engine().quit.connect(quit)
-                        view.show()
+                        window.show()
                         app.exec_()
                     except ImportError as e:
                         getLogger().debug("Key input gui unavailable",
