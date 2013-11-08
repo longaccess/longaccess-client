@@ -1,66 +1,78 @@
 import QtQuick 1.1
+
+
 FocusScope {
+    id: rect
     property bool complete: false
-    property bool acceptable: text_input1.acceptableInput
-    property string val: text_input1.text.replace(/[ .]/g, '')
-    height: text_input1.height
-    signal rowChanged()
-    Grid {
+    property bool acceptable: textbox.acceptableInput
+    signal rowChanged(string val)
+    width: childrenRect.width
+    height: childrenRect.height
+
+    Row {
         id: row1
-        anchors.fill: parent
-        columns: 2
-        rows: 1
-        spacing: 10
-        height: 50
+        layoutDirection: Qt.RightToLeft
+        spacing: 0
+
         Rectangle {
-            x: 0
-            y: 0
-            width: 30
-            height: text_input1.height+5
-            color: "#000000"
-            radius: 0
-            border.width: 1
-            border.color: "#000000"
-
-            Text {
-                id: text1
-                x: 8
-                y: 0
-                color: "#ffffff"
-
-                text: name
-                anchors.verticalCenterOffset: 0
-                anchors.horizontalCenterOffset: 0
-                anchors.topMargin: 0
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.top: parent.top
-                font.pointSize: 11
-                verticalAlignment: Text.AlignVCenter
+            width: 10
+            height: textbox.height
+            color: "#ffffff"
+        }
+        TextBox {
+            id: textbox
+            fontSize: text_proto.font.pointSize
+            textBoxHeight: text_proto.height
+            textBoxWidth: text_proto.width + 16
+            focus: true
+            font: text_proto.font
+            inputMask: "HH HH HH HH . HH HH HH HH"
+            Connections {
+                onTextChanged: rect.rowChanged(text.replace(/[ .]/g, ''))
             }
         }
+
         Rectangle {
-            width: text_input1.width +5
-            height: text_input1.height+5
-            color: "#dbd6d6"
-            border.width: 1
-            border.color: "#000000"
+            width: 10
+            height: textbox.height
+            color: "#ffffff"
+        }
+        Rectangle {
+            width: 30
+            color: "#ffffff"
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 0
+            anchors.top: parent.top
+            anchors.topMargin: 0
 
-            TextInput {
-                id: text_input1
-                cursorVisible: true
-                focus: true
-                anchors.horizontalCenter: parent.horizontalCenter
+            Rectangle {
+                width: text1.width + 10
+                height: 20
+                color: "#000000"
                 anchors.verticalCenter: parent.verticalCenter
-                font.pointSize: 15
-                font.family: "Consolas"
-                inputMask: "HH HH HH HH . HH HH HH HH"
+                anchors.horizontalCenter: parent.horizontalCenter
 
+                Text {
+                    id: text1
+                    color: "#ffffff"
+                    text: name
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    font.pixelSize: 15
+                    transformOrigin: Item.Center
+                    anchors.verticalCenter: parent.verticalCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
             }
         }
     }
-    Connections {
-        target: text_input1
-        onTextChanged: rowChanged()
+
+    TextInput {
+        id: text_proto
+        visible: false
+        font.pointSize: 15
+        font.family: "Consolas"
+        font.capitalization: Font.AllUppercase
+        text: qsTr("ff ff ff ff . ff ff ff ff")
+
     }
 }

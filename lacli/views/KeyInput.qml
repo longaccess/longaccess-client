@@ -2,108 +2,193 @@ import QtQuick 1.1
 
 
 Column {
-    id: column1
+    id: keyinput
+    signal decrypt(string key, string path)
+
+    transformOrigin: Item.Center
+
     spacing: 20
-    IdRow { visible: false }
-    property alias button: button1
-    property alias model: mymodel
-    property alias folder: text_input1.text
 
+    ListModel {
+        id: mymodel
+        ListElement {
+            name: "B"
+            complete: false
+            value: ""
+        }
+        ListElement {
+            name: "C"
+            complete: false
+            value: ""
+        }
+        ListElement {
+            name: "D"
+            complete: false
+            value:""
+        }
+        ListElement {
+            name: "E"
+            complete: false
+            value:""
+        }
+    }
 
-    ListView {
+    Row {
+        height: 1
+        anchors.right: parent.right
+        anchors.rightMargin: 0
+        anchors.left: parent.left
+        anchors.leftMargin: 0
+    }
 
-        boundsBehavior: Flickable.StopAtBounds
-        id: list
-        x: 0
-        width: 300
-        height: 200
-        contentHeight: 166
-        contentWidth: list.width
-        focus: true
+    Row {
+        anchors.horizontalCenter: parent.horizontalCenter
+        Text {
+            id: list_title
+            text: "Enter Certificate Key"
+            font.family: "Arial"
+            font.bold: true
+            font.pixelSize: 19
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignHCenter
+        }
+    }
+    Row {
+        id: key_row
+        Column {
+            id: column1
+            spacing: 10
 
-        spacing: 30
-        delegate: KeyRow {
-            id: foo
-            Connections {
-                onAcceptableChanged: {
-                    mymodel.setProperty(index, 'complete', foo.acceptable)
-                    button1.rowChanged()
-                    if (foo.acceptable)
-                        list.incrementCurrentIndex()
+            Repeater {
+                id: list
+                focus: true
+                model: mymodel
+                onItemAdded: {
+                    if (!index) {
+                        item.forceActiveFocus()
+                    }
                 }
 
-                onRowChanged: {
-                    mymodel.setProperty(index, 'value', val)
+                delegate: KeyRow {
+                    id: foo
+                    Connections {
+                        onAcceptableChanged: {
+                            mymodel.setProperty(index, 'complete', foo.acceptable)
+                            button1.rowComplete()
+                            if (foo.acceptable)
+                                if (index + 1 < list.count)
+                                    list.itemAt(index+1).forceActiveFocus()
+                                else
+                                    folder.forceActiveFocus()
+                        }
+
+                        onRowChanged: {
+                            mymodel.setProperty(index, 'value', val)
+                        }
+                    }
                 }
-            }}
-        model: ListModel {
-            id: mymodel
-            ListElement {
-                name: "B"
-                complete: false
-                value: ""
-            }
-            ListElement {
-                name: "C"
-                complete: false
-                value: ""
-            }
-            ListElement {
-                name: "D"
-                complete: false
-                value:""
-            }
-            ListElement {
-                name: "E"
-                complete: false
-                value:""
             }
         }
     }
-Row{
-    Rectangle {
-        width: text_input1.width
-        height: text_input1.height
-        color: "#dbd6d6"
-        smooth: true
-        border.color: "#000000"
-        TextInput {
-            id: text_input1
-            width: 200
-            height: 22
-            anchors.horizontalCenter: parent.horizontalCenter
+    Row{
+        id: folder_row
+        anchors.right: parent.right
+        anchors.rightMargin: 10
+        layoutDirection: Qt.RightToLeft
+        spacing: 10
+
+
+        Button {
+            id: button2
+            text: "Browse"
+            enabled: true
+            Connections {
+                onButtonClicked: folder.text = destsel.getDirectory()
+            }
+            font.pixelSize: 10
+            radius: 0
+        }
+
+        TextBox {
+            id: folder
             anchors.verticalCenter: parent.verticalCenter
+            fontSize: 12
+            textBoxHeight: 20
+            textBoxWidth: 150
             focus: true
             font.pointSize: 12
-            onTextChanged: button1.rowChanged()
-        }
-        border.width: 1
-    }
+            Connections {
+                onTextChanged: button1.folderChanged()
+            }
 
-    Button {
-        id: button2
-        text: "Browse"
-        enabled: true
-        Connections {
-            onButtonClicked: text_input1.text = destsel.getDirectory()
         }
-        font.pixelSize: 10
-        radius: 0
-    }
-}
 
-    Button {
-        id: button1
-        text: "Decrypt"
-        signal rowChanged()
-        x: 39
-        onRowChanged: {
-            enabled = destsel.dirExists(text_input1.text)
-            for (var i=0; i< mymodel.count; i++) {
-                if (!mymodel.get(i).complete)
-                    enabled = false
+        Rectangle {
+            id: rectangle1
+            width: childrenRect.width
+            height: childrenRect.height
+            color: "#ffffff"
+            anchors.verticalCenter: parent.verticalCenter
+            z: -2
+
+            Text {
+                id: text1
+                text: qsTr("Folder:")
+                font.pointSize: 12
             }
         }
     }
 
+
+    Row {
+        id: button_row
+        layoutDirection: Qt.RightToLeft
+        anchors.right: parent.right
+        anchors.rightMargin: 10
+        anchors.left: parent.left
+        anchors.leftMargin: 10
+        spacing: 10
+        Button {
+            id: button1
+            text: "Decrypt"
+            signal rowComplete()
+            signal folderChanged()
+            onRowComplete: {
+                enabled = destsel.dirExists(folder.text)
+                for (var i=0; i< mymodel.count; i++) {
+                    if (!mymodel.get(i).complete)
+                        enabled = false
+                }
+            }
+            onFolderChanged: {
+                if (destsel.dirExists(folder.text))
+                    rowComplete()
+            }
+
+            onButtonClicked: {
+                var key=''
+                for (var i=0; i<list.model.count; i++)
+                    key += list.model.get(i).value
+                keyinput.decrypt(key, folder.text)
+                Qt.quit()
+
+            }
+        }
+        Button {
+            id: button3
+            text: "Cancel"
+            enabled: true
+            onButtonClicked: Qt.quit()
+        }
+    }
+
+    Row {
+        height: 1
+        anchors.right: parent.right
+        anchors.rightMargin: 0
+        anchors.left: parent.left
+        anchors.leftMargin: 0
+    }
+
 }
+

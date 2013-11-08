@@ -24,6 +24,7 @@ Rectangle {
         x: parent.width/2 - width/2; y: parent.height/2 - height/2
         font.pixelSize: 18
         color: "black"
+        font.family: "Open Sans"
         style: Text.Raised
     }
 
@@ -38,7 +39,7 @@ Rectangle {
         name: "pressed"; when: mouseArea.pressed && mouseArea.containsMouse
         PropertyChanges { target: topGrad; color: "white" }
         PropertyChanges { target: bottomGrad; color: "white" }
-        PropertyChanges { target: textItem; x: textItem.x + 1; y: textItem.y + 1; font.family: "Arial"; explicit: true }
+        PropertyChanges { target: textItem; x: textItem.x + 1; y: textItem.y + 1; font.family: "Open Sans"; explicit: true }
         PropertyChanges { target: mouseArea; enabled: true; onClicked: button.buttonClicked() }
     },
     State {
@@ -47,6 +48,11 @@ Rectangle {
         PropertyChanges { target: topGrad; position: 0; color: "white" }
         PropertyChanges { target: bottomGrad; position: 1; color: "white" }
         PropertyChanges { target: mouseArea; enabled: true; onClicked: button.buttonClicked() }
+
+        PropertyChanges {
+            target: textItem
+            font.family: "Open Sans"
+        }
     }
     ]
 }
