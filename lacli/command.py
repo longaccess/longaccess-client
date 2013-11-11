@@ -11,6 +11,7 @@ from lacli.upload import Upload
 from lacli.archive import restore_archive
 from lacli.adf import archive_size, Certificate, Archive, Meta
 from lacli.decorators import command, login
+from lacli.exceptions import DecryptionError
 from abc import ABCMeta, abstractmethod
 
 
@@ -492,7 +493,7 @@ class LaArchiveCommand(LaBaseCommand):
                     else:
                         print "No matching certificate found."
 
-                def extract(cert, archive):
+                def extract(cert, archive, dest=dest):
                     def _print(f):
                         print "Extracting", f
                     restore_archive(archive, path, cert,
@@ -505,15 +506,26 @@ class LaArchiveCommand(LaBaseCommand):
                 else:
                     try:
                         from lacli.views.decrypt import view, app, window
-                        def decrypt(x):
-                            cert = Certificate(x.decode('hex'))
-                            archive = Archive(
-                                'title', Meta('zip', 'aes-256-ctr'))
-                            extract(cert, archive)
 
                         def quit():
                             view.hide()
                             app.quit()
+
+                        def decrypt(x, dest):
+                            cert = Certificate(x.decode('hex'))
+                            archive = Archive(
+                                'title', Meta('zip', 'aes-256-ctr'))
+                            try:
+                                extract(cert, archive, dest)
+                                quit()
+                            except DecryptionError as e:
+                                print "Error decrypting"
+                                getLogger().debug("Error decrypting", exc_info=True)
+                                view.rootObject().setProperty("hasError", True)
+                            except IOError as e:
+                                print "Error extracting"
+                                getLogger().debug("Error extracting", exc_info=True)
+                                view.rootObject().setProperty("hasError", True)
 
                         view.rootObject().decrypt.connect(decrypt)
                         view.engine().quit.connect(quit)

@@ -4,7 +4,7 @@ import QtQuick 1.1
 Column {
     id: keyinput
     signal decrypt(string key, string path)
-
+    property bool hasError: false
     transformOrigin: Item.Center
 
     spacing: 20
@@ -30,6 +30,26 @@ Column {
             name: "E"
             complete: false
             value:""
+        }
+    }
+
+    Component {
+        id: _error_msg
+        Column {
+            Text {
+                color: "#ff0000"
+                text: "Error"
+                anchors.right: parent.right
+                anchors.rightMargin: 0
+                font.pointSize: 15
+            }
+            Text {
+                color: "#992626"
+                text: "please try again"
+                font.pointSize: 9
+                font.family: "Open Sans"
+                verticalAlignment: Text.AlignVCenter
+            }
         }
     }
 
@@ -80,6 +100,7 @@ Column {
                                     list.itemAt(index+1).forceActiveFocus()
                                 else
                                     folder.forceActiveFocus()
+                                keyinput.hasError = false
                         }
 
                         onRowChanged: {
@@ -170,8 +191,8 @@ Column {
                 for (var i=0; i<list.model.count; i++)
                     key += list.model.get(i).value
                 keyinput.decrypt(key, folder.text)
-                Qt.quit()
-
+                if(!keyinput.hasError)
+                    Qt.quit()
             }
         }
         Button {
@@ -179,6 +200,11 @@ Column {
             text: "Cancel"
             enabled: true
             onButtonClicked: Qt.quit()
+        }
+        Loader {
+            sourceComponent: _error_msg
+            id: error
+            opacity: 0
         }
     }
 
@@ -189,6 +215,15 @@ Column {
         anchors.left: parent.left
         anchors.leftMargin: 0
     }
+    states: [
+        State {
+            when: keyinput.hasError
+            PropertyChanges {
+                target: error
+                opacity: 1
+            }
+        }
+    ]
 
 }
 
