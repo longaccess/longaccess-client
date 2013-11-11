@@ -10,13 +10,15 @@
 Name "Longaccess CLI"
 
 ;Default installation folder
-InstallDir "$PROGRAMFILES64\LongaccessCLI\"
+InstallDir "$LOCALAPPDATA\LongaccessCLI\"
 
 ;Get installation folder from registry if available
 InstallDirRegKey HKCU "Software\LongaccessCLI" ""
 
 ;Request application privileges for Windows Vista
-RequestExecutionLevel admin
+RequestExecutionLevel user
+
+
 
 ;--------------------------------
 ;Interface Settings
@@ -38,6 +40,7 @@ RequestExecutionLevel admin
 
 !insertmacro MUI_LANGUAGE "English"
 
+
 Var Extension
 Var ExtCmd
 Function un.setExtensionVars
@@ -50,6 +53,13 @@ Function setExtensionVars
 StrCpy $Extension ".longaccess"
 StrCpy $ExtCmd '"$INSTDIR\lacli\lacli.exe" --batch archive extract'
 FunctionEnd
+Var Version
+Function setVersion
+nsExec::ExecToStack '"$INSTDIR\lacli\lacli.exe" --version'
+Pop $0 ; exit status
+Pop $1 ; output
+StrCpy $Version $1 ; "" 6
+FunctionEnd
 
 ;--------------------------------
 ;Installer Sections
@@ -59,8 +69,28 @@ SetRegView 64
 
 
 SetOutPath "$INSTDIR"
-Call setExtensionVars
 File /r "dist\lacli"
+
+Call setVersion
+Call setExtensionVars
+
+!define UNINSTALLER_NAME "Uninstall.exe"
+!define REG_UNINSTALL "Software\Microsoft\Windows\CurrentVersion\Uninstall\LongaccessCLI"
+!define WEBSITE_LINK "http://longaccess.com"
+
+WriteRegStr HKCU "${REG_UNINSTALL}" "DisplayName" "Longaccess CLI"
+WriteRegStr HKCU "${REG_UNINSTALL}" "DisplayIcon" "$\"$INSTDIR\lacli\lacli.exe$\""
+WriteRegStr HKCU "${REG_UNINSTALL}" "Publisher" "The Longaccess Company"
+WriteRegStr HKCU "${REG_UNINSTALL}" "DisplayVersion" "$Version"
+WriteRegDWord HKCU "${REG_UNINSTALL}" "EstimatedSize" 48185
+WriteRegStr HKCU "${REG_UNINSTALL}" "HelpLink" "${WEBSITE_LINK}"
+WriteRegStr HKCU "${REG_UNINSTALL}" "URLInfoAbout" "${WEBSITE_LINK}"
+WriteRegStr HKCU "${REG_UNINSTALL}" "InstallLocation" "$\"$INSTDIR$\""
+WriteRegStr HKCU "${REG_UNINSTALL}" "InstallSource" "$\"$EXEDIR$\""
+WriteRegDWord HKCU "${REG_UNINSTALL}" "NoModify" 1
+WriteRegDWord HKCU "${REG_UNINSTALL}" "NoRepair" 1
+WriteRegStr HKCU "${REG_UNINSTALL}" "UninstallString" "$\"$INSTDIR\${UNINSTALLER_NAME}$\""
+WriteRegStr HKCU "${REG_UNINSTALL}" "Comments" "Uninstalls Longaccess."
 
 
 WriteRegStr HKCU "Software\Classes\lacli" "DefaultIcon" "$INSTDIR\lacli\lacli.exe"
@@ -78,7 +108,7 @@ WriteRegStr HKCU "Software\RegisteredApplications" "lacli" "Software\LongaccessC
 WriteRegStr HKCU "Software\Classes\.longaccess\OpenWithProgids" "lacli" ""
 
 ;Create uninstaller
-WriteUninstaller "$INSTDIR\Uninstall.exe"
+WriteUninstaller "$INSTDIR\${UNINSTALLER_NAME}"
 
 ;Create shortcuts
 CreateDirectory $SMPROGRAMS\LongaccessCLI
@@ -105,6 +135,7 @@ DeleteRegKey HKCU "Software\Classes\lacli"
 DeleteRegValue HKCU "Software\RegisteredApplications" "lacli"
 DeleteRegValue HKCU "Software\Classes\.longaccess\OpenWithProgids" "lacli"
 DeleteRegKey HKCU "Software\LongaccessCLI"
+DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\LongaccessCLI"
 
 SectionEnd
 
