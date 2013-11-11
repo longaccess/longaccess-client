@@ -22,7 +22,6 @@ class MainWindow(QDeclarativeView):
 
 # Create Qt application and the QDeclarative view
 app = QApplication(sys.argv)
-import pdb; pdb.set_trace()
 window = QWidget()
 view = MainWindow()
 layout = QVBoxLayout()

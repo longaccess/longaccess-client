@@ -506,7 +506,6 @@ class LaArchiveCommand(LaBaseCommand):
                     try:
                         from lacli.views.decrypt import view, app, window
                         def decrypt(x):
-                            import pdb; pdb.set_trace()
                             cert = Certificate(x.decode('hex'))
                             archive = Archive(
                                 'title', Meta('zip', 'aes-256-ctr'))
