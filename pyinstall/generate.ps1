@@ -28,10 +28,12 @@ $arch+=$os.OSArchitecture
 $ver=(lacli --version | cut -c 7-)
 
 
-
+pip uninstall -y lacli
+pip install --egg ..
 
 Remove-Item -Recurse -Force build
 Remove-Item -Recurse -Force dist
+
 $rcc=$env:VIRTUAL_ENV
 $rcc+="\lib\site-packages\PySide\pyside-rcc.exe"
 & $rcc "..\lacli\views\decrypt.qrc" -o "..\lacli\views\qrc_decrypt.py"
