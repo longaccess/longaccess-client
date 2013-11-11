@@ -46,12 +46,12 @@ Var ExtCmd
 Function un.setExtensionVars
 
 StrCpy $Extension ".longaccess"
-StrCpy $ExtCmd '"$INSTDIR\lacli\lacli.exe" --batch archive extract'
+StrCpy $ExtCmd '"$INSTDIR\lacli\lacli.exe" archive extract'
 FunctionEnd
 Function setExtensionVars
 
 StrCpy $Extension ".longaccess"
-StrCpy $ExtCmd '"$INSTDIR\lacli\lacli.exe" --batch archive extract'
+StrCpy $ExtCmd '"$INSTDIR\lacli\lacli.exe" archive extract'
 FunctionEnd
 Var Version
 Function setVersion
