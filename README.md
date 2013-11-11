@@ -70,7 +70,6 @@ An example scenario:
     $ lacli certificate export 68-H1BK
     Created files:
     longaccess-68-H1BK.html
-    longaccess-68-H1BK.yaml
     $
 
 
