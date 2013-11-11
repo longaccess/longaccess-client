@@ -5,6 +5,5 @@
   <file>KeyInput.qml</file>
   <file>KeyRow.qml</file>
   <file>TextBox.qml</file>
-  <file>cert.qml</file>
  </qresource>
 </RCC>
