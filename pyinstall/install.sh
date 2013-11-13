@@ -5,7 +5,7 @@ trap cleanup 1 2 3 6 EXIT
 cleanup () {
     ret=$?
     if [ -n "$STACK" ] ; then
-        echo "cleaning up.."
+        printf "cleaning up..\n"
         IFS=":"
         for item in $STACK ; do
             rm -r "$item"
@@ -15,73 +15,67 @@ cleanup () {
 }
 
 _mkdir () {
-    echo -n "Creating $1: "
+    printf "Creating $1: "
     if [ ! -d "$1" ] ; then
         mkdir "$1"
         STACK="$1:$STACK"
-        echo "done"
+        printf "done\n\n"
     else
-        echo "exists"
+        printf "exists\n\n"
     fi
-    echo
 }
 
 _separator () {
-    echo "========================================"
-    echo
+    printf "\n========================================\n\n"
 }
 
 _download () {
     TARGET=$2
     URL=http://download.longaccess.com/lacli-$1-latest.tar.bz2
     
-    _mkdir $TARGET/lacli || { echo "$TARGET/lacli already exists!" ; exit 1; }
+    _mkdir $TARGET/lacli || { printf "$TARGET/lacli already exists!\n" ; exit 1; }
     
-    echo -n "Downloading lacli (the Longaccess command line client) "
+    printf "Downloading lacli (the Longaccess command line client) "
 
     _failed () {
-        echo
-        echo "****************************************"
-        echo "ERROR:"
-        echo "    Unable to $1 http://download.longaccess.com/lacli-$ARCH-latest.tar.bz2"
-        echo "    It is possible that your architecture is not supported by this installer."
-        echo "    You can always install from source: https://github.com/longaccess/longaccess-client"
-        echo "    Please contact team@longaccess.com or open an issue at https://github.com/longaccess/longaccess-client."
-        echo "****************************************"
+        printf "\n"
+        printf "****************************************\n"
+        printf "ERROR:\n"
+        printf "    Unable to $1 http://download.longaccess.com/lacli-$ARCH-latest.tar.bz2\n"
+        printf "    It is possible that your architecture is not supported by this installer.\n"
+        printf "    You can always install from source: https://github.com/longaccess/longaccess-client\n"
+        printf "    Please contact team@longaccess.com or open an issue at https://github.com/longaccess/longaccess-client.\n"
+        printf "****************************************\n"
     }
 
     curl -LIfs "$URL" >/dev/null || { _failed "download" ; exit 1; }
-    echo "and extracting to $TARGET/lacli"
+    printf "and extracting to $TARGET/lacli\n"
     curl -L -s "$URL" | tar xjf - -C "$TARGET" lacli || { _failed "extract" ; exit 1; }
 }
 
 _install () {
-    echo "========================================"
-    echo "Creating symlink $1 -> $BIN/lacli"
+    _separator
+    printf "Creating symlink $1 -> $BIN/lacli\n"
     ln -s $1 $BIN/lacli
-    echo
-    echo "========================================"
+    _separator
     if [ "$SHELL" = "/bin/bash" ]; then
-      echo "Adding $BIN to .bashrc"
-      echo "# Added by Longaccess (lacli)" >> ~/.bashrc
-      echo "export PATH=$BIN:$PATH" >> ~/.bashrc
+      printf "Adding $BIN to .bashrc\n"
+      printf "# Added by Longaccess (lacli)\n" >> ~/.bashrc
+      printf "export PATH=$BIN:$PATH\n" >> ~/.bashrc
     elif [ "$SHELL" = "/bin/zsh" ]; then
-      echo "Adding $BIN to .zshrc"
-      echo "# Added by Longaccess (lacli)" >> ~/.zshrc
-      echo "export PATH=$BIN:$PATH" >> ~/.zshrc
+      printf "Adding $BIN to .zshrc\n"
+      printf "# Added by Longaccess (lacli)\n" >> ~/.zshrc
+      printf "export PATH=$BIN:$PATH\n" >> ~/.zshrc
     else
-      echo "Make sure you add $BIN to your PATH."
+      printf "Make sure you add $BIN to your PATH.\n"
     fi
-    echo "========================================"
+    _separator
 }
 
 _finish () {
     STACK=''
-    echo
-    echo "Done."
-    echo
-    echo "Start a *new* shell and type \"lacli --help\" for options."
-    echo 
+    printf "\nDone.\n" 
+    printf "\nStart a *new* shell and type \"lacli --help\" for options.\n"
 }
 
 main () {
