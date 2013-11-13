@@ -15,7 +15,7 @@ from shutil import copyfileobj
 def main(args=sys.argv[1:]):
     options = docopt(__doc__)
     with open(options['<file>']) as f:
-        with CryptIO(f, CipherAES(b64decode(options['<key>']))) as cf:
+        with CryptIO(f, CipherAES(options['<key>'].decode('hex'))) as cf:
             with NamedTemporaryFile(delete=False) as out:
                 copyfileobj(cf, out)
                 print "saved in", out.name
