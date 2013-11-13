@@ -133,5 +133,5 @@ class CryptIO(BufferedIOBase):
 
     def __exit__(self, eType, eValue, eTrace):
         super(CryptIO, self).__exit__(eType, eValue, eTrace)
-        if eType:
+        if eType and self.mode == READ:
             raise DecryptionError(eValue)
