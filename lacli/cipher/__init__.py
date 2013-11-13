@@ -16,6 +16,9 @@ def new_key(nbit):
 
 
 def get_cipher(archive, cert):
+    """ return a suitable cipher object to decrypt/encrypt the archive
+        using the certificate key and input parameters (iv, etc).
+    """
     input = None
     key = None
     cipher = archive.meta.cipher
