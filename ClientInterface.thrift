@@ -1,3 +1,4 @@
+namespace csharp ThriftInterface
 //============Errors====================
 enum ErrorType {
   None = 0,
@@ -33,6 +34,7 @@ struct Capsule {
 }
 struct Archive {
   1: string ID,
+  2: string Title
 }
 struct Certificate {
   1: string Title,
@@ -42,27 +44,30 @@ struct Certificate {
 
 
 //===========Methods===================
-service LongAccessClient {
+service CLI {
+
+  void PingCLI(),
+
   bool LoginUser(1: string username, 2: string Pass,3: bool Remember) throws (1:InvalidOperation error),
   
-  bool Logout() throws (1:InvalidOperation error),
-  
+  bool Logout() throws (1:InvalidOperation error),  
   
   list<Capsule> GetCapsules() throws (1:InvalidOperation error),
   
   Archive UploadFileGUI(1: list<string> filePaths,2: string capsuleID, 3: string title, 4: string description) 
   throws (1: InvalidOperation error),
+
+  list<Archive> GetIncompleteUploads(),
   
-  void GeginUpload(1: string ArchiveID),
+  void BeginUpload(1: string ArchiveID),
+
+  void ResumeUpload(1: string ArchiveID),
   
   TransferStatus QueryArchiveStatus(1: string ArchiveID),
   
-  void PauseUpload(1: string ArchiveID),
+  void PauseUpload(1: string ArchiveID),    
   
-  void ResumeUpload(1: string ArchiveID),
-  
-  void CancelUpload(1: string ArchiveID)
-  
+  void CancelUpload(1: string ArchiveID),  
   
   list<Certificate> getCertificates(),
   
