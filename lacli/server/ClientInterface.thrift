@@ -1,7 +1,7 @@
 namespace csharp ThriftInterface
 //============Errors====================
 enum ErrorType {
-  None = 0,
+  NoError = 0,
   Server = 1,
   nNetwork = 2,
   Authentication = 3,

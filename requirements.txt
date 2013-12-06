@@ -9,3 +9,5 @@ pycrypto==2.6
 python-dateutil==2.1
 requests==2.0.0
 pyaml==13.07.1
+thrift==0.9.1
+Twisted==13.2.0
