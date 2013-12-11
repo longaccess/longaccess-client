@@ -346,7 +346,8 @@ def make_adf(archive=None, canonical=False, out=None, pretty=False):
     if pretty:
         out.write("--- ".join(map(pyaml.dump, archive)))
         return
-    return yaml.safe_dump_all(archive, out, canonical=canonical)
+    return yaml.safe_dump_all(
+        archive, out, canonical=canonical, allow_unicode=True)
 
 
 def archive_size(archive):

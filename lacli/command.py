@@ -110,7 +110,7 @@ class LaCertsCommand(LaBaseCommand):
                 aid = cert['signature'].aid
                 title = cert['archive'].title
                 size = archive_size(cert['archive'])
-                print "{:>10} {:>6} {:<}".format(
+                print u"{:>10} {:>6} {:<}".format(
                     aid, size, title)
                 if self.debug > 2:
                     for doc in cert.itervalues():
@@ -169,7 +169,7 @@ class LaCertsCommand(LaBaseCommand):
         else:
             print "Certificate not found"
 
-    @command(filename=str)
+    @command(filename=unicode)
     def do_import(self, filename=None):
         """
         Usage: import <filename>
@@ -214,7 +214,7 @@ class LaCapsuleCommand(LaBaseCommand):
             if len(capsules):
                 print "Available capsules:"
                 for capsule in capsules:
-                    print "{:<10}:{:>10}".format('title', capsule.pop('title'))
+                    print u"{:<10}:{:>10}".format('title', capsule.pop('title'))
                     for i, v in capsule.iteritems():
                         print "{:<10}:{:>10}".format(i, v)
                     print "\n"
@@ -366,7 +366,7 @@ class LaArchiveCommand(LaBaseCommand):
                                       exc_info=True)
                     print "error: " + str(e)
 
-    @command(directory=str, title=str)
+    @command(directory=unicode, title=unicode)
     def do_create(self, directory=None, title="my archive"):
         """
         Usage: create <directory> <title>
@@ -404,7 +404,7 @@ class LaArchiveCommand(LaBaseCommand):
                         cert = archive['links'].upload
                 title = archive['archive'].title
                 size = archive_size(archive['archive'])
-                print "{:03d} {:>6} {:>20} {:>10} {:>10}".format(
+                print u"{:03d} {:>6} {:>20} {:>10} {:>10}".format(
                     n+1, size, title, status, cert)
                 if self.debug > 2:
                     for doc in archive.itervalues():
@@ -452,7 +452,7 @@ class LaArchiveCommand(LaBaseCommand):
                                       exc_info=True)
                     print "error: " + str(e)
 
-    @command(path=str, dest=str, cert_id=str, cert_file=str)
+    @command(path=unicode, dest=unicode, cert_id=str, cert_file=unicode)
     def do_extract(self, path=None, dest=None, cert_id=None, cert_file=None):
         """
         Usage: extract <path> [<dest>] [<cert_id>] [<cert_file>]

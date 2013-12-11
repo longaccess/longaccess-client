@@ -139,7 +139,7 @@ class Cache(object):
         key = b2a_hex(docs['cert'].key).upper()
         hk = pairs(fours(pairs(iter(key))), " . ")
 
-        return resource_string(__name__, "data/certificate.html").format(
+        return unicode(resource_string(__name__, "data/certificate.html")).format(
             json=as_json(docs),
             aid=docs['signature'].aid,
             keyB=next(hk),
@@ -154,7 +154,7 @@ class Cache(object):
             desc=archive.description,
             md5=" . ".join(fours(pairs(iter(md5)))),
             fmt=archive.meta.format,
-            cipher=cipher)
+            cipher=cipher).encode('utf8')
 
     def shred_file(self, fname, srm=None):
         commands = []
