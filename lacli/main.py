@@ -81,7 +81,7 @@ def settings(options):
         prefs[options['<command>']] = options.get('<args>')
 
     home = options.get('--home', default_home)
-    if not home or not os.path.isdir(home):
+    if not home or not os.path.isdir(os.path.expanduser(home)):
         if batch:
             sys.exit("{} does not exist!".format(home))
         else:

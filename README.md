@@ -35,8 +35,16 @@ Authentication
 In order to use the service you must first have a username and password for the service. You can provide them to the program in two ways:
 
 1. as global arguments, e.g. `lacli -u user -p pass archive list ...`. If a password is not provided you will be prompted for one.
-2. as entries in your `.netrc` file. This way you will not have to provide them everytime (but you should keep your `.netrc` safe)
+2. as entries in your `.netrc` file. This way you will not have to provide them everytime (but you should keep your `.netrc` safe).
 3. by using the `login` command. If authentication is succesfull you will be prompted to save the credentials in `.netrc` as above for future use. If interactive the credentials will be used for subsequent commands.
+
+### Netrc
+
+The correct `machine` to add to `.netrc` for the service in production at Longaccess is `www.longaccess.com`. For example you need this entry:
+
+```
+machine www.longaccess.com login user@domain.com password somep4ss
+```
 
 Example usage
 -------------
