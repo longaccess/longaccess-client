@@ -1,4 +1,5 @@
 import shlex
+import sys
 
 from docopt import docopt, DocoptExit
 from functools import update_wrapper, wraps
@@ -72,9 +73,13 @@ def command(**types):
                 for opt, val in opts.iteritems():
                     kw = opt.strip('<>')
                     if val and kw in types:
-                        kwargs[kw] = types[kw](val)
+                        if types[kw] == unicode:
+                            kwargs[kw] = unicode(
+                                val, sys.getfilesystemencoding())
+                        else:
+                            kwargs[kw] = types[kw](val)
             except ValueError as e:
-                print "error: invalid value:", shlex.split(e.message).pop()
+                print "error: invalid value:", e
                 print func.__doc__
                 return
             except DocoptExit as e:

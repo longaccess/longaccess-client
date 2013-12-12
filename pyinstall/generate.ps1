@@ -42,3 +42,11 @@ $outfile="Longaccess-$ver-$arch.exe"
 $latest="Longaccess-latest-$arch.exe"
 makensis /X"OutFile $outfile" .\win.nsis
 upload $outfile $latest
+prefix="lacli-MINGW32_NT-"
+prefix+=$os.version
+prefix+="-unknown-"
+latest=$prefix+"latest.tar.bz2"
+tarball=$prefix+$ver+".tar.bz2"
+tar cjvf $tarball -C .\dist\ lacli
+upload $tarball $latest
+upload install.sh
