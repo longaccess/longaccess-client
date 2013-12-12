@@ -95,7 +95,7 @@ class Cache(object):
             docs = load_archive(_upload)
         docs['signature'] = Signature(aid=status['archive_key'],
                                       uri=status['archive'],
-                                      expires=status.get('expiration'),
+                                      expires=status.get('expires'),
                                       created=status.get('created'))
         with open(fname, 'w') as _upload:
             make_adf(list(docs.itervalues()), out=_upload)

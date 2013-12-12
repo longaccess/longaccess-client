@@ -87,8 +87,8 @@ class Api(object):
             if rsp:
                 if 'created' in rsp:
                     rsp['created'] = parse_timestamp(rsp['created'])
-                if 'expiration' in rsp:
-                    rsp['expiration'] = parse_timestamp(rsp['expiration'])
+                if 'expires' in rsp:
+                    rsp['expires'] = parse_timestamp(rsp['expires'])
                 if 'archive' in rsp:
                     rsp['archive'] = urljoin(self.url, rsp['archive'])
             return rsp
