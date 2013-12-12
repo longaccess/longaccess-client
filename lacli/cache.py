@@ -96,7 +96,8 @@ class Cache(object):
         docs['signature'] = Signature(aid=status['archive_key'],
                                       uri=status['archive'],
                                       expires=status.get('expires'),
-                                      created=status.get('created'))
+                                      created=status.get('created'),
+                                      creator=docs['archive'].meta.name)
         with open(fname, 'w') as _upload:
             make_adf(list(docs.itervalues()), out=_upload)
         return docs
