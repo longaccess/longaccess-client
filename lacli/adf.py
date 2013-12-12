@@ -9,9 +9,8 @@ from lacli.cipher import cipher_modes, new_key
 from yaml import SafeLoader
 from yaml import SafeDumper
 from lacli.exceptions import InvalidArchiveError
+from lacli.date import parse_timestamp, today
 from datetime import datetime
-from dateutil.tz import tzutc
-from dateutil.parser import parse as date_parse
 from base64 import b64encode, b64decode
 
 
@@ -123,8 +122,7 @@ class Meta(BaseYAMLObject):
         if created:
             self.created = created
         else:
-            self.created = datetime.utcnow().replace(
-                microsecond=0, tzinfo=tzutc())
+            self.created = today()
 
 
 class Format(BaseYAMLObject):
@@ -257,8 +255,7 @@ class Signature(BaseYAMLObject):
         if created:
             self.created = created
         else:
-            self.created = datetime.utcnow().replace(
-                microsecond=0, tzinfo=tzutc()).isoformat()
+            self.created = today()
 
 
 def add_path_resolver(tag, keys):
@@ -398,7 +395,7 @@ def _as_adf_object(dct):
     if 'download' in dct or 'upload' in dct or 'local' in dct:
         return Links(**dct)
     if 'created' in dct:
-        dct['created'] = date_parse(dct['created'])
+        dct['created'] = parse_timestamp(dct['created'])
         if 'aid' in dct:
             return Signature(**dct)
         else:
