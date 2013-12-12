@@ -9,7 +9,7 @@ from lacli.cipher import cipher_modes, new_key
 from yaml import SafeLoader
 from yaml import SafeDumper
 from lacli.exceptions import InvalidArchiveError
-from lacli.date import parse_timestamp, today
+from lacli.date import parse_timestamp, today, later
 from datetime import datetime
 from base64 import b64encode, b64decode
 
@@ -248,14 +248,20 @@ class Signature(BaseYAMLObject):
     aid = None
     uri = None
     created = None
+    expires = None
 
-    def __init__(self, aid, uri, created=None):
+    def __init__(self, aid, uri, created=None, expires=None):
         self.aid = aid
         self.uri = uri
         if created:
             self.created = created
         else:
             self.created = today()
+
+        if expires:
+            self.expires = expires
+        else:
+            self.expires = later(self.created, years=30)
 
 
 def add_path_resolver(tag, keys):

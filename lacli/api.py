@@ -84,8 +84,11 @@ class Api(object):
 
     def _upload_status(self, uri, first=None):
         def parse(rsp):
-            if rsp and 'created' in rsp:
-                rsp['created'] = parse_timestamp(rsp['created'])
+            if rsp:
+                if 'created' in rsp:
+                    rsp['created'] = parse_timestamp(rsp['created'])
+                if 'expiration' in rsp:
+                    rsp['expiration'] = parse_timestamp(rsp['expiration'])
             return rsp
 
         if first:
