@@ -84,7 +84,6 @@ class Api(object):
 
     def _upload_status(self, uri, first=None):
         def parse(rsp):
-            import pdb; pdb.set_trace()
             if rsp:
                 if 'created' in rsp:
                     rsp['created'] = parse_timestamp(rsp['created'])

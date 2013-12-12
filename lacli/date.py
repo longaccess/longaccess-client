@@ -5,7 +5,7 @@ from datetime import datetime
 
 
 def parse_timestamp(string):
-    if isinstance(string, datetime):
+    if not string or isinstance(string, datetime):
         return string
     try:
         d = dateutil.parser.parse(string)
