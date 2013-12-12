@@ -407,7 +407,7 @@ def _as_adf_object(dct):
 
 
 def as_json(docs):
-    return ADFEncoder().encode(docs)
+    return ADFEncoder(ensure_ascii=False).encode(docs)
 
 
 def as_adf(data):
