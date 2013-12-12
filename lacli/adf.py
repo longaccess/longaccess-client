@@ -249,8 +249,9 @@ class Signature(BaseYAMLObject):
     uri = None
     created = None
     expires = None
+    creator = None
 
-    def __init__(self, aid, uri, created=None, expires=None):
+    def __init__(self, aid, uri, created=None, expires=None, creator=None):
         self.aid = aid
         self.uri = uri
         if created:
@@ -262,6 +263,9 @@ class Signature(BaseYAMLObject):
             self.expires = expires
         else:
             self.expires = later(self.created, years=30)
+
+        if creator:
+            self.creator = creator
 
 
 def add_path_resolver(tag, keys):
