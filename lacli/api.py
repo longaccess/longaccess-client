@@ -84,6 +84,7 @@ class Api(object):
 
     def _upload_status(self, uri, first=None):
         def parse(rsp):
+            import pdb; pdb.set_trace()
             if rsp:
                 if 'created' in rsp:
                     rsp['created'] = parse_timestamp(rsp['created'])
@@ -109,7 +110,7 @@ class Api(object):
         >>> meta = Meta('zip', 'xor')
         >>> archive = Archive('foo', meta)
         >>> auth = Auth(md5="foo")
-        >>> with api.upload(1, archive, auth) as upload:
+        >>> with api.upload({'resource_uri': 'foo'}, archive, auth) as upload:
         ...     token = next(upload['tokens'])
         ...     uri = upload['uri']
         ...     id = upload['id']
@@ -124,18 +125,11 @@ class Api(object):
             raise ValueError("No such capsule")
         ValueError: No such capsule
         """
-        cs = []
-        if 'capsule' in self.endpoints:
-            url = self.endpoints['capsule']
-            cs = self._get(url).get('objects', [])
-        if capsule >= len(cs):
-            raise ValueError("No such capsule")
-
         req_data = json.dumps(
             {
                 'title': archive.title,
                 'description': archive.description or '',
-                'capsule': cs[capsule]['resource_uri']
+                'capsule': capsule['resource_uri']
             })
         status = self._post(self.endpoints['upload'], data=req_data)
         uri = urljoin(self.url, status['resource_uri'])
@@ -163,7 +157,13 @@ class Api(object):
         getLogger().debug("requesting capsules from {}".format(url))
         for cs in self._get(url)['objects']:
             yield dict([(k, cs.get(k, None))
-                        for k in ['title', 'remaining', 'size']])
+                        for k in ['title', 'remaining', 'size',
+                                  'id', 'resource_uri']])
+
+    @contains(dict)
+    def capsule_ids(self):
+        for capsule in self.capsules():
+            yield (capsule['id'], capsule)
 
     @cached_property
     def account(self):

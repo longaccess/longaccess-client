@@ -214,8 +214,11 @@ class LaCapsuleCommand(LaBaseCommand):
             if len(capsules):
                 print "Available capsules:"
                 for capsule in capsules:
-                    print u"{:<10}:{:>10}".format('title', capsule.pop('title'))
+                    print u"{:<10}:{:>10}".format(
+                        'title', capsule.pop('title'))
                     for i, v in capsule.iteritems():
+                        if i == 'resource_uri':
+                            continue
                         print "{:<10}:{:>10}".format(i, v)
                     print "\n"
             else:
@@ -239,10 +242,12 @@ class LaArchiveCommand(LaBaseCommand):
         -n <np>, --procs <np>               number of processes [default: auto]
         -t <title>, --title <title>         title for prepared archive
         -o <dirname>, --out <dirname>       directory to restore archive
-        -c <capsule>, --capsule <capsule>   capsule to upload to [default: 1]
+        -c <capsule>, --capsule <capsule>   capsule to upload to (see below)
         -f <cert>, --cert <cert>            certificate file to use
         -h, --help                          this help
 
+    The archive will be uploaded to the first capsule that has enough available
+    space.
     """
     prompt = 'lacli:archive> '
 
@@ -299,20 +304,30 @@ class LaArchiveCommand(LaBaseCommand):
 
     @login
     @command(index=int, capsule=int)
-    def do_upload(self, index=1, capsule=1):
+    def do_upload(self, index=1, capsule=None):
         """
         Usage: upload [<index>] [<capsule>]
         """
+        fname = None
         docs = list(self.cache._for_adf('archives').iteritems())
 
-        if capsule <= 0:
-            print "Invalid capsule"
-        elif index <= 0 or len(docs) < index:
+        if index <= 0 or len(docs) < index:
             print "No such archive."
         else:
-            capsule -= 1
             fname = docs[index-1][0]
             docs = docs[index-1][1]
+
+            capsules = self.session.capsule_ids()
+            if capsule is not None:
+                capsule = capsules.get(capsule)
+            elif len(capsules) > 0:
+                # TODO default to the first one that has available space
+                capsule = capsules.popitem()[1]
+
+            if capsule is None:
+                print "No such capsule"
+
+        if fname and capsule:
             archive = docs['archive']
             link = docs['links']
             path = self.cache.data_file(link)
