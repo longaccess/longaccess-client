@@ -2,8 +2,7 @@ import os
 import shlex
 from urlparse import urlparse
 from pkg_resources import resource_string
-from dateutil.parser import parse as date_parse
-from dateutil.relativedelta import relativedelta as date_delta
+from lacli.date import parse_timestamp, later
 
 from glob import iglob
 from lacli.adf import (load_archive, make_adf, Certificate, Archive,
@@ -95,7 +94,9 @@ class Cache(object):
         with open(fname) as _upload:
             docs = load_archive(_upload)
         docs['signature'] = Signature(aid=status['archive_key'],
-                                      uri='http://longaccess.com/a/')
+                                      uri='http://longaccess.com/a/',
+                                      expires=status.get('expires'),
+                                      created=status.get('created'))
         with open(fname, 'w') as _upload:
             make_adf(list(docs.itervalues()), out=_upload)
         return docs
@@ -129,12 +130,11 @@ class Cache(object):
         cipher = archive.meta.cipher
         if hasattr(cipher, 'mode'):
             cipher = cipher.mode
-        created = archive.meta.created
-        try:
-            created = date_parse(created)
-        except:
-            pass
-        expires = created + date_delta(years=30)
+        created = parse_timestamp(archive.meta.created)
+        expires = later(created, years=30)
+        if 'signature' in docs:
+            expires = parse_timestamp(docs['signature'].expires)
+            created = parse_timestamp(docs['signature'].created)
         md5 = b2a_hex(docs['auth'].md5).upper()
         key = b2a_hex(docs['cert'].key).upper()
         hk = pairs(fours(pairs(iter(key))), " . ")

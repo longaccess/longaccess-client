@@ -1,6 +1,7 @@
 from urlparse import urljoin
 from lacli.log import getLogger
 from lacli.decorators import cached_property, with_api_response, contains
+from lacli.date import parse_timestamp
 from contextlib import contextmanager
 
 import json
@@ -55,6 +56,7 @@ class Api(object):
 
     @cached_property
     def root(self):
+        getLogger().debug("requesting API root from {}".format(self.url))
         return self._get(self.url)
 
     @cached_property
@@ -81,10 +83,18 @@ class Api(object):
         return self.session.patch(url, headers=headers, data=data)
 
     def _upload_status(self, uri, first=None):
+        def parse(rsp):
+            if rsp:
+                if 'created' in rsp:
+                    rsp['created'] = parse_timestamp(rsp['created'])
+                if 'expires' in rsp:
+                    rsp['expires'] = parse_timestamp(rsp['expires'])
+            return rsp
+
         if first:
-            yield first
+            yield parse(first)
         while True:
-            yield self._get(uri)
+            yield parse(self._get(uri))
 
     @contextmanager
     def upload(self, capsule, archive, auth=None):
