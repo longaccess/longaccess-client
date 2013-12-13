@@ -61,8 +61,9 @@ class Cache(object):
                 except InvalidArchiveError:
                     getLogger().debug(fn, exc_info=True)
 
-    def prepare(self, title, folder, fmt='zip', cb=None):
-        archive = Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)))
+    def prepare(self, title, folder, description=None, fmt='zip', cb=None):
+        archive = Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)),
+                          description=description)
         cert = Certificate()
         tmpdir = self._cache_dir('data', write=True)
         name, path, auth = dump_archive(archive, folder, cert, cb, tmpdir)
