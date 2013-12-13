@@ -196,6 +196,14 @@ class Cache(object):
             self.shred_file(path, srm)
             return path
 
+    def export_cert(self, aid):
+        for fname, docs in self._for_adf('certs').iteritems():
+            if 'signature' in docs and aid == docs['signature'].aid:
+                text = 'longaccess-{}.yaml'.format(aid)
+                with open(text, 'w') as f:
+                    make_adf(list(docs.itervalues()), out=f, pretty=True)
+                return text
+
     def print_cert(self, aid):
         for fname, docs in self._for_adf('certs').iteritems():
             if 'signature' in docs and aid == docs['signature'].aid:

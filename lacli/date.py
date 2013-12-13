@@ -28,3 +28,17 @@ def today():
 
 def later(d, **args):
     return d + date_delta(**args)
+
+
+def format_timestamp(d, tz=None):
+    utc = dateutil.tz.tzutc()
+
+    if not d.utcoffset():
+        d = d.replace(tzinfo=utc)
+    if tz and not tz.utcoffset():
+        tz = None
+    if tz:
+        d = d.astimezone(tz)
+    else:
+        d = d.astimezone(utc)
+    return d.replace(tzinfo=tz).isoformat()

@@ -71,6 +71,7 @@ class LaCertsCommand(LaBaseCommand):
     """Manage Long Access Certificates
 
     Usage: lacli certificate list
+           lacli certificate print <cert_id>
            lacli certificate export <cert_id>
            lacli certificate import <filename>
            lacli certificate delete <cert_id> [<srm>...]
@@ -89,6 +90,9 @@ class LaCertsCommand(LaBaseCommand):
             if options['<srm>']:
                 line.append(quote(
                     " ".join(options["<srm>"])))
+        elif options['print']:
+            line.append("print")
+            line.append(options["<cert_id>"])
         elif options['export']:
             line.append("export")
             line.append(options["<cert_id>"])
@@ -161,6 +165,18 @@ class LaCertsCommand(LaBaseCommand):
     def do_export(self, cert_id=None):
         """
         Usage: export <cert_id>
+        """
+        path = self.cache.export_cert(cert_id)
+        if path:
+            print "Created file:"
+            print path
+        else:
+            print "Certificate not found"
+
+    @command(cert_id=str)
+    def do_print(self, cert_id=None):
+        """
+        Usage: print <cert_id>
         """
         path = self.cache.print_cert(cert_id)
         if path:
@@ -399,7 +415,7 @@ class LaArchiveCommand(LaBaseCommand):
     @command(directory=unicode, title=unicode, description=unicode)
     def do_create(self, directory=None, title="my archive", description=None):
         """
-        Usage: create <directory> <title> <description>
+        Usage: create <directory> <title> [<description>]
         """
         try:
             if not os.path.isdir(directory):

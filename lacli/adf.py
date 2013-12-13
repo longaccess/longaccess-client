@@ -9,7 +9,7 @@ from lacli.cipher import cipher_modes, new_key
 from yaml import SafeLoader
 from yaml import SafeDumper
 from lacli.exceptions import InvalidArchiveError
-from lacli.date import parse_timestamp, today, later
+from lacli.date import parse_timestamp, today, later, format_timestamp
 from datetime import datetime
 from base64 import b64encode, b64decode
 
@@ -324,7 +324,7 @@ def load_archive(f):
     raise InvalidArchiveError()
 
 
-def make_adf(archive=None, canonical=False, out=None, pretty=False):
+def make_adf(archive=None, out=None, pretty=False):
     """
     >>> meta = Meta('zip', 'aes-256-ctr', created='now')
     >>> archive = Archive('title', meta)
@@ -354,7 +354,7 @@ def make_adf(archive=None, canonical=False, out=None, pretty=False):
         out.write("--- ".join(map(pyaml.dump, archive)))
         return
     return yaml.safe_dump_all(
-        archive, out, canonical=canonical, allow_unicode=True)
+        archive, out, canonical=True, allow_unicode=True)
 
 
 def archive_size(archive):
@@ -380,7 +380,7 @@ class ADFEncoder(json.JSONEncoder):
                           int, float, bool, type(None))):
             return super(ADFEncoder, self).default(o)
         if isinstance(o, datetime):
-            return o.isoformat()
+            return format_timestamp(o)
         if o.yaml_tag == Certificate.yaml_tag:
             return {'key': self._b64(o.key)}
         if o.yaml_tag == Auth.yaml_tag:
