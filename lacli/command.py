@@ -233,7 +233,7 @@ class LaArchiveCommand(LaBaseCommand):
     Usage: lacli archive upload [-n <np>] [<index>] [<capsule>]
            lacli archive list
            lacli archive status <index>
-           lacli archive create <dirname> -t <title>
+           lacli archive create <dirname> -t <title> [--desc <description>]
            lacli archive extract [-o <dirname>] <path> [<cert_id>|-f <cert>]
            lacli archive delete <index> [<srm>...]
            lacli archive --help
@@ -241,6 +241,7 @@ class LaArchiveCommand(LaBaseCommand):
     Options:
         -n <np>, --procs <np>               number of processes [default: auto]
         -t <title>, --title <title>         title for prepared archive
+        --desc <description>                description for prepared archive
         -o <dirname>, --out <dirname>       directory to restore archive
         -c <capsule>, --capsule <capsule>   capsule to upload to (see below)
         -f <cert>, --cert <cert>            certificate file to use
@@ -279,6 +280,8 @@ class LaArchiveCommand(LaBaseCommand):
             line.append(quote(options['<dirname>']))
             if options['--title']:
                 line.append(quote(options['--title']))
+                if options['--desc']:
+                    line.append(quote(options['--desc']))
         elif options['status']:
             line.append("status")
             line.append(options['<index>'])
@@ -393,16 +396,16 @@ class LaArchiveCommand(LaBaseCommand):
         else:
             print _error
 
-    @command(directory=unicode, title=unicode)
-    def do_create(self, directory=None, title="my archive"):
+    @command(directory=unicode, title=unicode, description=unicode)
+    def do_create(self, directory=None, title="my archive", description=None):
         """
-        Usage: create <directory> <title>
+        Usage: create <directory> <title> <description>
         """
         try:
             if not os.path.isdir(directory):
                 print "The specified folder does not exist."
                 return
-            self.cache.prepare(title, directory)
+            self.cache.prepare(title, directory, description=description)
             print "archive prepared"
 
         except Exception as e:
