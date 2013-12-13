@@ -330,7 +330,7 @@ class LaArchiveCommand(LaBaseCommand):
                     capsule = None
             elif len(capsules) > 0:
                 for i, c in capsules.iteritems():
-                    if capsule.get('remaining', 0) < size:
+                    if c.get('remaining', 0) > size:
                         capsule = c
                 if not capsule:
                     _error += "no capsules with available space found."
