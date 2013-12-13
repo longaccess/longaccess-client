@@ -8,7 +8,7 @@ from glob import iglob
 from lacli.adf import (load_archive, make_adf, Certificate, Archive,
                        Meta, Links, Cipher, Signature, as_json)
 from lacli.log import getLogger
-from lacli.archive import dump_archive, archive_slug
+from lacli.archive import dump_archive, archive_handle
 from lacli.exceptions import InvalidArchiveError
 from lacli.decorators import contains
 from urllib import pathname2url
@@ -107,7 +107,7 @@ class Cache(object):
         """
         write cert documents to the cache directory under a unique filename.
         """
-        fname = archive_slug(docs['archive'])
+        fname = archive_handle(list(docs.itervalues()))
         tmpargs = {'delete': False,
                    'dir': self._cache_dir('certs', write=True),
                    'suffix': ".adf",

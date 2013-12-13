@@ -374,7 +374,7 @@ class LaArchiveCommand(LaBaseCommand):
                     saved = None
                     with self.session.upload(capsule, archive, auth) as upload:
                         Upload(self.session, self.nprocs, self.debug).upload(
-                            path, upload['tokens'])
+                            path, upload)
                         saved = self.cache.save_upload(fname, docs, upload)
 
                     if saved and not self.batch:

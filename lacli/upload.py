@@ -20,12 +20,12 @@ class Upload(object):
             yield pool
             pool.terminate()
 
-    def upload(self, fname, tokens):
-        with ProgressHandler(fname) as progq:
+    def upload(self, fname, upload):
+        with ProgressHandler(upload['uri']) as progq:
             with self._workers(progq) as pool:
                 etags = {}
                 source = MPFile(fname)
-                for token, key in self._nexttoken(tokens):
+                for token, key in self._nexttoken(upload['tokens']):
                     connection = MPConnection(token)
                     with MPUpload(connection, source, key) as uploader:
                         etags[key], source = uploader.get_result(

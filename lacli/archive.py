@@ -5,9 +5,10 @@ import hashlib
 from unidecode import unidecode
 from datetime import date
 from tempfile import NamedTemporaryFile
-from lacli.adf import Auth
+from lacli.adf import Auth, make_adf
 from lacli.crypt import CryptIO
 from lacli.cipher import get_cipher
+from lacli.hash import HashIO
 from shutil import copyfileobj
 from zipfile import ZipFile, ZIP_DEFLATED
 
@@ -32,6 +33,12 @@ def _slugify(value):
 def archive_slug(archive):
     return "{}-{}".format(date.today().isoformat(),
                           _slugify(archive.title))
+
+
+def archive_handle(docs):
+    h = HashIO()
+    make_adf(docs, out=h)
+    return h.getvalue().encode('hex')
 
 
 def restore_archive(archive, path, cert, folder, tmpdir, cb=None):
@@ -70,7 +77,7 @@ class MyHashObj(object):
 
 def dump_archive(archive, folder, cert, cb=None, tmpdir='/tmp',
                  hashf='sha512'):
-    name = archive_slug(archive)
+    name = archive_handle([archive, cert])
     cipher = get_cipher(archive, cert)
     hashobj = MyHashObj(hashf)
     path, writer = _writer(name, os.path.abspath(folder),
