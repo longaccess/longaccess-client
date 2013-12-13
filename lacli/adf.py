@@ -419,3 +419,11 @@ def as_json(docs):
 
 def as_adf(data):
     return json.loads(data, object_hook=_as_adf_object)
+
+
+def creation(docs):
+    created = docs['archive'].meta.created
+    sig = docs.get('signature')
+    if sig and sig.created:
+        created = sig.created
+    return parse_timestamp(created)

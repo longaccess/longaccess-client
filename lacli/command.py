@@ -5,13 +5,15 @@ import glob
 import pyaml
 import sys
 import time
+import operator
 from pipes import quote
 from lacli.log import getLogger
 from lacli.upload import Upload
 from lacli.archive import restore_archive
-from lacli.adf import archive_size, Certificate, Archive, Meta
+from lacli.adf import archive_size, Certificate, Archive, Meta, creation
 from lacli.decorators import command, login
 from lacli.exceptions import DecryptionError
+from lacli.compose import compose
 from abc import ABCMeta, abstractmethod
 
 
@@ -109,8 +111,7 @@ class LaCertsCommand(LaBaseCommand):
         certs = self.cache._for_adf('certs')
 
         if len(certs):
-            for n, cert in enumerate(certs.iteritems()):
-                cert = cert[1]
+            for cert in sorted(certs.itervalues(), key=creation):
                 aid = cert['signature'].aid
                 title = cert['archive'].title
                 size = archive_size(cert['archive'])
@@ -329,6 +330,7 @@ class LaArchiveCommand(LaBaseCommand):
         """
         fname = None
         docs = list(self.cache._for_adf('archives').iteritems())
+        docs = sorted(docs, key=compose(creation, operator.itemgetter(1)))
 
         _error = "Cannot upload: "
 
@@ -437,8 +439,8 @@ class LaArchiveCommand(LaBaseCommand):
         archives = self.cache._for_adf('archives')
 
         if len(archives):
-            for n, archive in enumerate(archives.iteritems()):
-                archive = archive[1]
+            bydate = sorted(archives.itervalues(), key=creation)
+            for n, archive in enumerate(bydate):
                 status = "LOCAL"
                 cert = ""
                 if 'signature' in archive:
@@ -466,6 +468,7 @@ class LaArchiveCommand(LaBaseCommand):
         Usage: status <index>
         """
         docs = list(self.cache._for_adf('archives').iteritems())
+        docs = sorted(docs, key=compose(creation, operator.itemgetter(1)))
         if index <= 0 or len(docs) < index:
             print "No such archive"
         else:
@@ -598,6 +601,7 @@ class LaArchiveCommand(LaBaseCommand):
         Usage: delete <index> [<srm>]
         """
         docs = list(self.cache._for_adf('archives').iteritems())
+        docs = sorted(docs, key=compose(creation, operator.itemgetter(1)))
 
         fname = path = None
         if index <= 0 or len(docs) < index:

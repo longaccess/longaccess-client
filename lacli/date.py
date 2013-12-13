@@ -4,16 +4,17 @@ from dateutil.relativedelta import relativedelta as date_delta
 from datetime import datetime
 
 
-def parse_timestamp(string):
-    if not string or isinstance(string, datetime):
-        return string
+def parse_timestamp(d):
+    if not d:
+        return d
     try:
-        d = dateutil.parser.parse(string)
+        if not isinstance(d, datetime):
+            d = dateutil.parser.parse(d)
         if d.utcoffset() is not None:
             return d.astimezone(dateutil.tz.tzutc())
-        return d
+        return d.replace(tzinfo=dateutil.tz.tzutc())
     except TypeError:
-        raise ValueError("invalid time stamp: " + str(string))
+        raise ValueError("invalid time stamp: " + str(d))
 
 
 def remaining_time(d):
