@@ -103,7 +103,7 @@ def _writer(name, folder, cipher, tmpdir, hashobj=None):
                     for f in (os.path.join(root, f) for f in fs):
                         path = os.path.join(root, f)
                         zpf.write(path, os.path.relpath(path, folder))
-                        print f
+                        print f.encode('utf8')
                         yield f
             zf.flush()
             zf.seek(0)
