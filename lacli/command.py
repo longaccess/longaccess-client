@@ -311,21 +311,31 @@ class LaArchiveCommand(LaBaseCommand):
         fname = None
         docs = list(self.cache._for_adf('archives').iteritems())
 
+        _error = "Cannot upload: "
+
         if index <= 0 or len(docs) < index:
-            print "No such archive."
+            _error += "no such archive."
         else:
             fname = docs[index-1][0]
             docs = docs[index-1][1]
+            size = docs['archive'].meta.size
 
             capsules = self.session.capsule_ids()
             if capsule is not None:
                 capsule = capsules.get(capsule)
+                if not capsule:
+                    _error += "no such capsule"
+                elif capsule.get('remaining', 0) < size:
+                    _error += "archive too big for capsule"
+                    capsule = None
             elif len(capsules) > 0:
-                # TODO default to the first one that has available space
-                capsule = capsules.popitem()[1]
-
-            if capsule is None:
-                print "No such capsule"
+                for i, c in capsules.iteritems():
+                    if capsule.get('remaining', 0) < size:
+                        capsule = c
+                if not capsule:
+                    _error += "no capsules with available space found."
+            else:
+                _error += "no capsules found"
 
         if fname and capsule:
             archive = docs['archive']
@@ -380,6 +390,8 @@ class LaArchiveCommand(LaBaseCommand):
                     getLogger().debug("exception while uploading",
                                       exc_info=True)
                     print "error: " + str(e)
+        else:
+            print _error
 
     @command(directory=unicode, title=unicode)
     def do_create(self, directory=None, title="my archive"):
