@@ -94,7 +94,7 @@ class Cache(object):
         with open(fname) as _upload:
             docs = load_archive(_upload)
         docs['signature'] = Signature(aid=status['archive_key'],
-                                      uri=status['archive'],
+                                      uri=status.get('archive'),
                                       expires=status.get('expires'),
                                       created=status.get('created'),
                                       creator=docs['archive'].meta.name)
