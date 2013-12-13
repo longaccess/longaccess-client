@@ -75,7 +75,7 @@ An example scenario:
     001  36MiB             documents   COMPLETE    68-H1BK
     $ lacli certificate list
        68-H1BK  36MiB documents
-    $ lacli certificate export 68-H1BK
+    $ lacli certificate print 68-H1BK
     Created files:
     longaccess-68-H1BK.html
     $

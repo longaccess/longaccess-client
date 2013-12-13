@@ -8,7 +8,7 @@ from glob import iglob
 from lacli.adf import (load_archive, make_adf, Certificate, Archive,
                        Meta, Links, Cipher, Signature, as_json)
 from lacli.log import getLogger
-from lacli.archive import dump_archive, archive_slug
+from lacli.archive import dump_archive, archive_handle
 from lacli.exceptions import InvalidArchiveError
 from lacli.decorators import contains
 from urllib import pathname2url
@@ -61,8 +61,9 @@ class Cache(object):
                 except InvalidArchiveError:
                     getLogger().debug(fn, exc_info=True)
 
-    def prepare(self, title, folder, fmt='zip', cb=None):
-        archive = Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)))
+    def prepare(self, title, folder, description=None, fmt='zip', cb=None):
+        archive = Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)),
+                          description=description)
         cert = Certificate()
         tmpdir = self._cache_dir('data', write=True)
         name, path, auth = dump_archive(archive, folder, cert, cb, tmpdir)
@@ -106,7 +107,7 @@ class Cache(object):
         """
         write cert documents to the cache directory under a unique filename.
         """
-        fname = archive_slug(docs['archive'])
+        fname = archive_handle(list(docs.itervalues()))
         tmpargs = {'delete': False,
                    'dir': self._cache_dir('certs', write=True),
                    'suffix': ".adf",
@@ -194,6 +195,14 @@ class Cache(object):
                 pass
             self.shred_file(path, srm)
             return path
+
+    def export_cert(self, aid):
+        for fname, docs in self._for_adf('certs').iteritems():
+            if 'signature' in docs and aid == docs['signature'].aid:
+                text = 'longaccess-{}.yaml'.format(aid)
+                with open(text, 'w') as f:
+                    make_adf(list(docs.itervalues()), out=f, pretty=True)
+                return text
 
     def print_cert(self, aid):
         for fname, docs in self._for_adf('certs').iteritems():
