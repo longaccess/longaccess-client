@@ -2,14 +2,13 @@ import os
 import shlex
 from urlparse import urlparse
 from pkg_resources import resource_string
-from dateutil.parser import parse as date_parse
-from dateutil.relativedelta import relativedelta as date_delta
+from lacli.date import parse_timestamp, later
 
 from glob import iglob
 from lacli.adf import (load_archive, make_adf, Certificate, Archive,
                        Meta, Links, Cipher, Signature, as_json)
 from lacli.log import getLogger
-from lacli.archive import dump_archive, archive_slug
+from lacli.archive import dump_archive, archive_handle
 from lacli.exceptions import InvalidArchiveError
 from lacli.decorators import contains
 from urllib import pathname2url
@@ -62,8 +61,9 @@ class Cache(object):
                 except InvalidArchiveError:
                     getLogger().debug(fn, exc_info=True)
 
-    def prepare(self, title, folder, fmt='zip', cb=None):
-        archive = Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)))
+    def prepare(self, title, folder, description=None, fmt='zip', cb=None):
+        archive = Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)),
+                          description=description)
         cert = Certificate()
         tmpdir = self._cache_dir('data', write=True)
         name, path, auth = dump_archive(archive, folder, cert, cb, tmpdir)
@@ -95,7 +95,10 @@ class Cache(object):
         with open(fname) as _upload:
             docs = load_archive(_upload)
         docs['signature'] = Signature(aid=status['archive_key'],
-                                      uri='http://longaccess.com/a/')
+                                      uri=status.get('archive'),
+                                      expires=status.get('expires'),
+                                      created=status.get('created'),
+                                      creator=docs['archive'].meta.name)
         with open(fname, 'w') as _upload:
             make_adf(list(docs.itervalues()), out=_upload)
         return docs
@@ -104,7 +107,7 @@ class Cache(object):
         """
         write cert documents to the cache directory under a unique filename.
         """
-        fname = archive_slug(docs['archive'])
+        fname = archive_handle(list(docs.itervalues()))
         tmpargs = {'delete': False,
                    'dir': self._cache_dir('certs', write=True),
                    'suffix': ".adf",
@@ -129,17 +132,16 @@ class Cache(object):
         cipher = archive.meta.cipher
         if hasattr(cipher, 'mode'):
             cipher = cipher.mode
-        created = archive.meta.created
-        try:
-            created = date_parse(created)
-        except:
-            pass
-        expires = created + date_delta(years=30)
+        created = parse_timestamp(archive.meta.created)
+        expires = later(created, years=30)
+        if 'signature' in docs:
+            expires = parse_timestamp(docs['signature'].expires)
+            created = parse_timestamp(docs['signature'].created)
         md5 = b2a_hex(docs['auth'].md5).upper()
         key = b2a_hex(docs['cert'].key).upper()
         hk = pairs(fours(pairs(iter(key))), " . ")
 
-        return resource_string(__name__, "data/certificate.html").format(
+        return unicode(resource_string(__name__, "data/certificate.html")).format(
             json=as_json(docs),
             aid=docs['signature'].aid,
             keyB=next(hk),
@@ -154,7 +156,7 @@ class Cache(object):
             desc=archive.description,
             md5=" . ".join(fours(pairs(iter(md5)))),
             fmt=archive.meta.format,
-            cipher=cipher)
+            cipher=cipher).encode('utf8')
 
     def shred_file(self, fname, srm=None):
         commands = []
@@ -193,6 +195,14 @@ class Cache(object):
                 pass
             self.shred_file(path, srm)
             return path
+
+    def export_cert(self, aid):
+        for fname, docs in self._for_adf('certs').iteritems():
+            if 'signature' in docs and aid == docs['signature'].aid:
+                text = 'longaccess-{}.yaml'.format(aid)
+                with open(text, 'w') as f:
+                    make_adf(list(docs.itervalues()), out=f, pretty=True)
+                return text
 
     def print_cert(self, aid):
         for fname, docs in self._for_adf('certs').iteritems():

@@ -5,13 +5,15 @@ import glob
 import pyaml
 import sys
 import time
+import operator
 from pipes import quote
 from lacli.log import getLogger
 from lacli.upload import Upload
 from lacli.archive import restore_archive
-from lacli.adf import archive_size, Certificate, Archive, Meta
+from lacli.adf import archive_size, Certificate, Archive, Meta, creation
 from lacli.decorators import command, login
 from lacli.exceptions import DecryptionError
+from lacli.compose import compose
 from abc import ABCMeta, abstractmethod
 
 
@@ -71,6 +73,7 @@ class LaCertsCommand(LaBaseCommand):
     """Manage Long Access Certificates
 
     Usage: lacli certificate list
+           lacli certificate print <cert_id>
            lacli certificate export <cert_id>
            lacli certificate import <filename>
            lacli certificate delete <cert_id> [<srm>...]
@@ -89,6 +92,9 @@ class LaCertsCommand(LaBaseCommand):
             if options['<srm>']:
                 line.append(quote(
                     " ".join(options["<srm>"])))
+        elif options['print']:
+            line.append("print")
+            line.append(options["<cert_id>"])
         elif options['export']:
             line.append("export")
             line.append(options["<cert_id>"])
@@ -105,12 +111,11 @@ class LaCertsCommand(LaBaseCommand):
         certs = self.cache._for_adf('certs')
 
         if len(certs):
-            for n, cert in enumerate(certs.iteritems()):
-                cert = cert[1]
+            for cert in sorted(certs.itervalues(), key=creation):
                 aid = cert['signature'].aid
                 title = cert['archive'].title
                 size = archive_size(cert['archive'])
-                print "{:>10} {:>6} {:<}".format(
+                print u"{:>10} {:>6} {:<}".format(
                     aid, size, title)
                 if self.debug > 2:
                     for doc in cert.itervalues():
@@ -162,6 +167,18 @@ class LaCertsCommand(LaBaseCommand):
         """
         Usage: export <cert_id>
         """
+        path = self.cache.export_cert(cert_id)
+        if path:
+            print "Created file:"
+            print path
+        else:
+            print "Certificate not found"
+
+    @command(cert_id=str)
+    def do_print(self, cert_id=None):
+        """
+        Usage: print <cert_id>
+        """
         path = self.cache.print_cert(cert_id)
         if path:
             print "Created file:"
@@ -169,7 +186,7 @@ class LaCertsCommand(LaBaseCommand):
         else:
             print "Certificate not found"
 
-    @command(filename=str)
+    @command(filename=unicode)
     def do_import(self, filename=None):
         """
         Usage: import <filename>
@@ -214,8 +231,11 @@ class LaCapsuleCommand(LaBaseCommand):
             if len(capsules):
                 print "Available capsules:"
                 for capsule in capsules:
-                    print "{:<10}:{:>10}".format('title', capsule.pop('title'))
+                    print u"{:<10}:{:>10}".format(
+                        'title', capsule.pop('title'))
                     for i, v in capsule.iteritems():
+                        if i == 'resource_uri':
+                            continue
                         print "{:<10}:{:>10}".format(i, v)
                     print "\n"
             else:
@@ -230,7 +250,7 @@ class LaArchiveCommand(LaBaseCommand):
     Usage: lacli archive upload [-n <np>] [<index>] [<capsule>]
            lacli archive list
            lacli archive status <index>
-           lacli archive create <dirname> -t <title>
+           lacli archive create <dirname> -t <title> [--desc <description>]
            lacli archive extract [-o <dirname>] <path> [<cert_id>|-f <cert>]
            lacli archive delete <index> [<srm>...]
            lacli archive --help
@@ -238,11 +258,14 @@ class LaArchiveCommand(LaBaseCommand):
     Options:
         -n <np>, --procs <np>               number of processes [default: auto]
         -t <title>, --title <title>         title for prepared archive
+        --desc <description>                description for prepared archive
         -o <dirname>, --out <dirname>       directory to restore archive
-        -c <capsule>, --capsule <capsule>   capsule to upload to [default: 1]
+        -c <capsule>, --capsule <capsule>   capsule to upload to (see below)
         -f <cert>, --cert <cert>            certificate file to use
         -h, --help                          this help
 
+    The archive will be uploaded to the first capsule that has enough available
+    space.
     """
     prompt = 'lacli:archive> '
 
@@ -274,6 +297,8 @@ class LaArchiveCommand(LaBaseCommand):
             line.append(quote(options['<dirname>']))
             if options['--title']:
                 line.append(quote(options['--title']))
+                if options['--desc']:
+                    line.append(quote(options['--desc']))
         elif options['status']:
             line.append("status")
             line.append(options['<index>'])
@@ -299,20 +324,41 @@ class LaArchiveCommand(LaBaseCommand):
 
     @login
     @command(index=int, capsule=int)
-    def do_upload(self, index=1, capsule=1):
+    def do_upload(self, index=1, capsule=None):
         """
         Usage: upload [<index>] [<capsule>]
         """
+        fname = None
         docs = list(self.cache._for_adf('archives').iteritems())
+        docs = sorted(docs, key=compose(creation, operator.itemgetter(1)))
 
-        if capsule <= 0:
-            print "Invalid capsule"
-        elif index <= 0 or len(docs) < index:
-            print "No such archive."
+        _error = "Cannot upload: "
+
+        if index <= 0 or len(docs) < index:
+            _error += "no such archive."
         else:
-            capsule -= 1
             fname = docs[index-1][0]
             docs = docs[index-1][1]
+            size = docs['archive'].meta.size
+
+            capsules = self.session.capsule_ids()
+            if capsule is not None:
+                capsule = capsules.get(capsule)
+                if not capsule:
+                    _error += "no such capsule"
+                elif capsule.get('remaining', 0) < size:
+                    _error += "archive too big for capsule"
+                    capsule = None
+            elif len(capsules) > 0:
+                for i, c in capsules.iteritems():
+                    if c.get('remaining', 0) > size:
+                        capsule = c
+                if not capsule:
+                    _error += "no capsules with available space found."
+            else:
+                _error += "no capsules found"
+
+        if fname and capsule:
             archive = docs['archive']
             link = docs['links']
             path = self.cache.data_file(link)
@@ -330,7 +376,7 @@ class LaArchiveCommand(LaBaseCommand):
                     saved = None
                     with self.session.upload(capsule, archive, auth) as upload:
                         Upload(self.session, self.nprocs, self.debug).upload(
-                            path, upload['tokens'])
+                            path, upload)
                         saved = self.cache.save_upload(fname, docs, upload)
 
                     if saved and not self.batch:
@@ -365,17 +411,19 @@ class LaArchiveCommand(LaBaseCommand):
                     getLogger().debug("exception while uploading",
                                       exc_info=True)
                     print "error: " + str(e)
+        else:
+            print _error
 
-    @command(directory=str, title=str)
-    def do_create(self, directory=None, title="my archive"):
+    @command(directory=unicode, title=unicode, description=unicode)
+    def do_create(self, directory=None, title="my archive", description=None):
         """
-        Usage: create <directory> <title>
+        Usage: create <directory> <title> [<description>]
         """
         try:
             if not os.path.isdir(directory):
                 print "The specified folder does not exist."
                 return
-            self.cache.prepare(title, directory)
+            self.cache.prepare(title, directory, description=description)
             print "archive prepared"
 
         except Exception as e:
@@ -391,8 +439,8 @@ class LaArchiveCommand(LaBaseCommand):
         archives = self.cache._for_adf('archives')
 
         if len(archives):
-            for n, archive in enumerate(archives.iteritems()):
-                archive = archive[1]
+            bydate = sorted(archives.itervalues(), key=creation)
+            for n, archive in enumerate(bydate):
                 status = "LOCAL"
                 cert = ""
                 if 'signature' in archive:
@@ -404,7 +452,7 @@ class LaArchiveCommand(LaBaseCommand):
                         cert = archive['links'].upload
                 title = archive['archive'].title
                 size = archive_size(archive['archive'])
-                print "{:03d} {:>6} {:>20} {:>10} {:>10}".format(
+                print u"{:03d} {:>6} {:>20} {:>10} {:>10}".format(
                     n+1, size, title, status, cert)
                 if self.debug > 2:
                     for doc in archive.itervalues():
@@ -420,6 +468,7 @@ class LaArchiveCommand(LaBaseCommand):
         Usage: status <index>
         """
         docs = list(self.cache._for_adf('archives').iteritems())
+        docs = sorted(docs, key=compose(creation, operator.itemgetter(1)))
         if index <= 0 or len(docs) < index:
             print "No such archive"
         else:
@@ -452,7 +501,7 @@ class LaArchiveCommand(LaBaseCommand):
                                       exc_info=True)
                     print "error: " + str(e)
 
-    @command(path=str, dest=str, cert_id=str, cert_file=str)
+    @command(path=unicode, dest=unicode, cert_id=str, cert_file=unicode)
     def do_extract(self, path=None, dest=None, cert_id=None, cert_file=None):
         """
         Usage: extract <path> [<dest>] [<cert_id>] [<cert_file>]
@@ -552,6 +601,7 @@ class LaArchiveCommand(LaBaseCommand):
         Usage: delete <index> [<srm>]
         """
         docs = list(self.cache._for_adf('archives').iteritems())
+        docs = sorted(docs, key=compose(creation, operator.itemgetter(1)))
 
         fname = path = None
         if index <= 0 or len(docs) < index:

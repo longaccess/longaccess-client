@@ -1,6 +1,7 @@
 from urlparse import urljoin
 from lacli.log import getLogger
 from lacli.decorators import cached_property, with_api_response, contains
+from lacli.date import parse_timestamp
 from contextlib import contextmanager
 
 import json
@@ -55,6 +56,7 @@ class Api(object):
 
     @cached_property
     def root(self):
+        getLogger().debug("requesting API root from {}".format(self.url))
         return self._get(self.url)
 
     @cached_property
@@ -81,10 +83,20 @@ class Api(object):
         return self.session.patch(url, headers=headers, data=data)
 
     def _upload_status(self, uri, first=None):
+        def parse(rsp):
+            if rsp:
+                if 'created' in rsp:
+                    rsp['created'] = parse_timestamp(rsp['created'])
+                if 'expires' in rsp:
+                    rsp['expires'] = parse_timestamp(rsp['expires'])
+                if 'archive' in rsp:
+                    rsp['archive'] = urljoin(self.url, rsp['archive'])
+            return rsp
+
         if first:
-            yield first
+            yield parse(first)
         while True:
-            yield self._get(uri)
+            yield parse(self._get(uri))
 
     @contextmanager
     def upload(self, capsule, archive, auth=None):
@@ -97,7 +109,7 @@ class Api(object):
         >>> meta = Meta('zip', 'xor')
         >>> archive = Archive('foo', meta)
         >>> auth = Auth(md5="foo")
-        >>> with api.upload(1, archive, auth) as upload:
+        >>> with api.upload({'resource_uri': 'foo'}, archive, auth) as upload:
         ...     token = next(upload['tokens'])
         ...     uri = upload['uri']
         ...     id = upload['id']
@@ -112,18 +124,11 @@ class Api(object):
             raise ValueError("No such capsule")
         ValueError: No such capsule
         """
-        cs = []
-        if 'capsule' in self.endpoints:
-            url = self.endpoints['capsule']
-            cs = self._get(url).get('objects', [])
-        if capsule >= len(cs):
-            raise ValueError("No such capsule")
-
         req_data = json.dumps(
             {
                 'title': archive.title,
                 'description': archive.description or '',
-                'capsule': cs[capsule]['resource_uri']
+                'capsule': capsule['resource_uri']
             })
         status = self._post(self.endpoints['upload'], data=req_data)
         uri = urljoin(self.url, status['resource_uri'])
@@ -151,7 +156,13 @@ class Api(object):
         getLogger().debug("requesting capsules from {}".format(url))
         for cs in self._get(url)['objects']:
             yield dict([(k, cs.get(k, None))
-                        for k in ['title', 'remaining', 'size']])
+                        for k in ['title', 'remaining', 'size',
+                                  'id', 'resource_uri']])
+
+    @contains(dict)
+    def capsule_ids(self):
+        for capsule in self.capsules():
+            yield (capsule['id'], capsule)
 
     @cached_property
     def account(self):

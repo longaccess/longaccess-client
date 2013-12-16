@@ -83,7 +83,7 @@ def settings(options):
         prefs[options['<command>']] = options.get('<args>')
 
     home = options.get('--home', default_home)
-    if not home or not os.path.isdir(home):
+    if not home or not os.path.isdir(os.path.expanduser(home)):
         if batch:
             sys.exit("{} does not exist!".format(home))
         else:
@@ -131,14 +131,16 @@ class LaCommand(cmd.Cmd):
         options.insert(0, subcmd)
         try:
             subcmd = getattr(self, subcmd)
-            line = subcmd.makecmd(docopt(subcmd.__doc__, options))
-            self.dispatch_one(subcmd, line)
         except AttributeError:
             print "Unrecognized command:", subcmd
             print(__doc__)
+            return
+        try:
+            line = subcmd.makecmd(docopt(subcmd.__doc__, options))
         except DocoptExit as e:
             print e
             return
+        self.dispatch_one(subcmd, line)
 
     def dispatch_one(self, subcmd, line, interactive=False):
         if line:

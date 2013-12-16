@@ -9,9 +9,8 @@ from lacli.cipher import cipher_modes, new_key
 from yaml import SafeLoader
 from yaml import SafeDumper
 from lacli.exceptions import InvalidArchiveError
+from lacli.date import parse_timestamp, today, later, format_timestamp
 from datetime import datetime
-from dateutil.tz import tzutc
-from dateutil.parser import parse as date_parse
 from base64 import b64encode, b64decode
 
 
@@ -123,8 +122,7 @@ class Meta(BaseYAMLObject):
         if created:
             self.created = created
         else:
-            self.created = datetime.utcnow().replace(
-                microsecond=0, tzinfo=tzutc())
+            self.created = today()
 
 
 class Format(BaseYAMLObject):
@@ -250,15 +248,24 @@ class Signature(BaseYAMLObject):
     aid = None
     uri = None
     created = None
+    expires = None
+    creator = None
 
-    def __init__(self, aid, uri, created=None):
+    def __init__(self, aid, uri, created=None, expires=None, creator=None):
         self.aid = aid
         self.uri = uri
         if created:
             self.created = created
         else:
-            self.created = datetime.utcnow().replace(
-                microsecond=0, tzinfo=tzutc()).isoformat()
+            self.created = today()
+
+        if expires:
+            self.expires = expires
+        else:
+            self.expires = later(self.created, years=30)
+
+        if creator:
+            self.creator = creator
 
 
 def add_path_resolver(tag, keys):
@@ -317,7 +324,7 @@ def load_archive(f):
     raise InvalidArchiveError()
 
 
-def make_adf(archive=None, canonical=False, out=None, pretty=False):
+def make_adf(archive=None, out=None, pretty=False):
     """
     >>> meta = Meta('zip', 'aes-256-ctr', created='now')
     >>> archive = Archive('title', meta)
@@ -346,7 +353,8 @@ def make_adf(archive=None, canonical=False, out=None, pretty=False):
     if pretty:
         out.write("--- ".join(map(pyaml.dump, archive)))
         return
-    return yaml.safe_dump_all(archive, out, canonical=canonical)
+    return yaml.safe_dump_all(
+        archive, out, canonical=True, allow_unicode=True)
 
 
 def archive_size(archive):
@@ -372,7 +380,7 @@ class ADFEncoder(json.JSONEncoder):
                           int, float, bool, type(None))):
             return super(ADFEncoder, self).default(o)
         if isinstance(o, datetime):
-            return o.isoformat()
+            return format_timestamp(o)
         if o.yaml_tag == Certificate.yaml_tag:
             return {'key': self._b64(o.key)}
         if o.yaml_tag == Auth.yaml_tag:
@@ -397,7 +405,7 @@ def _as_adf_object(dct):
     if 'download' in dct or 'upload' in dct or 'local' in dct:
         return Links(**dct)
     if 'created' in dct:
-        dct['created'] = date_parse(dct['created'])
+        dct['created'] = parse_timestamp(dct['created'])
         if 'aid' in dct:
             return Signature(**dct)
         else:
@@ -406,8 +414,16 @@ def _as_adf_object(dct):
 
 
 def as_json(docs):
-    return ADFEncoder().encode(docs)
+    return ADFEncoder(ensure_ascii=False).encode(docs)
 
 
 def as_adf(data):
     return json.loads(data, object_hook=_as_adf_object)
+
+
+def creation(docs):
+    created = docs['archive'].meta.created
+    sig = docs.get('signature')
+    if sig and sig.created:
+        created = sig.created
+    return parse_timestamp(created)
