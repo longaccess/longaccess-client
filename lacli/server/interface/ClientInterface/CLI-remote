@@ -23,21 +23,23 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print 'Usage: ' + sys.argv[0] + ' [-h host[:port]] [-u url] [-f[ramed]] function [arg1 [arg2...]]'
   print ''
   print 'Functions:'
-  print '  void PingCLI()'
+  print '  bool PingCLI()'
   print '  bool LoginUser(string username, string Pass, bool Remember)'
   print '  bool Logout()'
   print '   GetCapsules()'
-  print '  Archive UploadFileGUI( filePaths, string capsuleID, string title, string description)'
-  print '   GetIncompleteUploads()'
-  print '  void BeginUpload(string ArchiveID)'
-  print '  void ResumeUpload(string ArchiveID)'
-  print '  TransferStatus QueryArchiveStatus(string ArchiveID)'
-  print '  void PauseUpload(string ArchiveID)'
-  print '  void CancelUpload(string ArchiveID)'
-  print '   getCertificates()'
+  print '  Archive CreateArchive( filePaths)'
+  print '   GetUploads()'
+  print '  void UploadToCapsule(string ArchiveLocalID, string CapsuleID, string title, string description)'
+  print '  void ResumeUpload(string ArchiveLocalID)'
+  print '  TransferStatus QueryArchiveStatus(string ArchiveLocalID)'
+  print '  void PauseUpload(string ArchiveLocalID)'
+  print '  void CancelUpload(string ArchiveLocalID)'
+  print '   GetCertificates()'
   print '  string GetCertificateFolder()'
+  print '  string GetArchivesFolder()'
   print '  void SetCertificateFolder(string path)'
-  print '  string Export(string certificateID, string format)'
+  print '  string ExportCertificate(string ArchiveID, CertExportFormat format)'
+  print '  string GetDefaultExtractionPath()'
   print '  void Decrypt(string archivePath, string key, string destinationPath)'
   print ''
   sys.exit(0)
@@ -114,23 +116,23 @@ elif cmd == 'GetCapsules':
     sys.exit(1)
   pp.pprint(client.GetCapsules())
 
-elif cmd == 'UploadFileGUI':
-  if len(args) != 4:
-    print 'UploadFileGUI requires 4 args'
-    sys.exit(1)
-  pp.pprint(client.UploadFileGUI(eval(args[0]),args[1],args[2],args[3],))
-
-elif cmd == 'GetIncompleteUploads':
-  if len(args) != 0:
-    print 'GetIncompleteUploads requires 0 args'
-    sys.exit(1)
-  pp.pprint(client.GetIncompleteUploads())
-
-elif cmd == 'BeginUpload':
+elif cmd == 'CreateArchive':
   if len(args) != 1:
-    print 'BeginUpload requires 1 args'
+    print 'CreateArchive requires 1 args'
     sys.exit(1)
-  pp.pprint(client.BeginUpload(args[0],))
+  pp.pprint(client.CreateArchive(eval(args[0]),))
+
+elif cmd == 'GetUploads':
+  if len(args) != 0:
+    print 'GetUploads requires 0 args'
+    sys.exit(1)
+  pp.pprint(client.GetUploads())
+
+elif cmd == 'UploadToCapsule':
+  if len(args) != 4:
+    print 'UploadToCapsule requires 4 args'
+    sys.exit(1)
+  pp.pprint(client.UploadToCapsule(args[0],args[1],args[2],args[3],))
 
 elif cmd == 'ResumeUpload':
   if len(args) != 1:
@@ -156,11 +158,11 @@ elif cmd == 'CancelUpload':
     sys.exit(1)
   pp.pprint(client.CancelUpload(args[0],))
 
-elif cmd == 'getCertificates':
+elif cmd == 'GetCertificates':
   if len(args) != 0:
-    print 'getCertificates requires 0 args'
+    print 'GetCertificates requires 0 args'
     sys.exit(1)
-  pp.pprint(client.getCertificates())
+  pp.pprint(client.GetCertificates())
 
 elif cmd == 'GetCertificateFolder':
   if len(args) != 0:
@@ -168,17 +170,29 @@ elif cmd == 'GetCertificateFolder':
     sys.exit(1)
   pp.pprint(client.GetCertificateFolder())
 
+elif cmd == 'GetArchivesFolder':
+  if len(args) != 0:
+    print 'GetArchivesFolder requires 0 args'
+    sys.exit(1)
+  pp.pprint(client.GetArchivesFolder())
+
 elif cmd == 'SetCertificateFolder':
   if len(args) != 1:
     print 'SetCertificateFolder requires 1 args'
     sys.exit(1)
   pp.pprint(client.SetCertificateFolder(args[0],))
 
-elif cmd == 'Export':
+elif cmd == 'ExportCertificate':
   if len(args) != 2:
-    print 'Export requires 2 args'
+    print 'ExportCertificate requires 2 args'
     sys.exit(1)
-  pp.pprint(client.Export(args[0],args[1],))
+  pp.pprint(client.ExportCertificate(args[0],eval(args[1]),))
+
+elif cmd == 'GetDefaultExtractionPath':
+  if len(args) != 0:
+    print 'GetDefaultExtractionPath requires 0 args'
+    sys.exit(1)
+  pp.pprint(client.GetDefaultExtractionPath())
 
 elif cmd == 'Decrypt':
   if len(args) != 3:

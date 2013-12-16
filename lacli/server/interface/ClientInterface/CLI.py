@@ -39,58 +39,61 @@ class Iface(Interface):
   def GetCapsules():
     pass
 
-  def UploadFileGUI(filePaths, capsuleID, title, description):
+  def CreateArchive(filePaths):
     """
     Parameters:
      - filePaths
-     - capsuleID
+    """
+    pass
+
+  def GetUploads():
+    pass
+
+  def UploadToCapsule(ArchiveLocalID, CapsuleID, title, description):
+    """
+    Parameters:
+     - ArchiveLocalID
+     - CapsuleID
      - title
      - description
     """
     pass
 
-  def GetIncompleteUploads():
-    pass
-
-  def BeginUpload(ArchiveID):
+  def ResumeUpload(ArchiveLocalID):
     """
     Parameters:
-     - ArchiveID
+     - ArchiveLocalID
     """
     pass
 
-  def ResumeUpload(ArchiveID):
+  def QueryArchiveStatus(ArchiveLocalID):
     """
     Parameters:
-     - ArchiveID
+     - ArchiveLocalID
     """
     pass
 
-  def QueryArchiveStatus(ArchiveID):
+  def PauseUpload(ArchiveLocalID):
     """
     Parameters:
-     - ArchiveID
+     - ArchiveLocalID
     """
     pass
 
-  def PauseUpload(ArchiveID):
+  def CancelUpload(ArchiveLocalID):
     """
     Parameters:
-     - ArchiveID
+     - ArchiveLocalID
     """
     pass
 
-  def CancelUpload(ArchiveID):
-    """
-    Parameters:
-     - ArchiveID
-    """
-    pass
-
-  def getCertificates():
+  def GetCertificates():
     pass
 
   def GetCertificateFolder():
+    pass
+
+  def GetArchivesFolder():
     pass
 
   def SetCertificateFolder(path):
@@ -100,12 +103,15 @@ class Iface(Interface):
     """
     pass
 
-  def Export(certificateID, format):
+  def ExportCertificate(ArchiveID, format):
     """
     Parameters:
-     - certificateID
+     - ArchiveID
      - format
     """
+    pass
+
+  def GetDefaultExtractionPath():
     pass
 
   def Decrypt(archivePath, key, destinationPath):
@@ -151,7 +157,9 @@ class Client(object):
     result = PingCLI_result()
     result.read(iprot)
     iprot.readMessageEnd()
-    return d.callback(None)
+    if result.success is not None:
+      return d.callback(result.success)
+    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "PingCLI failed: unknown result"))
 
   def LoginUser(self, username, Pass, Remember):
     """
@@ -252,121 +260,123 @@ class Client(object):
       return d.errback(result.error)
     return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "GetCapsules failed: unknown result"))
 
-  def UploadFileGUI(self, filePaths, capsuleID, title, description):
+  def CreateArchive(self, filePaths):
     """
     Parameters:
      - filePaths
-     - capsuleID
-     - title
-     - description
     """
     self._seqid += 1
     d = self._reqs[self._seqid] = defer.Deferred()
-    self.send_UploadFileGUI(filePaths, capsuleID, title, description)
+    self.send_CreateArchive(filePaths)
     return d
 
-  def send_UploadFileGUI(self, filePaths, capsuleID, title, description):
+  def send_CreateArchive(self, filePaths):
     oprot = self._oprot_factory.getProtocol(self._transport)
-    oprot.writeMessageBegin('UploadFileGUI', TMessageType.CALL, self._seqid)
-    args = UploadFileGUI_args()
+    oprot.writeMessageBegin('CreateArchive', TMessageType.CALL, self._seqid)
+    args = CreateArchive_args()
     args.filePaths = filePaths
-    args.capsuleID = capsuleID
-    args.title = title
-    args.description = description
     args.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def recv_UploadFileGUI(self, iprot, mtype, rseqid):
+  def recv_CreateArchive(self, iprot, mtype, rseqid):
     d = self._reqs.pop(rseqid)
     if mtype == TMessageType.EXCEPTION:
       x = TApplicationException()
       x.read(iprot)
       iprot.readMessageEnd()
       return d.errback(x)
-    result = UploadFileGUI_result()
+    result = CreateArchive_result()
     result.read(iprot)
     iprot.readMessageEnd()
     if result.success is not None:
       return d.callback(result.success)
     if result.error is not None:
       return d.errback(result.error)
-    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "UploadFileGUI failed: unknown result"))
+    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "CreateArchive failed: unknown result"))
 
-  def GetIncompleteUploads(self):
+  def GetUploads(self):
     self._seqid += 1
     d = self._reqs[self._seqid] = defer.Deferred()
-    self.send_GetIncompleteUploads()
+    self.send_GetUploads()
     return d
 
-  def send_GetIncompleteUploads(self):
+  def send_GetUploads(self):
     oprot = self._oprot_factory.getProtocol(self._transport)
-    oprot.writeMessageBegin('GetIncompleteUploads', TMessageType.CALL, self._seqid)
-    args = GetIncompleteUploads_args()
+    oprot.writeMessageBegin('GetUploads', TMessageType.CALL, self._seqid)
+    args = GetUploads_args()
     args.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def recv_GetIncompleteUploads(self, iprot, mtype, rseqid):
+  def recv_GetUploads(self, iprot, mtype, rseqid):
     d = self._reqs.pop(rseqid)
     if mtype == TMessageType.EXCEPTION:
       x = TApplicationException()
       x.read(iprot)
       iprot.readMessageEnd()
       return d.errback(x)
-    result = GetIncompleteUploads_result()
+    result = GetUploads_result()
     result.read(iprot)
     iprot.readMessageEnd()
     if result.success is not None:
       return d.callback(result.success)
-    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "GetIncompleteUploads failed: unknown result"))
+    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "GetUploads failed: unknown result"))
 
-  def BeginUpload(self, ArchiveID):
+  def UploadToCapsule(self, ArchiveLocalID, CapsuleID, title, description):
     """
     Parameters:
-     - ArchiveID
+     - ArchiveLocalID
+     - CapsuleID
+     - title
+     - description
     """
     self._seqid += 1
     d = self._reqs[self._seqid] = defer.Deferred()
-    self.send_BeginUpload(ArchiveID)
+    self.send_UploadToCapsule(ArchiveLocalID, CapsuleID, title, description)
     return d
 
-  def send_BeginUpload(self, ArchiveID):
+  def send_UploadToCapsule(self, ArchiveLocalID, CapsuleID, title, description):
     oprot = self._oprot_factory.getProtocol(self._transport)
-    oprot.writeMessageBegin('BeginUpload', TMessageType.CALL, self._seqid)
-    args = BeginUpload_args()
-    args.ArchiveID = ArchiveID
+    oprot.writeMessageBegin('UploadToCapsule', TMessageType.CALL, self._seqid)
+    args = UploadToCapsule_args()
+    args.ArchiveLocalID = ArchiveLocalID
+    args.CapsuleID = CapsuleID
+    args.title = title
+    args.description = description
     args.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def recv_BeginUpload(self, iprot, mtype, rseqid):
+  def recv_UploadToCapsule(self, iprot, mtype, rseqid):
     d = self._reqs.pop(rseqid)
     if mtype == TMessageType.EXCEPTION:
       x = TApplicationException()
       x.read(iprot)
       iprot.readMessageEnd()
       return d.errback(x)
-    result = BeginUpload_result()
+    result = UploadToCapsule_result()
     result.read(iprot)
     iprot.readMessageEnd()
+    if result.error is not None:
+      return d.errback(result.error)
     return d.callback(None)
 
-  def ResumeUpload(self, ArchiveID):
+  def ResumeUpload(self, ArchiveLocalID):
     """
     Parameters:
-     - ArchiveID
+     - ArchiveLocalID
     """
     self._seqid += 1
     d = self._reqs[self._seqid] = defer.Deferred()
-    self.send_ResumeUpload(ArchiveID)
+    self.send_ResumeUpload(ArchiveLocalID)
     return d
 
-  def send_ResumeUpload(self, ArchiveID):
+  def send_ResumeUpload(self, ArchiveLocalID):
     oprot = self._oprot_factory.getProtocol(self._transport)
     oprot.writeMessageBegin('ResumeUpload', TMessageType.CALL, self._seqid)
     args = ResumeUpload_args()
-    args.ArchiveID = ArchiveID
+    args.ArchiveLocalID = ArchiveLocalID
     args.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -381,23 +391,25 @@ class Client(object):
     result = ResumeUpload_result()
     result.read(iprot)
     iprot.readMessageEnd()
+    if result.error is not None:
+      return d.errback(result.error)
     return d.callback(None)
 
-  def QueryArchiveStatus(self, ArchiveID):
+  def QueryArchiveStatus(self, ArchiveLocalID):
     """
     Parameters:
-     - ArchiveID
+     - ArchiveLocalID
     """
     self._seqid += 1
     d = self._reqs[self._seqid] = defer.Deferred()
-    self.send_QueryArchiveStatus(ArchiveID)
+    self.send_QueryArchiveStatus(ArchiveLocalID)
     return d
 
-  def send_QueryArchiveStatus(self, ArchiveID):
+  def send_QueryArchiveStatus(self, ArchiveLocalID):
     oprot = self._oprot_factory.getProtocol(self._transport)
     oprot.writeMessageBegin('QueryArchiveStatus', TMessageType.CALL, self._seqid)
     args = QueryArchiveStatus_args()
-    args.ArchiveID = ArchiveID
+    args.ArchiveLocalID = ArchiveLocalID
     args.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -414,23 +426,25 @@ class Client(object):
     iprot.readMessageEnd()
     if result.success is not None:
       return d.callback(result.success)
+    if result.error is not None:
+      return d.errback(result.error)
     return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "QueryArchiveStatus failed: unknown result"))
 
-  def PauseUpload(self, ArchiveID):
+  def PauseUpload(self, ArchiveLocalID):
     """
     Parameters:
-     - ArchiveID
+     - ArchiveLocalID
     """
     self._seqid += 1
     d = self._reqs[self._seqid] = defer.Deferred()
-    self.send_PauseUpload(ArchiveID)
+    self.send_PauseUpload(ArchiveLocalID)
     return d
 
-  def send_PauseUpload(self, ArchiveID):
+  def send_PauseUpload(self, ArchiveLocalID):
     oprot = self._oprot_factory.getProtocol(self._transport)
     oprot.writeMessageBegin('PauseUpload', TMessageType.CALL, self._seqid)
     args = PauseUpload_args()
-    args.ArchiveID = ArchiveID
+    args.ArchiveLocalID = ArchiveLocalID
     args.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -445,23 +459,25 @@ class Client(object):
     result = PauseUpload_result()
     result.read(iprot)
     iprot.readMessageEnd()
+    if result.error is not None:
+      return d.errback(result.error)
     return d.callback(None)
 
-  def CancelUpload(self, ArchiveID):
+  def CancelUpload(self, ArchiveLocalID):
     """
     Parameters:
-     - ArchiveID
+     - ArchiveLocalID
     """
     self._seqid += 1
     d = self._reqs[self._seqid] = defer.Deferred()
-    self.send_CancelUpload(ArchiveID)
+    self.send_CancelUpload(ArchiveLocalID)
     return d
 
-  def send_CancelUpload(self, ArchiveID):
+  def send_CancelUpload(self, ArchiveLocalID):
     oprot = self._oprot_factory.getProtocol(self._transport)
     oprot.writeMessageBegin('CancelUpload', TMessageType.CALL, self._seqid)
     args = CancelUpload_args()
-    args.ArchiveID = ArchiveID
+    args.ArchiveLocalID = ArchiveLocalID
     args.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -476,35 +492,37 @@ class Client(object):
     result = CancelUpload_result()
     result.read(iprot)
     iprot.readMessageEnd()
+    if result.error is not None:
+      return d.errback(result.error)
     return d.callback(None)
 
-  def getCertificates(self):
+  def GetCertificates(self):
     self._seqid += 1
     d = self._reqs[self._seqid] = defer.Deferred()
-    self.send_getCertificates()
+    self.send_GetCertificates()
     return d
 
-  def send_getCertificates(self):
+  def send_GetCertificates(self):
     oprot = self._oprot_factory.getProtocol(self._transport)
-    oprot.writeMessageBegin('getCertificates', TMessageType.CALL, self._seqid)
-    args = getCertificates_args()
+    oprot.writeMessageBegin('GetCertificates', TMessageType.CALL, self._seqid)
+    args = GetCertificates_args()
     args.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def recv_getCertificates(self, iprot, mtype, rseqid):
+  def recv_GetCertificates(self, iprot, mtype, rseqid):
     d = self._reqs.pop(rseqid)
     if mtype == TMessageType.EXCEPTION:
       x = TApplicationException()
       x.read(iprot)
       iprot.readMessageEnd()
       return d.errback(x)
-    result = getCertificates_result()
+    result = GetCertificates_result()
     result.read(iprot)
     iprot.readMessageEnd()
     if result.success is not None:
       return d.callback(result.success)
-    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "getCertificates failed: unknown result"))
+    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "GetCertificates failed: unknown result"))
 
   def GetCertificateFolder(self):
     self._seqid += 1
@@ -533,6 +551,34 @@ class Client(object):
     if result.success is not None:
       return d.callback(result.success)
     return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "GetCertificateFolder failed: unknown result"))
+
+  def GetArchivesFolder(self):
+    self._seqid += 1
+    d = self._reqs[self._seqid] = defer.Deferred()
+    self.send_GetArchivesFolder()
+    return d
+
+  def send_GetArchivesFolder(self):
+    oprot = self._oprot_factory.getProtocol(self._transport)
+    oprot.writeMessageBegin('GetArchivesFolder', TMessageType.CALL, self._seqid)
+    args = GetArchivesFolder_args()
+    args.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def recv_GetArchivesFolder(self, iprot, mtype, rseqid):
+    d = self._reqs.pop(rseqid)
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      return d.errback(x)
+    result = GetArchivesFolder_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.success is not None:
+      return d.callback(result.success)
+    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "GetArchivesFolder failed: unknown result"))
 
   def SetCertificateFolder(self, path):
     """
@@ -565,40 +611,70 @@ class Client(object):
     iprot.readMessageEnd()
     return d.callback(None)
 
-  def Export(self, certificateID, format):
+  def ExportCertificate(self, ArchiveID, format):
     """
     Parameters:
-     - certificateID
+     - ArchiveID
      - format
     """
     self._seqid += 1
     d = self._reqs[self._seqid] = defer.Deferred()
-    self.send_Export(certificateID, format)
+    self.send_ExportCertificate(ArchiveID, format)
     return d
 
-  def send_Export(self, certificateID, format):
+  def send_ExportCertificate(self, ArchiveID, format):
     oprot = self._oprot_factory.getProtocol(self._transport)
-    oprot.writeMessageBegin('Export', TMessageType.CALL, self._seqid)
-    args = Export_args()
-    args.certificateID = certificateID
+    oprot.writeMessageBegin('ExportCertificate', TMessageType.CALL, self._seqid)
+    args = ExportCertificate_args()
+    args.ArchiveID = ArchiveID
     args.format = format
     args.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def recv_Export(self, iprot, mtype, rseqid):
+  def recv_ExportCertificate(self, iprot, mtype, rseqid):
     d = self._reqs.pop(rseqid)
     if mtype == TMessageType.EXCEPTION:
       x = TApplicationException()
       x.read(iprot)
       iprot.readMessageEnd()
       return d.errback(x)
-    result = Export_result()
+    result = ExportCertificate_result()
     result.read(iprot)
     iprot.readMessageEnd()
     if result.success is not None:
       return d.callback(result.success)
-    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "Export failed: unknown result"))
+    if result.error is not None:
+      return d.errback(result.error)
+    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "ExportCertificate failed: unknown result"))
+
+  def GetDefaultExtractionPath(self):
+    self._seqid += 1
+    d = self._reqs[self._seqid] = defer.Deferred()
+    self.send_GetDefaultExtractionPath()
+    return d
+
+  def send_GetDefaultExtractionPath(self):
+    oprot = self._oprot_factory.getProtocol(self._transport)
+    oprot.writeMessageBegin('GetDefaultExtractionPath', TMessageType.CALL, self._seqid)
+    args = GetDefaultExtractionPath_args()
+    args.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def recv_GetDefaultExtractionPath(self, iprot, mtype, rseqid):
+    d = self._reqs.pop(rseqid)
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      return d.errback(x)
+    result = GetDefaultExtractionPath_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.success is not None:
+      return d.callback(result.success)
+    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "GetDefaultExtractionPath failed: unknown result"))
 
   def Decrypt(self, archivePath, key, destinationPath):
     """
@@ -633,6 +709,8 @@ class Client(object):
     result = Decrypt_result()
     result.read(iprot)
     iprot.readMessageEnd()
+    if result.error is not None:
+      return d.errback(result.error)
     return d.callback(None)
 
 
@@ -646,17 +724,19 @@ class Processor(TProcessor):
     self._processMap["LoginUser"] = Processor.process_LoginUser
     self._processMap["Logout"] = Processor.process_Logout
     self._processMap["GetCapsules"] = Processor.process_GetCapsules
-    self._processMap["UploadFileGUI"] = Processor.process_UploadFileGUI
-    self._processMap["GetIncompleteUploads"] = Processor.process_GetIncompleteUploads
-    self._processMap["BeginUpload"] = Processor.process_BeginUpload
+    self._processMap["CreateArchive"] = Processor.process_CreateArchive
+    self._processMap["GetUploads"] = Processor.process_GetUploads
+    self._processMap["UploadToCapsule"] = Processor.process_UploadToCapsule
     self._processMap["ResumeUpload"] = Processor.process_ResumeUpload
     self._processMap["QueryArchiveStatus"] = Processor.process_QueryArchiveStatus
     self._processMap["PauseUpload"] = Processor.process_PauseUpload
     self._processMap["CancelUpload"] = Processor.process_CancelUpload
-    self._processMap["getCertificates"] = Processor.process_getCertificates
+    self._processMap["GetCertificates"] = Processor.process_GetCertificates
     self._processMap["GetCertificateFolder"] = Processor.process_GetCertificateFolder
+    self._processMap["GetArchivesFolder"] = Processor.process_GetArchivesFolder
     self._processMap["SetCertificateFolder"] = Processor.process_SetCertificateFolder
-    self._processMap["Export"] = Processor.process_Export
+    self._processMap["ExportCertificate"] = Processor.process_ExportCertificate
+    self._processMap["GetDefaultExtractionPath"] = Processor.process_GetDefaultExtractionPath
     self._processMap["Decrypt"] = Processor.process_Decrypt
 
   def process(self, iprot, oprot):
@@ -770,61 +850,72 @@ class Processor(TProcessor):
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def process_UploadFileGUI(self, seqid, iprot, oprot):
-    args = UploadFileGUI_args()
+  def process_CreateArchive(self, seqid, iprot, oprot):
+    args = CreateArchive_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = UploadFileGUI_result()
-    d = defer.maybeDeferred(self._handler.UploadFileGUI, args.filePaths, args.capsuleID, args.title, args.description)
-    d.addCallback(self.write_results_success_UploadFileGUI, result, seqid, oprot)
-    d.addErrback(self.write_results_exception_UploadFileGUI, result, seqid, oprot)
+    result = CreateArchive_result()
+    d = defer.maybeDeferred(self._handler.CreateArchive, args.filePaths)
+    d.addCallback(self.write_results_success_CreateArchive, result, seqid, oprot)
+    d.addErrback(self.write_results_exception_CreateArchive, result, seqid, oprot)
     return d
 
-  def write_results_success_UploadFileGUI(self, success, result, seqid, oprot):
+  def write_results_success_CreateArchive(self, success, result, seqid, oprot):
     result.success = success
-    oprot.writeMessageBegin("UploadFileGUI", TMessageType.REPLY, seqid)
+    oprot.writeMessageBegin("CreateArchive", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def write_results_exception_UploadFileGUI(self, error, result, seqid, oprot):
+  def write_results_exception_CreateArchive(self, error, result, seqid, oprot):
     try:
       error.raiseException()
     except InvalidOperation, error:
       result.error = error
-    oprot.writeMessageBegin("UploadFileGUI", TMessageType.REPLY, seqid)
+    oprot.writeMessageBegin("CreateArchive", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def process_GetIncompleteUploads(self, seqid, iprot, oprot):
-    args = GetIncompleteUploads_args()
+  def process_GetUploads(self, seqid, iprot, oprot):
+    args = GetUploads_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = GetIncompleteUploads_result()
-    d = defer.maybeDeferred(self._handler.GetIncompleteUploads, )
-    d.addCallback(self.write_results_success_GetIncompleteUploads, result, seqid, oprot)
+    result = GetUploads_result()
+    d = defer.maybeDeferred(self._handler.GetUploads, )
+    d.addCallback(self.write_results_success_GetUploads, result, seqid, oprot)
     return d
 
-  def write_results_success_GetIncompleteUploads(self, success, result, seqid, oprot):
+  def write_results_success_GetUploads(self, success, result, seqid, oprot):
     result.success = success
-    oprot.writeMessageBegin("GetIncompleteUploads", TMessageType.REPLY, seqid)
+    oprot.writeMessageBegin("GetUploads", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def process_BeginUpload(self, seqid, iprot, oprot):
-    args = BeginUpload_args()
+  def process_UploadToCapsule(self, seqid, iprot, oprot):
+    args = UploadToCapsule_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = BeginUpload_result()
-    d = defer.maybeDeferred(self._handler.BeginUpload, args.ArchiveID)
-    d.addCallback(self.write_results_success_BeginUpload, result, seqid, oprot)
+    result = UploadToCapsule_result()
+    d = defer.maybeDeferred(self._handler.UploadToCapsule, args.ArchiveLocalID, args.CapsuleID, args.title, args.description)
+    d.addCallback(self.write_results_success_UploadToCapsule, result, seqid, oprot)
+    d.addErrback(self.write_results_exception_UploadToCapsule, result, seqid, oprot)
     return d
 
-  def write_results_success_BeginUpload(self, success, result, seqid, oprot):
+  def write_results_success_UploadToCapsule(self, success, result, seqid, oprot):
     result.success = success
-    oprot.writeMessageBegin("BeginUpload", TMessageType.REPLY, seqid)
+    oprot.writeMessageBegin("UploadToCapsule", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def write_results_exception_UploadToCapsule(self, error, result, seqid, oprot):
+    try:
+      error.raiseException()
+    except InvalidOperation, error:
+      result.error = error
+    oprot.writeMessageBegin("UploadToCapsule", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -834,12 +925,23 @@ class Processor(TProcessor):
     args.read(iprot)
     iprot.readMessageEnd()
     result = ResumeUpload_result()
-    d = defer.maybeDeferred(self._handler.ResumeUpload, args.ArchiveID)
+    d = defer.maybeDeferred(self._handler.ResumeUpload, args.ArchiveLocalID)
     d.addCallback(self.write_results_success_ResumeUpload, result, seqid, oprot)
+    d.addErrback(self.write_results_exception_ResumeUpload, result, seqid, oprot)
     return d
 
   def write_results_success_ResumeUpload(self, success, result, seqid, oprot):
     result.success = success
+    oprot.writeMessageBegin("ResumeUpload", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def write_results_exception_ResumeUpload(self, error, result, seqid, oprot):
+    try:
+      error.raiseException()
+    except InvalidOperation, error:
+      result.error = error
     oprot.writeMessageBegin("ResumeUpload", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
@@ -850,12 +952,23 @@ class Processor(TProcessor):
     args.read(iprot)
     iprot.readMessageEnd()
     result = QueryArchiveStatus_result()
-    d = defer.maybeDeferred(self._handler.QueryArchiveStatus, args.ArchiveID)
+    d = defer.maybeDeferred(self._handler.QueryArchiveStatus, args.ArchiveLocalID)
     d.addCallback(self.write_results_success_QueryArchiveStatus, result, seqid, oprot)
+    d.addErrback(self.write_results_exception_QueryArchiveStatus, result, seqid, oprot)
     return d
 
   def write_results_success_QueryArchiveStatus(self, success, result, seqid, oprot):
     result.success = success
+    oprot.writeMessageBegin("QueryArchiveStatus", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def write_results_exception_QueryArchiveStatus(self, error, result, seqid, oprot):
+    try:
+      error.raiseException()
+    except InvalidOperation, error:
+      result.error = error
     oprot.writeMessageBegin("QueryArchiveStatus", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
@@ -866,12 +979,23 @@ class Processor(TProcessor):
     args.read(iprot)
     iprot.readMessageEnd()
     result = PauseUpload_result()
-    d = defer.maybeDeferred(self._handler.PauseUpload, args.ArchiveID)
+    d = defer.maybeDeferred(self._handler.PauseUpload, args.ArchiveLocalID)
     d.addCallback(self.write_results_success_PauseUpload, result, seqid, oprot)
+    d.addErrback(self.write_results_exception_PauseUpload, result, seqid, oprot)
     return d
 
   def write_results_success_PauseUpload(self, success, result, seqid, oprot):
     result.success = success
+    oprot.writeMessageBegin("PauseUpload", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def write_results_exception_PauseUpload(self, error, result, seqid, oprot):
+    try:
+      error.raiseException()
+    except InvalidOperation, error:
+      result.error = error
     oprot.writeMessageBegin("PauseUpload", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
@@ -882,8 +1006,9 @@ class Processor(TProcessor):
     args.read(iprot)
     iprot.readMessageEnd()
     result = CancelUpload_result()
-    d = defer.maybeDeferred(self._handler.CancelUpload, args.ArchiveID)
+    d = defer.maybeDeferred(self._handler.CancelUpload, args.ArchiveLocalID)
     d.addCallback(self.write_results_success_CancelUpload, result, seqid, oprot)
+    d.addErrback(self.write_results_exception_CancelUpload, result, seqid, oprot)
     return d
 
   def write_results_success_CancelUpload(self, success, result, seqid, oprot):
@@ -893,18 +1018,28 @@ class Processor(TProcessor):
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def process_getCertificates(self, seqid, iprot, oprot):
-    args = getCertificates_args()
+  def write_results_exception_CancelUpload(self, error, result, seqid, oprot):
+    try:
+      error.raiseException()
+    except InvalidOperation, error:
+      result.error = error
+    oprot.writeMessageBegin("CancelUpload", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_GetCertificates(self, seqid, iprot, oprot):
+    args = GetCertificates_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = getCertificates_result()
-    d = defer.maybeDeferred(self._handler.getCertificates, )
-    d.addCallback(self.write_results_success_getCertificates, result, seqid, oprot)
+    result = GetCertificates_result()
+    d = defer.maybeDeferred(self._handler.GetCertificates, )
+    d.addCallback(self.write_results_success_GetCertificates, result, seqid, oprot)
     return d
 
-  def write_results_success_getCertificates(self, success, result, seqid, oprot):
+  def write_results_success_GetCertificates(self, success, result, seqid, oprot):
     result.success = success
-    oprot.writeMessageBegin("getCertificates", TMessageType.REPLY, seqid)
+    oprot.writeMessageBegin("GetCertificates", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -925,6 +1060,22 @@ class Processor(TProcessor):
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
+  def process_GetArchivesFolder(self, seqid, iprot, oprot):
+    args = GetArchivesFolder_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = GetArchivesFolder_result()
+    d = defer.maybeDeferred(self._handler.GetArchivesFolder, )
+    d.addCallback(self.write_results_success_GetArchivesFolder, result, seqid, oprot)
+    return d
+
+  def write_results_success_GetArchivesFolder(self, success, result, seqid, oprot):
+    result.success = success
+    oprot.writeMessageBegin("GetArchivesFolder", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
   def process_SetCertificateFolder(self, seqid, iprot, oprot):
     args = SetCertificateFolder_args()
     args.read(iprot)
@@ -941,18 +1092,45 @@ class Processor(TProcessor):
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def process_Export(self, seqid, iprot, oprot):
-    args = Export_args()
+  def process_ExportCertificate(self, seqid, iprot, oprot):
+    args = ExportCertificate_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = Export_result()
-    d = defer.maybeDeferred(self._handler.Export, args.certificateID, args.format)
-    d.addCallback(self.write_results_success_Export, result, seqid, oprot)
+    result = ExportCertificate_result()
+    d = defer.maybeDeferred(self._handler.ExportCertificate, args.ArchiveID, args.format)
+    d.addCallback(self.write_results_success_ExportCertificate, result, seqid, oprot)
+    d.addErrback(self.write_results_exception_ExportCertificate, result, seqid, oprot)
     return d
 
-  def write_results_success_Export(self, success, result, seqid, oprot):
+  def write_results_success_ExportCertificate(self, success, result, seqid, oprot):
     result.success = success
-    oprot.writeMessageBegin("Export", TMessageType.REPLY, seqid)
+    oprot.writeMessageBegin("ExportCertificate", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def write_results_exception_ExportCertificate(self, error, result, seqid, oprot):
+    try:
+      error.raiseException()
+    except InvalidOperation, error:
+      result.error = error
+    oprot.writeMessageBegin("ExportCertificate", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_GetDefaultExtractionPath(self, seqid, iprot, oprot):
+    args = GetDefaultExtractionPath_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = GetDefaultExtractionPath_result()
+    d = defer.maybeDeferred(self._handler.GetDefaultExtractionPath, )
+    d.addCallback(self.write_results_success_GetDefaultExtractionPath, result, seqid, oprot)
+    return d
+
+  def write_results_success_GetDefaultExtractionPath(self, success, result, seqid, oprot):
+    result.success = success
+    oprot.writeMessageBegin("GetDefaultExtractionPath", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -964,10 +1142,21 @@ class Processor(TProcessor):
     result = Decrypt_result()
     d = defer.maybeDeferred(self._handler.Decrypt, args.archivePath, args.key, args.destinationPath)
     d.addCallback(self.write_results_success_Decrypt, result, seqid, oprot)
+    d.addErrback(self.write_results_exception_Decrypt, result, seqid, oprot)
     return d
 
   def write_results_success_Decrypt(self, success, result, seqid, oprot):
     result.success = success
+    oprot.writeMessageBegin("Decrypt", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def write_results_exception_Decrypt(self, error, result, seqid, oprot):
+    try:
+      error.raiseException()
+    except InvalidOperation, error:
+      result.error = error
     oprot.writeMessageBegin("Decrypt", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
@@ -1019,9 +1208,17 @@ class PingCLI_args(object):
     return not (self == other)
 
 class PingCLI_result(object):
+  """
+  Attributes:
+   - success
+  """
 
   thrift_spec = (
+    (0, TType.BOOL, 'success', None, None, ), # 0
   )
+
+  def __init__(self, success=None,):
+    self.success = success
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -1032,6 +1229,11 @@ class PingCLI_result(object):
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
         break
+      if fid == 0:
+        if ftype == TType.BOOL:
+          self.success = iprot.readBool();
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -1042,6 +1244,10 @@ class PingCLI_result(object):
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('PingCLI_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.BOOL, 0)
+      oprot.writeBool(self.success)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -1400,11 +1606,11 @@ class GetCapsules_result(object):
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype3, _size0) = iprot.readListBegin()
-          for _i4 in xrange(_size0):
-            _elem5 = Capsule()
-            _elem5.read(iprot)
-            self.success.append(_elem5)
+          (_etype10, _size7) = iprot.readListBegin()
+          for _i11 in xrange(_size7):
+            _elem12 = Capsule()
+            _elem12.read(iprot)
+            self.success.append(_elem12)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1427,8 +1633,8 @@ class GetCapsules_result(object):
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter6 in self.success:
-        iter6.write(oprot)
+      for iter13 in self.success:
+        iter13.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.error is not None:
@@ -1453,28 +1659,19 @@ class GetCapsules_result(object):
   def __ne__(self, other):
     return not (self == other)
 
-class UploadFileGUI_args(object):
+class CreateArchive_args(object):
   """
   Attributes:
    - filePaths
-   - capsuleID
-   - title
-   - description
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.LIST, 'filePaths', (TType.STRING,None), None, ), # 1
-    (2, TType.STRING, 'capsuleID', None, None, ), # 2
-    (3, TType.STRING, 'title', None, None, ), # 3
-    (4, TType.STRING, 'description', None, None, ), # 4
   )
 
-  def __init__(self, filePaths=None, capsuleID=None, title=None, description=None,):
+  def __init__(self, filePaths=None,):
     self.filePaths = filePaths
-    self.capsuleID = capsuleID
-    self.title = title
-    self.description = description
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -1488,26 +1685,11 @@ class UploadFileGUI_args(object):
       if fid == 1:
         if ftype == TType.LIST:
           self.filePaths = []
-          (_etype10, _size7) = iprot.readListBegin()
-          for _i11 in xrange(_size7):
-            _elem12 = iprot.readString();
-            self.filePaths.append(_elem12)
+          (_etype17, _size14) = iprot.readListBegin()
+          for _i18 in xrange(_size14):
+            _elem19 = iprot.readString();
+            self.filePaths.append(_elem19)
           iprot.readListEnd()
-        else:
-          iprot.skip(ftype)
-      elif fid == 2:
-        if ftype == TType.STRING:
-          self.capsuleID = iprot.readString();
-        else:
-          iprot.skip(ftype)
-      elif fid == 3:
-        if ftype == TType.STRING:
-          self.title = iprot.readString();
-        else:
-          iprot.skip(ftype)
-      elif fid == 4:
-        if ftype == TType.STRING:
-          self.description = iprot.readString();
         else:
           iprot.skip(ftype)
       else:
@@ -1519,25 +1701,13 @@ class UploadFileGUI_args(object):
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('UploadFileGUI_args')
+    oprot.writeStructBegin('CreateArchive_args')
     if self.filePaths is not None:
       oprot.writeFieldBegin('filePaths', TType.LIST, 1)
       oprot.writeListBegin(TType.STRING, len(self.filePaths))
-      for iter13 in self.filePaths:
-        oprot.writeString(iter13)
+      for iter20 in self.filePaths:
+        oprot.writeString(iter20)
       oprot.writeListEnd()
-      oprot.writeFieldEnd()
-    if self.capsuleID is not None:
-      oprot.writeFieldBegin('capsuleID', TType.STRING, 2)
-      oprot.writeString(self.capsuleID)
-      oprot.writeFieldEnd()
-    if self.title is not None:
-      oprot.writeFieldBegin('title', TType.STRING, 3)
-      oprot.writeString(self.title)
-      oprot.writeFieldEnd()
-    if self.description is not None:
-      oprot.writeFieldBegin('description', TType.STRING, 4)
-      oprot.writeString(self.description)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -1557,7 +1727,7 @@ class UploadFileGUI_args(object):
   def __ne__(self, other):
     return not (self == other)
 
-class UploadFileGUI_result(object):
+class CreateArchive_result(object):
   """
   Attributes:
    - success
@@ -1603,7 +1773,7 @@ class UploadFileGUI_result(object):
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('UploadFileGUI_result')
+    oprot.writeStructBegin('CreateArchive_result')
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.STRUCT, 0)
       self.success.write(oprot)
@@ -1630,7 +1800,7 @@ class UploadFileGUI_result(object):
   def __ne__(self, other):
     return not (self == other)
 
-class GetIncompleteUploads_args(object):
+class GetUploads_args(object):
 
   thrift_spec = (
   )
@@ -1653,7 +1823,7 @@ class GetIncompleteUploads_args(object):
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('GetIncompleteUploads_args')
+    oprot.writeStructBegin('GetUploads_args')
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -1672,7 +1842,7 @@ class GetIncompleteUploads_args(object):
   def __ne__(self, other):
     return not (self == other)
 
-class GetIncompleteUploads_result(object):
+class GetUploads_result(object):
   """
   Attributes:
    - success
@@ -1697,11 +1867,11 @@ class GetIncompleteUploads_result(object):
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype17, _size14) = iprot.readListBegin()
-          for _i18 in xrange(_size14):
-            _elem19 = Archive()
-            _elem19.read(iprot)
-            self.success.append(_elem19)
+          (_etype24, _size21) = iprot.readListBegin()
+          for _i25 in xrange(_size21):
+            _elem26 = Archive()
+            _elem26.read(iprot)
+            self.success.append(_elem26)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1714,12 +1884,12 @@ class GetIncompleteUploads_result(object):
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('GetIncompleteUploads_result')
+    oprot.writeStructBegin('GetUploads_result')
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter20 in self.success:
-        iter20.write(oprot)
+      for iter27 in self.success:
+        iter27.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -1740,19 +1910,28 @@ class GetIncompleteUploads_result(object):
   def __ne__(self, other):
     return not (self == other)
 
-class BeginUpload_args(object):
+class UploadToCapsule_args(object):
   """
   Attributes:
-   - ArchiveID
+   - ArchiveLocalID
+   - CapsuleID
+   - title
+   - description
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRING, 'ArchiveID', None, None, ), # 1
+    (1, TType.STRING, 'ArchiveLocalID', None, None, ), # 1
+    (2, TType.STRING, 'CapsuleID', None, None, ), # 2
+    (3, TType.STRING, 'title', None, None, ), # 3
+    (4, TType.STRING, 'description', None, None, ), # 4
   )
 
-  def __init__(self, ArchiveID=None,):
-    self.ArchiveID = ArchiveID
+  def __init__(self, ArchiveLocalID=None, CapsuleID=None, title=None, description=None,):
+    self.ArchiveLocalID = ArchiveLocalID
+    self.CapsuleID = CapsuleID
+    self.title = title
+    self.description = description
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -1765,7 +1944,22 @@ class BeginUpload_args(object):
         break
       if fid == 1:
         if ftype == TType.STRING:
-          self.ArchiveID = iprot.readString();
+          self.ArchiveLocalID = iprot.readString();
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRING:
+          self.CapsuleID = iprot.readString();
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRING:
+          self.title = iprot.readString();
+        else:
+          iprot.skip(ftype)
+      elif fid == 4:
+        if ftype == TType.STRING:
+          self.description = iprot.readString();
         else:
           iprot.skip(ftype)
       else:
@@ -1777,10 +1971,22 @@ class BeginUpload_args(object):
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('BeginUpload_args')
-    if self.ArchiveID is not None:
-      oprot.writeFieldBegin('ArchiveID', TType.STRING, 1)
-      oprot.writeString(self.ArchiveID)
+    oprot.writeStructBegin('UploadToCapsule_args')
+    if self.ArchiveLocalID is not None:
+      oprot.writeFieldBegin('ArchiveLocalID', TType.STRING, 1)
+      oprot.writeString(self.ArchiveLocalID)
+      oprot.writeFieldEnd()
+    if self.CapsuleID is not None:
+      oprot.writeFieldBegin('CapsuleID', TType.STRING, 2)
+      oprot.writeString(self.CapsuleID)
+      oprot.writeFieldEnd()
+    if self.title is not None:
+      oprot.writeFieldBegin('title', TType.STRING, 3)
+      oprot.writeString(self.title)
+      oprot.writeFieldEnd()
+    if self.description is not None:
+      oprot.writeFieldBegin('description', TType.STRING, 4)
+      oprot.writeString(self.description)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -1800,10 +2006,19 @@ class BeginUpload_args(object):
   def __ne__(self, other):
     return not (self == other)
 
-class BeginUpload_result(object):
+class UploadToCapsule_result(object):
+  """
+  Attributes:
+   - error
+  """
 
   thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'error', (InvalidOperation, InvalidOperation.thrift_spec), None, ), # 1
   )
+
+  def __init__(self, error=None,):
+    self.error = error
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -1814,6 +2029,12 @@ class BeginUpload_result(object):
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
         break
+      if fid == 1:
+        if ftype == TType.STRUCT:
+          self.error = InvalidOperation()
+          self.error.read(iprot)
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -1823,7 +2044,11 @@ class BeginUpload_result(object):
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('BeginUpload_result')
+    oprot.writeStructBegin('UploadToCapsule_result')
+    if self.error is not None:
+      oprot.writeFieldBegin('error', TType.STRUCT, 1)
+      self.error.write(oprot)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -1845,16 +2070,16 @@ class BeginUpload_result(object):
 class ResumeUpload_args(object):
   """
   Attributes:
-   - ArchiveID
+   - ArchiveLocalID
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRING, 'ArchiveID', None, None, ), # 1
+    (1, TType.STRING, 'ArchiveLocalID', None, None, ), # 1
   )
 
-  def __init__(self, ArchiveID=None,):
-    self.ArchiveID = ArchiveID
+  def __init__(self, ArchiveLocalID=None,):
+    self.ArchiveLocalID = ArchiveLocalID
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -1867,7 +2092,7 @@ class ResumeUpload_args(object):
         break
       if fid == 1:
         if ftype == TType.STRING:
-          self.ArchiveID = iprot.readString();
+          self.ArchiveLocalID = iprot.readString();
         else:
           iprot.skip(ftype)
       else:
@@ -1880,9 +2105,9 @@ class ResumeUpload_args(object):
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('ResumeUpload_args')
-    if self.ArchiveID is not None:
-      oprot.writeFieldBegin('ArchiveID', TType.STRING, 1)
-      oprot.writeString(self.ArchiveID)
+    if self.ArchiveLocalID is not None:
+      oprot.writeFieldBegin('ArchiveLocalID', TType.STRING, 1)
+      oprot.writeString(self.ArchiveLocalID)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -1903,9 +2128,18 @@ class ResumeUpload_args(object):
     return not (self == other)
 
 class ResumeUpload_result(object):
+  """
+  Attributes:
+   - error
+  """
 
   thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'error', (InvalidOperation, InvalidOperation.thrift_spec), None, ), # 1
   )
+
+  def __init__(self, error=None,):
+    self.error = error
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -1916,6 +2150,12 @@ class ResumeUpload_result(object):
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
         break
+      if fid == 1:
+        if ftype == TType.STRUCT:
+          self.error = InvalidOperation()
+          self.error.read(iprot)
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -1926,6 +2166,10 @@ class ResumeUpload_result(object):
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('ResumeUpload_result')
+    if self.error is not None:
+      oprot.writeFieldBegin('error', TType.STRUCT, 1)
+      self.error.write(oprot)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -1947,16 +2191,16 @@ class ResumeUpload_result(object):
 class QueryArchiveStatus_args(object):
   """
   Attributes:
-   - ArchiveID
+   - ArchiveLocalID
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRING, 'ArchiveID', None, None, ), # 1
+    (1, TType.STRING, 'ArchiveLocalID', None, None, ), # 1
   )
 
-  def __init__(self, ArchiveID=None,):
-    self.ArchiveID = ArchiveID
+  def __init__(self, ArchiveLocalID=None,):
+    self.ArchiveLocalID = ArchiveLocalID
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -1969,7 +2213,7 @@ class QueryArchiveStatus_args(object):
         break
       if fid == 1:
         if ftype == TType.STRING:
-          self.ArchiveID = iprot.readString();
+          self.ArchiveLocalID = iprot.readString();
         else:
           iprot.skip(ftype)
       else:
@@ -1982,9 +2226,9 @@ class QueryArchiveStatus_args(object):
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('QueryArchiveStatus_args')
-    if self.ArchiveID is not None:
-      oprot.writeFieldBegin('ArchiveID', TType.STRING, 1)
-      oprot.writeString(self.ArchiveID)
+    if self.ArchiveLocalID is not None:
+      oprot.writeFieldBegin('ArchiveLocalID', TType.STRING, 1)
+      oprot.writeString(self.ArchiveLocalID)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -2008,14 +2252,17 @@ class QueryArchiveStatus_result(object):
   """
   Attributes:
    - success
+   - error
   """
 
   thrift_spec = (
     (0, TType.STRUCT, 'success', (TransferStatus, TransferStatus.thrift_spec), None, ), # 0
+    (1, TType.STRUCT, 'error', (InvalidOperation, InvalidOperation.thrift_spec), None, ), # 1
   )
 
-  def __init__(self, success=None,):
+  def __init__(self, success=None, error=None,):
     self.success = success
+    self.error = error
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -2032,6 +2279,12 @@ class QueryArchiveStatus_result(object):
           self.success.read(iprot)
         else:
           iprot.skip(ftype)
+      elif fid == 1:
+        if ftype == TType.STRUCT:
+          self.error = InvalidOperation()
+          self.error.read(iprot)
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -2045,6 +2298,10 @@ class QueryArchiveStatus_result(object):
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.STRUCT, 0)
       self.success.write(oprot)
+      oprot.writeFieldEnd()
+    if self.error is not None:
+      oprot.writeFieldBegin('error', TType.STRUCT, 1)
+      self.error.write(oprot)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -2067,16 +2324,16 @@ class QueryArchiveStatus_result(object):
 class PauseUpload_args(object):
   """
   Attributes:
-   - ArchiveID
+   - ArchiveLocalID
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRING, 'ArchiveID', None, None, ), # 1
+    (1, TType.STRING, 'ArchiveLocalID', None, None, ), # 1
   )
 
-  def __init__(self, ArchiveID=None,):
-    self.ArchiveID = ArchiveID
+  def __init__(self, ArchiveLocalID=None,):
+    self.ArchiveLocalID = ArchiveLocalID
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -2089,7 +2346,7 @@ class PauseUpload_args(object):
         break
       if fid == 1:
         if ftype == TType.STRING:
-          self.ArchiveID = iprot.readString();
+          self.ArchiveLocalID = iprot.readString();
         else:
           iprot.skip(ftype)
       else:
@@ -2102,9 +2359,9 @@ class PauseUpload_args(object):
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('PauseUpload_args')
-    if self.ArchiveID is not None:
-      oprot.writeFieldBegin('ArchiveID', TType.STRING, 1)
-      oprot.writeString(self.ArchiveID)
+    if self.ArchiveLocalID is not None:
+      oprot.writeFieldBegin('ArchiveLocalID', TType.STRING, 1)
+      oprot.writeString(self.ArchiveLocalID)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -2125,9 +2382,18 @@ class PauseUpload_args(object):
     return not (self == other)
 
 class PauseUpload_result(object):
+  """
+  Attributes:
+   - error
+  """
 
   thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'error', (InvalidOperation, InvalidOperation.thrift_spec), None, ), # 1
   )
+
+  def __init__(self, error=None,):
+    self.error = error
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -2138,6 +2404,12 @@ class PauseUpload_result(object):
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
         break
+      if fid == 1:
+        if ftype == TType.STRUCT:
+          self.error = InvalidOperation()
+          self.error.read(iprot)
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -2148,6 +2420,10 @@ class PauseUpload_result(object):
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('PauseUpload_result')
+    if self.error is not None:
+      oprot.writeFieldBegin('error', TType.STRUCT, 1)
+      self.error.write(oprot)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -2169,16 +2445,16 @@ class PauseUpload_result(object):
 class CancelUpload_args(object):
   """
   Attributes:
-   - ArchiveID
+   - ArchiveLocalID
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRING, 'ArchiveID', None, None, ), # 1
+    (1, TType.STRING, 'ArchiveLocalID', None, None, ), # 1
   )
 
-  def __init__(self, ArchiveID=None,):
-    self.ArchiveID = ArchiveID
+  def __init__(self, ArchiveLocalID=None,):
+    self.ArchiveLocalID = ArchiveLocalID
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -2191,7 +2467,7 @@ class CancelUpload_args(object):
         break
       if fid == 1:
         if ftype == TType.STRING:
-          self.ArchiveID = iprot.readString();
+          self.ArchiveLocalID = iprot.readString();
         else:
           iprot.skip(ftype)
       else:
@@ -2204,9 +2480,9 @@ class CancelUpload_args(object):
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('CancelUpload_args')
-    if self.ArchiveID is not None:
-      oprot.writeFieldBegin('ArchiveID', TType.STRING, 1)
-      oprot.writeString(self.ArchiveID)
+    if self.ArchiveLocalID is not None:
+      oprot.writeFieldBegin('ArchiveLocalID', TType.STRING, 1)
+      oprot.writeString(self.ArchiveLocalID)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -2227,9 +2503,18 @@ class CancelUpload_args(object):
     return not (self == other)
 
 class CancelUpload_result(object):
+  """
+  Attributes:
+   - error
+  """
 
   thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'error', (InvalidOperation, InvalidOperation.thrift_spec), None, ), # 1
   )
+
+  def __init__(self, error=None,):
+    self.error = error
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -2240,6 +2525,12 @@ class CancelUpload_result(object):
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
         break
+      if fid == 1:
+        if ftype == TType.STRUCT:
+          self.error = InvalidOperation()
+          self.error.read(iprot)
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -2250,6 +2541,10 @@ class CancelUpload_result(object):
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('CancelUpload_result')
+    if self.error is not None:
+      oprot.writeFieldBegin('error', TType.STRUCT, 1)
+      self.error.write(oprot)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -2268,7 +2563,7 @@ class CancelUpload_result(object):
   def __ne__(self, other):
     return not (self == other)
 
-class getCertificates_args(object):
+class GetCertificates_args(object):
 
   thrift_spec = (
   )
@@ -2291,7 +2586,7 @@ class getCertificates_args(object):
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('getCertificates_args')
+    oprot.writeStructBegin('GetCertificates_args')
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -2310,7 +2605,7 @@ class getCertificates_args(object):
   def __ne__(self, other):
     return not (self == other)
 
-class getCertificates_result(object):
+class GetCertificates_result(object):
   """
   Attributes:
    - success
@@ -2335,11 +2630,11 @@ class getCertificates_result(object):
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype24, _size21) = iprot.readListBegin()
-          for _i25 in xrange(_size21):
-            _elem26 = Certificate()
-            _elem26.read(iprot)
-            self.success.append(_elem26)
+          (_etype31, _size28) = iprot.readListBegin()
+          for _i32 in xrange(_size28):
+            _elem33 = Certificate()
+            _elem33.read(iprot)
+            self.success.append(_elem33)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -2352,12 +2647,12 @@ class getCertificates_result(object):
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('getCertificates_result')
+    oprot.writeStructBegin('GetCertificates_result')
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter27 in self.success:
-        iter27.write(oprot)
+      for iter34 in self.success:
+        iter34.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -2457,6 +2752,107 @@ class GetCertificateFolder_result(object):
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('GetCertificateFolder_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.STRING, 0)
+      oprot.writeString(self.success)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class GetArchivesFolder_args(object):
+
+  thrift_spec = (
+  )
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('GetArchivesFolder_args')
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class GetArchivesFolder_result(object):
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.STRING, 'success', None, None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.STRING:
+          self.success = iprot.readString();
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('GetArchivesFolder_result')
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.STRING, 0)
       oprot.writeString(self.success)
@@ -2581,21 +2977,21 @@ class SetCertificateFolder_result(object):
   def __ne__(self, other):
     return not (self == other)
 
-class Export_args(object):
+class ExportCertificate_args(object):
   """
   Attributes:
-   - certificateID
+   - ArchiveID
    - format
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRING, 'certificateID', None, None, ), # 1
-    (2, TType.STRING, 'format', None, None, ), # 2
+    (1, TType.STRING, 'ArchiveID', None, None, ), # 1
+    (2, TType.I32, 'format', None, None, ), # 2
   )
 
-  def __init__(self, certificateID=None, format=None,):
-    self.certificateID = certificateID
+  def __init__(self, ArchiveID=None, format=None,):
+    self.ArchiveID = ArchiveID
     self.format = format
 
   def read(self, iprot):
@@ -2609,12 +3005,12 @@ class Export_args(object):
         break
       if fid == 1:
         if ftype == TType.STRING:
-          self.certificateID = iprot.readString();
+          self.ArchiveID = iprot.readString();
         else:
           iprot.skip(ftype)
       elif fid == 2:
-        if ftype == TType.STRING:
-          self.format = iprot.readString();
+        if ftype == TType.I32:
+          self.format = iprot.readI32();
         else:
           iprot.skip(ftype)
       else:
@@ -2626,14 +3022,14 @@ class Export_args(object):
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('Export_args')
-    if self.certificateID is not None:
-      oprot.writeFieldBegin('certificateID', TType.STRING, 1)
-      oprot.writeString(self.certificateID)
+    oprot.writeStructBegin('ExportCertificate_args')
+    if self.ArchiveID is not None:
+      oprot.writeFieldBegin('ArchiveID', TType.STRING, 1)
+      oprot.writeString(self.ArchiveID)
       oprot.writeFieldEnd()
     if self.format is not None:
-      oprot.writeFieldBegin('format', TType.STRING, 2)
-      oprot.writeString(self.format)
+      oprot.writeFieldBegin('format', TType.I32, 2)
+      oprot.writeI32(self.format)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -2653,7 +3049,121 @@ class Export_args(object):
   def __ne__(self, other):
     return not (self == other)
 
-class Export_result(object):
+class ExportCertificate_result(object):
+  """
+  Attributes:
+   - success
+   - error
+  """
+
+  thrift_spec = (
+    (0, TType.STRING, 'success', None, None, ), # 0
+    (1, TType.STRUCT, 'error', (InvalidOperation, InvalidOperation.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, success=None, error=None,):
+    self.success = success
+    self.error = error
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.STRING:
+          self.success = iprot.readString();
+        else:
+          iprot.skip(ftype)
+      elif fid == 1:
+        if ftype == TType.STRUCT:
+          self.error = InvalidOperation()
+          self.error.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('ExportCertificate_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.STRING, 0)
+      oprot.writeString(self.success)
+      oprot.writeFieldEnd()
+    if self.error is not None:
+      oprot.writeFieldBegin('error', TType.STRUCT, 1)
+      self.error.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class GetDefaultExtractionPath_args(object):
+
+  thrift_spec = (
+  )
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('GetDefaultExtractionPath_args')
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class GetDefaultExtractionPath_result(object):
   """
   Attributes:
    - success
@@ -2689,7 +3199,7 @@ class Export_result(object):
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('Export_result')
+    oprot.writeStructBegin('GetDefaultExtractionPath_result')
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.STRING, 0)
       oprot.writeString(self.success)
@@ -2797,9 +3307,18 @@ class Decrypt_args(object):
     return not (self == other)
 
 class Decrypt_result(object):
+  """
+  Attributes:
+   - error
+  """
 
   thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'error', (InvalidOperation, InvalidOperation.thrift_spec), None, ), # 1
   )
+
+  def __init__(self, error=None,):
+    self.error = error
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -2810,6 +3329,12 @@ class Decrypt_result(object):
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
         break
+      if fid == 1:
+        if ftype == TType.STRUCT:
+          self.error = InvalidOperation()
+          self.error.read(iprot)
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -2820,6 +3345,10 @@ class Decrypt_result(object):
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('Decrypt_result')
+    if self.error is not None:
+      oprot.writeFieldBegin('error', TType.STRUCT, 1)
+      self.error.write(oprot)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
