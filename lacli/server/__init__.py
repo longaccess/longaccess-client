@@ -42,3 +42,4 @@ class LaServerCommand(LaBaseCommand):
 
     def PingCLI(self):
         msg('pingCLI()')
+        return True
