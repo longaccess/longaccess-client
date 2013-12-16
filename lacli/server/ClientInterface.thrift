@@ -6,7 +6,8 @@ enum ErrorType {
   Network = 2,
   Authentication = 3,
   Validation = 4,
-  Other = 5
+  Other = 5,
+  NotImplemented = 6
 }
 exception InvalidOperation {
   1: ErrorType what,

@@ -23,6 +23,7 @@ class ErrorType(object):
   Authentication = 3
   Validation = 4
   Other = 5
+  NotImplemented = 6
 
   _VALUES_TO_NAMES = {
     0: "NoError",
@@ -31,6 +32,7 @@ class ErrorType(object):
     3: "Authentication",
     4: "Validation",
     5: "Other",
+    6: "NotImplemented",
   }
 
   _NAMES_TO_VALUES = {
@@ -40,6 +42,7 @@ class ErrorType(object):
     "Authentication": 3,
     "Validation": 4,
     "Other": 5,
+    "NotImplemented": 6,
   }
 
 class ArchiveStatus(object):
