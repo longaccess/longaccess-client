@@ -27,6 +27,13 @@ struct TransferStatus {
   3: i32 RemainingMB,
   4: double Progress
 }
+struct ArchiveInfo {
+  1: string Title,
+  2: string Description,
+  3: i32 SizeInMb,
+  4: DateInfo CreatedDate,
+  5: string Md5HexDigits,
+}
 struct Capsule {
   1: string Created,
   2: string ID,
@@ -34,24 +41,21 @@ struct Capsule {
   4: string Title,
   5: string User,
   6: DateInfo ExpirationDate,
-  7: list<Certificate> CapsuleContents
+  7: i32 TotalSizeInMb,
+  8: i32 AvailableSizeInMb,
+  9: list<ArchiveInfo> CapsuleContents
+}
+enum ArchiveStatus {
+  Completed = 0,
+  InProgress = 1,
+  Paused=2,
+  Stopped= 3,
+  Failed = 4, 
 }
 struct Archive {
   1: string LocalID,  
   2: ArchiveStatus Status, 
   3: ArchiveInfo Info
-}
-enum ArchiveStatus {
-  Completed = 0,
-  InProgress = 1,
-  Failed = 2, 
-}
-struct ArchiveInfo {
-  1: string Title,
-  2: Description,
-  3: i32 SizeInMb,
-  4: DateInfo CreatedDate,
-  5: string Md5HexDigits,
 }
 struct Signature {
   1: string ArchiveID,
@@ -62,7 +66,7 @@ struct Signature {
 struct Certificate {
   1: string HexDigitsKey,
   2: Signature Sig,
-  3: ArchiveInfo LocalArchive   
+  3: ArchiveInfo RelatedArchive   
 }
 enum CertExportFormat
 {
@@ -73,7 +77,7 @@ enum CertExportFormat
 //===========Methods===================
 service CLI {
 
-  void PingCLI(),
+  bool PingCLI(),
 
   bool LoginUser(1: string username, 2: string Pass,3: bool Remember) throws (1:InvalidOperation error),
   
@@ -81,20 +85,20 @@ service CLI {
   
   list<Capsule> GetCapsules() throws (1:InvalidOperation error),
   
-  Archive UploadFileGUI(1: list<string> filePaths, 2: string title, 3: string description) 
+  Archive CreateArchive(1: list<string> filePaths) 
   throws (1: InvalidOperation error),
 
   list<Archive> GetUploads(),
   
-  void BeginUpload(1: string ArchiveLocalID, 2: CapsuleID),
+  void UploadToCapsule(1: string ArchiveLocalID, 2: string CapsuleID, 3: string title, 4: string description) throws (1:InvalidOperation error),
 
-  void ResumeUpload(1: string ArchiveLocalID),
+  void ResumeUpload(1: string ArchiveLocalID) throws (1:InvalidOperation error),
   
-  TransferStatus QueryArchiveStatus(1: string ArchiveLocalID),
+  TransferStatus QueryArchiveStatus(1: string ArchiveLocalID) throws (1:InvalidOperation error),
   
-  void PauseUpload(1: string ArchiveLocalID),    
+  void PauseUpload(1: string ArchiveLocalID) throws (1:InvalidOperation error),    
   
-  void CancelUpload(1: string ArchiveLocalID),  
+  void CancelUpload(1: string ArchiveLocalID) throws (1:InvalidOperation error),  
   
   list<Certificate> getCertificates(),
   
@@ -104,12 +108,10 @@ service CLI {
   
   void SetCertificateFolder(1: string path),
   
-  binary ExportCertificate(1: string ArchiveID,2: CertExportFormat format), 
+  binary ExportCertificate(1: string ArchiveID,2: CertExportFormat format) throws (1:InvalidOperation error), 
 
   string GetDefaultExtractionPath(),
  
-  void Decrypt(1: string archivePath,2: string key,3: string destinationPath)  
+  void Decrypt(1: string archivePath,2: string key,3: string destinationPath) throws (1:InvalidOperation error)  
   
 }
-
-
