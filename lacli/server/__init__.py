@@ -1,15 +1,13 @@
 from lacli.decorators import command
 from lacli.log import getLogger
 from lacli.command import LaBaseCommand
-from lacli.exceptions import ApiAuthException
 from lacli.decorators import contains
 from twisted.python.log import startLogging, msg, err
 from twisted.internet import reactor
 from thrift.transport import TTwisted
 from thrift.protocol import TBinaryProtocol
-from lacli.server.interface.ClientInterface import CLI
-from lacli.server.interface.ClientInterface.ttypes import InvalidOperation
-from lacli.server.interface.ClientInterface.ttypes import ErrorType, Capsule, DateInfo
+from lacli.server.interface.ClientInterface import CLI, ttypes
+from lacli.server.error import tthrow
 import sys
 
 
@@ -66,129 +64,131 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         msg('pingCLI()')
         return True
 
+    @tthrow
     def LoginUser(self, username, password, remember):
-        try:
-            email = self.logincmd.login_batch(username, password)
-            msg("LoginUser() => {}".format(email))
-            if remember:
-                self.registry.save_session(
-                    self.logincmd.username, self.logincmd.password)
-        except Exception as e:
-            err(e)
-            raise InvalidOperation(
-                ErrorType.Authentication, "Authentication failed")
+        email = self.logincmd.login_batch(username, password)
+        msg("LoginUser() => {}".format(email))
+        if remember:
+            self.registry.save_session(
+                self.logincmd.username, self.logincmd.password)
         return True
 
+    @tthrow
     def Logout(self):
-        raise InvalidOperation(ErrorType.NotImplemented, "not implemented")
+        raise NotImplementedError("not implemented")
 
     @contains(list)
     def capsules(self):
         cs = self.session.capsules()
         for c in cs:
-            yield Capsule('', str(c['id']), c['resource_uri'],
-                          c['title'], '', DateInfo(),
-                          c['size'], c['remaining'], [])
+            yield ttypes.Capsule(
+                '', str(c['id']), c['resource_uri'],
+                c['title'], '', ttypes.DateInfo(),
+                c['size'], c['remaining'], [])
 
+    @tthrow
     def GetCapsules(self):
         """
-          list<Capsule> GetCapsules() throws (1:InvalidOperation error),
         """
-        try:
-            return self.capsules()
-        except ApiAuthException as e:
-            raise InvalidOperation(ErrorType.Authentication, e.msg)
+        return self.capsules()
 
+    @tthrow
     def CreateArchive(self, paths):
         """
           Archive CreateArchive(1: list<string> filePaths)
         """
-        raise InvalidOperation(ErrorType.NotImplemented, "not implemented")
+        raise NotImplementedError("not implemented")
 
+    @tthrow
     def GetUploads(self):
         """
           list<Archive> GetUploads(),
         """
-        raise InvalidOperation(ErrorType.NotImplemented, "not implemented")
+        raise NotImplementedError("not implemented")
 
+    @tthrow
     def UploadToCapsule(self, archive, capsule, title, description):
         """
           void UploadToCapsule(1: string ArchiveLocalID, 2: string CapsuleID,
             3: string title, 4: string description)
-            throws (1:InvalidOperation error),
         """
-        raise InvalidOperation(ErrorType.NotImplemented, "not implemented")
+        raise NotImplementedError("not implemented")
 
+    @tthrow
     def ResumeUpload(self, archive):
         """
           void ResumeUpload(1: string ArchiveLocalID)
-            throws (1:InvalidOperation error),
         """
-        raise InvalidOperation(ErrorType.NotImplemented, "not implemented")
+        raise NotImplementedError("not implemented")
 
+    @tthrow
     def QueryArchiveStatus(self, archive):
         """
           TransferStatus QueryArchiveStatus(1: string ArchiveLocalID)
-            throws (1:InvalidOperation error),
         """
-        raise InvalidOperation(ErrorType.NotImplemented, "not implemented")
+        raise NotImplementedError("not implemented")
 
+    @tthrow
     def PauseUpload(self, archive):
         """
           void PauseUpload(1: string ArchiveLocalID)
-            throws (1:InvalidOperation error),
         """
-        raise InvalidOperation(ErrorType.NotImplemented, "not implemented")
+        raise NotImplementedError("not implemented")
 
+    @tthrow
     def CancelUpload(self, archive):
         """
           void CancelUpload(1: string ArchiveLocalID)
-            throws (1:InvalidOperation error),
         """
-        raise InvalidOperation(ErrorType.NotImplemented, "not implemented")
+        raise NotImplementedError("not implemented")
 
+    @tthrow
     def GetCertificates(self):
         """
           list<Certificate> getCertificates(),
         """
-        raise InvalidOperation(ErrorType.NotImplemented, "not implemented")
+        raise NotImplementedError("not implemented")
 
+    @tthrow
     def GetCertificateFolder(self):
         """
           string GetCertificateFolder(),
         """
-        raise InvalidOperation(ErrorType.NotImplemented, "not implemented")
+        raise NotImplementedError("not implemented")
 
+    @tthrow
     def GetArchivesFolder(self):
         """
           string GetarchivesFolder(),
         """
-        raise InvalidOperation(ErrorType.NotImplemented, "not implemented")
+        raise NotImplementedError("not implemented")
 
+    @tthrow
     def SetCertificateFolder(self, path):
         """
           void SetCertificateFolder(1: string path),
         """
-        raise InvalidOperation(ErrorType.NotImplemented, "not implemented")
+        raise NotImplementedError("not implemented")
 
+    @tthrow
     def ExportCertificate(self, archive, fmt):
         """
           binary ExportCertificate(1: string ArchiveID,
             2: CertExportFormat format)
-            throws (1:InvalidOperation error),
         """
-        raise InvalidOperation(ErrorType.NotImplemented, "not implemented")
+        raise NotImplementedError("not implemented")
 
+    @tthrow
     def GetDefaultExtractionPath(self):
         """
           string GetDefaultExtractionPath(),
         """
-        raise InvalidOperation(ErrorType.NotImplemented, "not implemented")
+        raise NotImplementedError("not implemented")
 
+    @tthrow
     def Decrypt(self, path, key, dest):
         """
           void Decrypt(1: string archivePath,2: string key,
             3: string destinationPath)
-            throws (1:InvalidOperation error)
         """
-        raise InvalidOperation(ErrorType.NotImplemented, "not implemented")
+        raise NotImplementedError("not implemented")
