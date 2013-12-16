@@ -91,17 +91,32 @@ def command(**types):
 
 
 class login(object):
-    def __init__(self, f):
+    def __init__(self, f, obj=None):
         self.f = f
+        self.obj = obj
+        update_wrapper(self, self.f)
 
     def __get__(self, obj, cls):
-        prefs = obj.registry.session.prefs
+        return wraps(self.f)(login(self.f, obj))
 
-        @wraps(self.f)
-        def wrap(*args, **kwargs):
-            if not prefs.get('pass'):
-                obj.registry.cmd.do_login(
-                    prefs.get('user') or '')
-            if obj.registry.prefs['api'].get('user'):
-                self.f(obj, *args, **kwargs)
-        return wrap
+    def __call__(self, *args, **kwargs):
+        if len(args) > 0:
+            if self.obj is None:
+                self.obj = args[0]
+                args = args[1:]
+            elif self.obj == args[0]:
+                args = args[1:]
+
+        prefs = {'user': None, 'pass': None}
+        if self.obj.registry.session:
+            prefs = self.obj.registry.session.prefs
+
+        if not self.obj.session or self.obj.registry.cmd.login.email is None:
+            if self.obj.batch:
+                self.obj.registry.cmd.login.login_batch(
+                    prefs.get('user'), prefs.get('pass'))
+            else:
+                cmdline = [prefs[a] for a in ['user', 'pass']
+                           if prefs.get(a)]
+                self.obj.registry.cmd.do_login(" ".join(cmdline))
+        return self.f(self.obj, *args, **kwargs)

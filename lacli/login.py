@@ -12,6 +12,7 @@ class LaLoginCommand(LaBaseCommand):
     Usage: lacli login [<username> <password>]
     """
     prompt = 'lacli:login> '
+    email = None
 
     def makecmd(self, options):
         cmd = ["login"]
@@ -53,8 +54,8 @@ class LaLoginCommand(LaBaseCommand):
             password = getpass("Password: ")
 
         try:
-            email = self.login_batch(username, password)
-            print "authentication succesfull as", email
+            self.login_batch(username, password)
+            print "authentication succesfull as", self.email
         except:
             print "authentication failed"
             return
@@ -70,7 +71,7 @@ class LaLoginCommand(LaBaseCommand):
         self.password = password
         self.session = self.registry.new_session()
         try:
-            return self.session.account['email']
+            self.email = self.session.account['email']
         except Exception as e:
             self.username = self.password = None
             getLogger().debug("auth failure", exc_info=True)
@@ -81,6 +82,10 @@ class LaLoginCommand(LaBaseCommand):
         """
         Usage: logout
         """
+        self.logout_batch()
+
+    def logout_batch(self):
         self.username = None
         self.password = None
+        self.email = None
         self.registry.session = None

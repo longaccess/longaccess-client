@@ -1,7 +1,7 @@
 from lacli.decorators import command
 from lacli.log import getLogger
 from lacli.command import LaBaseCommand
-from lacli.decorators import contains
+from lacli.decorators import contains, login
 from twisted.python.log import startLogging, msg, err
 from twisted.internet import reactor
 from thrift.transport import TTwisted
@@ -66,16 +66,17 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
 
     @tthrow
     def LoginUser(self, username, password, remember):
-        email = self.logincmd.login_batch(username, password)
-        msg("LoginUser() => {}".format(email))
+        self.logincmd.login_batch(username, password)
         if remember:
+            msg('Saving credentials for <'+self.logincmd.email+'>')
             self.registry.save_session(
                 self.logincmd.username, self.logincmd.password)
         return True
 
     @tthrow
     def Logout(self):
-        raise NotImplementedError("not implemented")
+        self.logincmd.logout_batch()
+        return True
 
     @contains(list)
     def capsules(self):
@@ -87,6 +88,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
                 c['size'], c['remaining'], [])
 
     @tthrow
+    @login
     def GetCapsules(self):
         """
         """
@@ -107,6 +109,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         raise NotImplementedError("not implemented")
 
     @tthrow
+    @login
     def UploadToCapsule(self, archive, capsule, title, description):
         """
           void UploadToCapsule(1: string ArchiveLocalID, 2: string CapsuleID,
@@ -136,6 +139,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         raise NotImplementedError("not implemented")
 
     @tthrow
+    @login
     def CancelUpload(self, archive):
         """
           void CancelUpload(1: string ArchiveLocalID)
