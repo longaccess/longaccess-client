@@ -100,11 +100,11 @@ service CLI {
   
   void CancelUpload(1: string ArchiveLocalID) throws (1:InvalidOperation error),  
   
-  list<Certificate> getCertificates(),
+  list<Certificate> GetCertificates(),
   
   string GetCertificateFolder(),
 
-  string GetarchivesFolder(),
+  string GetArchivesFolder(),
   
   void SetCertificateFolder(1: string path),
   
