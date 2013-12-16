@@ -1,19 +1,56 @@
 from lacli.decorators import command
+from lacli.log import getLogger
 from lacli.command import LaBaseCommand
+from lacli.exceptions import ApiAuthException
+from lacli.decorators import contains
 from twisted.python.log import startLogging, msg, err
 from twisted.internet import reactor
 from thrift.transport import TTwisted
 from thrift.protocol import TBinaryProtocol
 from lacli.server.interface.ClientInterface import CLI
 from lacli.server.interface.ClientInterface.ttypes import InvalidOperation
-from lacli.server.interface.ClientInterface.ttypes import ErrorType
+from lacli.server.interface.ClientInterface.ttypes import ErrorType, Capsule, DateInfo
 import sys
 
 
-class LaServerProcessor(CLI.Processor):
+class LaServerCommand(LaBaseCommand, CLI.Processor):
+    """Run a RPC server
+
+    Usage: lacli server [--no-detach] [--port <port>]
+
+    Options:
+        --no-detach              don't detach from terminal
+        --port <port>            port to listen on [default: 9090]
+    """
+    prompt = 'lacli:server> '
 
     def __init__(self, *args, **kwargs):
+        super(LaServerCommand, self).__init__(*args, **kwargs)
+        self.logincmd = self.registry.cmd.login
         CLI.Processor.__init__(self, self)
+
+    def makecmd(self, options):
+        cmd = ["run"]
+        if options['--port']:
+            cmd.append(options['--port'])
+        return " ".join(cmd)
+
+    def get_server(self):
+        factory = TBinaryProtocol.TBinaryProtocolFactory()
+        return TTwisted.ThriftServerFactory(
+            processor=self, iprot_factory=factory)
+
+    @command(port=int)
+    def do_run(self, port=9090):
+        """
+        Usage: run [<port>]
+        """
+        reactor.listenTCP(port, self.get_server())
+        startLogging(sys.stderr)
+        msg('Running reactor')
+        self.batch = True
+        reactor.run()
+        self.batch = False
 
     def process(self, iprot, oprot):
         d = CLI.Processor.process(self, iprot, oprot)
@@ -22,6 +59,7 @@ class LaServerProcessor(CLI.Processor):
 
     def logUnhandledError(self, error):
         err(error)
+        getLogger().debug("unhandled error: ", exc_info=True)
         return error
 
     def PingCLI(self):
@@ -29,17 +67,37 @@ class LaServerProcessor(CLI.Processor):
         return True
 
     def LoginUser(self, username, password, remember):
-        msg('LoginUser({}, {}, {})'.format(username, password, remember))
-        raise InvalidOperation(ErrorType.NotImplemented, "not implemented")
+        try:
+            email = self.logincmd.login_batch(username, password)
+            msg("LoginUser() => {}".format(email))
+            if remember:
+                self.registry.save_session(
+                    self.logincmd.username, self.logincmd.password)
+        except Exception as e:
+            err(e)
+            raise InvalidOperation(
+                ErrorType.Authentication, "Authentication failed")
+        return True
 
     def Logout(self):
         raise InvalidOperation(ErrorType.NotImplemented, "not implemented")
+
+    @contains(list)
+    def capsules(self):
+        cs = self.session.capsules()
+        for c in cs:
+            yield Capsule('', str(c['id']), c['resource_uri'],
+                          c['title'], '', DateInfo(),
+                          c['size'], c['remaining'], [])
 
     def GetCapsules(self):
         """
           list<Capsule> GetCapsules() throws (1:InvalidOperation error),
         """
-        raise InvalidOperation(ErrorType.NotImplemented, "not implemented")
+        try:
+            return self.capsules()
+        except ApiAuthException as e:
+            raise InvalidOperation(ErrorType.Authentication, e.msg)
 
     def CreateArchive(self, paths):
         """
@@ -134,37 +192,3 @@ class LaServerProcessor(CLI.Processor):
             throws (1:InvalidOperation error)
         """
         raise InvalidOperation(ErrorType.NotImplemented, "not implemented")
-
-
-class LaServerCommand(LaBaseCommand):
-    """Run a RPC server
-
-    Usage: lacli server [--no-detach] [--port <port>]
-
-    Options:
-        --no-detach              don't detach from terminal
-        --port <port>            port to listen on [default: 9090]
-    """
-    prompt = 'lacli:server> '
-
-    def makecmd(self, options):
-        cmd = ["run"]
-        if options['--port']:
-            cmd.append(options['--port'])
-        return " ".join(cmd)
-
-    def get_server(self):
-        processor = LaServerProcessor()
-        factory = TBinaryProtocol.TBinaryProtocolFactory()
-        return TTwisted.ThriftServerFactory(
-            processor=processor, iprot_factory=factory)
-
-    @command(port=int)
-    def do_run(self, port=9090):
-        """
-        Usage: run [<port>]
-        """
-        reactor.listenTCP(port, self.get_server())
-        startLogging(sys.stderr)
-        msg('Running reactor')
-        reactor.run()

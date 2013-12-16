@@ -1,6 +1,7 @@
 from lacli.decorators import command
 from lacli.command import LaBaseCommand
 from lacli.log import getLogger
+from lacli.exceptions import ApiAuthException
 from re import match, IGNORECASE
 from getpass import getpass
 
@@ -45,36 +46,35 @@ class LaLoginCommand(LaBaseCommand):
 
         save = (self.username, self.password)
 
-        if username:
-            self.username = username
-            self.password = None
+        if not username and not self.batch:
+            username = self.input("Username/email: ")
 
-        if password:
-            self.password = password
+        if not password and not self.batch:
+            password = getpass("Password: ")
 
-        if not self.username and not self.batch:
-            self.username = self.input("Username/email: ")
-
-        if not self.password and not self.batch:
-            self.password = getpass("Password: ")
-
-        # replace session for all commands
-        self.session = self.registry.new_session()
-
-        email = None
         try:
-            email = self.session.account['email']
+            email = self.login_batch(username, password)
             print "authentication succesfull as", email
         except:
-            self.username = self.password = None
-            getLogger().debug("auth failure", exc_info=True)
             print "authentication failed"
+            return
 
-        if email and not self.batch:
+        if not self.batch:
             if self.username != save[0] or self.password != save[1]:
                 if match('y(es)?$',
                          self.input("Save credentials? "), IGNORECASE):
                     self.registry.save_session(self.username, self.password)
+
+    def login_batch(self, username, password):
+        self.username = username
+        self.password = password
+        self.session = self.registry.new_session()
+        try:
+            return self.session.account['email']
+        except Exception as e:
+            self.username = self.password = None
+            getLogger().debug("auth failure", exc_info=True)
+            raise ApiAuthException(username=username, exc=e)
 
     @command()
     def do_logout(self):

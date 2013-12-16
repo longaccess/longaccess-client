@@ -41,7 +41,7 @@ def with_api_response(f):
             if e.response.status_code == 404:
                 raise ApiUnavailableException(e)
             elif e.response.status_code == 401:
-                raise ApiAuthException(e)
+                raise ApiAuthException(exc=e)
             else:
                 raise ApiErrorException(e)
         except ApiNoSessionError:

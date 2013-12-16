@@ -34,6 +34,10 @@ class LaBaseCommand(cmd.Cmd, object):
     def batch(self):
         return self.registry.prefs['command']['batch']
 
+    @batch.setter
+    def batch(self, newvalue):
+        self.registry.prefs['command']['batch'] = newvalue
+
     @property
     def cache(self):
         return self.registry.cache

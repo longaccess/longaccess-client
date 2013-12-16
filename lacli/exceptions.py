@@ -27,6 +27,11 @@ class ApiUnavailableException(BaseAppException):
 class ApiAuthException(BaseAppException):
     msg = "authentication failed"
 
+    def __init__(self, username=None, *args, **kwargs):
+        super(ApiAuthException, self).__init__(*args, **kwargs)
+        if username:
+            self.msg = "authentication as '{}' failed".format(username)
+
 
 class UploadEmptyError(BaseAppException):
     msg = "upload failed"
