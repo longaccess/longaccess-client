@@ -11,6 +11,7 @@ from lacli.log import getLogger
 from lacli.archive import dump_archive, archive_handle
 from lacli.exceptions import InvalidArchiveError
 from lacli.decorators import contains
+from lacli.server.interface.ClientInterface.ttypes import ArchiveStatus
 from urllib import pathname2url
 from tempfile import NamedTemporaryFile
 from binascii import b2a_hex
@@ -88,6 +89,14 @@ class Cache(object):
         with NamedTemporaryFile(prefix=name, suffix=".adf", **tmpargs) as f:
             make_adf(list(docs.itervalues()), out=f)
             return (f.name, docs)
+
+    def archive_status(self, docs):
+        if 'signature' in docs:
+            return ArchiveStatus.Completed
+        elif 'links' in docs and docs['links'].upload:
+            return ArchiveStatus.InProgress
+        else:
+            return ArchiveStatus.Local  # TODO: check for errors
 
     def save_upload(self, fname, docs, upload):
         docs['links'].upload = upload['uri']
