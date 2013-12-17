@@ -155,7 +155,20 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
           void UploadToCapsule(1: string ArchiveLocalID, 2: string CapsuleID,
             3: string title, 4: string description)
         """
-        raise NotImplementedError("not implemented")
+        docs = self.cache.get_adf(archive)
+        status = self.cache.archive_status(docs)
+        if status != ttypes.ArchiveStatus.Local:
+            raise ValueError("Archive state invalid")
+
+        capsule = self.session.capsule_ids().get(int(capsule))
+        if capsule is None:
+            raise ValueError("Capsule not found")
+
+        if capsule.get('remaining', 0) < docs['archive'].meta.size:
+            raise ValueError("Capsule is not big enough")
+
+        self.registry.cmd.archive.upload(
+            capsule, docs, archive)
 
     @tthrow
     def ResumeUpload(self, archive):

@@ -14,6 +14,7 @@ from lacli.adf import archive_size, Certificate, Archive, Meta, creation
 from lacli.decorators import command, login
 from lacli.exceptions import DecryptionError
 from lacli.compose import compose
+from contextlib import contextmanager
 from abc import ABCMeta, abstractmethod
 
 
@@ -363,27 +364,14 @@ class LaArchiveCommand(LaBaseCommand):
                 _error += "no capsules found"
 
         if fname and capsule:
-            archive = docs['archive']
             link = docs['links']
-            path = self.cache.data_file(link)
-
-            auth = None
-            if 'auth' in docs:
-                auth = docs['auth']
 
             if link.upload or link.download:
                 print "upload is already completed"
-            elif not path:
-                print "no local copy exists."
-            elif path:
+            else:
                 try:
-                    saved = None
-                    with self.session.upload(capsule, archive, auth) as upload:
-                        Upload(self.session, self.nprocs, self.debug).upload(
-                            path, upload)
-                        saved = self.cache.save_upload(fname, docs, upload)
-
-                    if saved and not self.batch:
+                    saved = self.upload(capsule, docs, fname)
+                    if not self.batch:
                         print ""
                         print "Upload finished, waiting for verification"
                         print "Press Ctrl-C to check manually later"
@@ -391,6 +379,7 @@ class LaArchiveCommand(LaBaseCommand):
                             status = self.session.upload_status(saved['link'])
                             if status['status'] == "error":
                                 print "status: error"
+                                self.cache.upload_error(fname)
                                 break
                             elif status['status'] == "completed":
                                 print "status: completed"
@@ -412,11 +401,21 @@ class LaArchiveCommand(LaBaseCommand):
 
                     print "\ndone."
                 except Exception as e:
+                    self.cache.upload_error(fname)
                     getLogger().debug("exception while uploading",
                                       exc_info=True)
                     print "error: " + str(e)
         else:
             print _error
+
+    def upload(self, cid, docs, fname):
+        archive = docs['archive']
+        auth = docs['auth']
+        path = self.cache.data_file(docs['links'])
+        with self.session.upload(cid, archive, auth) as upload:
+            Upload(self.session, self.nprocs, self.debug).upload(
+                path, upload)
+            return self.cache.save_upload(fname, docs, upload)
 
     @command(directory=unicode, title=unicode, description=unicode)
     def do_create(self, directory=None, title="my archive", description=None):
@@ -640,7 +639,7 @@ class LaArchiveCommand(LaBaseCommand):
                 sys.stdout.write(", {}".format(num))
             print "... deleting"
 
-        self.cache.shred_file(fname, srm)
+        self.cache.shred_archive(fname, srm)
         if os.path.exists(fname):
             if not srm:
                 print srmprompt

@@ -24,6 +24,8 @@ def tthrow(f):
             if e.errno == errno.ENOENT:
                 raise InvalidOperation(ErrorType.FileNotFound,
                                        filename=e.filename)
+        except ValueError as e:
+            raise InvalidOperation(ErrorType.Validation, str(e))
         except Exception as e:
             getLogger().debug("unhandled exception",
                               exc_info=True)

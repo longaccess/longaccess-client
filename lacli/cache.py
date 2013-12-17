@@ -53,12 +53,16 @@ class Cache(object):
         dname = self._cache_dir('uploads', write='w' in mode)
         return open(os.path.join(dname, name), mode)
 
+    def get_adf(self, fname, category='archives'):
+        with open(os.path.join(self._cache_dir(category), fname)) as f:
+            return load_archive(f)
+
     @contains(dict)
     def _for_adf(self, category):
         for fn in iglob(os.path.join(self._cache_dir(category), '*.adf')):
             with open(fn) as f:
                 try:
-                    yield (fn, load_archive(f))
+                    yield (os.path.basename(fn), load_archive(f))
                 except InvalidArchiveError:
                     getLogger().debug(fn, exc_info=True)
 
@@ -102,7 +106,7 @@ class Cache(object):
         docs['links'].upload = upload['uri']
         docs['archive'].meta.email = upload['account']['email']
         docs['archive'].meta.name = upload['account']['displayname']
-        with open(fname, 'w') as f:
+        with self._archive_open(fname, 'w') as f:
             make_adf(list(docs.itervalues()), out=f)
         return {
             'fname': fname,
@@ -110,20 +114,29 @@ class Cache(object):
             'archive': docs['archive']
         }
 
+    def upload_error(self, fname):
+        docs = []
+        with self._archive_open(fname) as _upload:
+            docs = load_archive(_upload)
+        docs['links'].upload = None
+        with self._archive_open(fname, 'w') as _upload:
+            make_adf(list(docs.itervalues()), out=_upload)
+        return docs
+
     def upload_complete(self, fname, status):
         """
         adds the archive key to the signature part of the ADF file
         """
         assert 'archive_key' in status, "no archive key"
         docs = []
-        with open(fname) as _upload:
+        with self._archive_open(fname) as _upload:
             docs = load_archive(_upload)
         docs['signature'] = Signature(aid=status['archive_key'],
                                       uri=status.get('archive'),
                                       expires=status.get('expires'),
                                       created=status.get('created'),
                                       creator=docs['archive'].meta.name)
-        with open(fname, 'w') as _upload:
+        with self._archive_open(fname, 'w') as _upload:
             make_adf(list(docs.itervalues()), out=_upload)
         return docs
 
@@ -206,6 +219,11 @@ class Cache(object):
             except Exception:
                 getLogger().debug("error running {}".format(command),
                                   exc_info=True)
+
+    def shred_archive(self, fname, srm=None):
+        fname = os.path.join(self._cache_dir('archives'), fname)
+        self.shred_file(fname, srm)
+        return fname
 
     def shred_cert(self, aid, countdown=[], srm=None):
         path = None
