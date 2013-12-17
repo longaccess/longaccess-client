@@ -61,12 +61,22 @@ class Cache(object):
                 except InvalidArchiveError:
                     getLogger().debug(fn, exc_info=True)
 
-    def prepare(self, title, folder, description=None, fmt='zip', cb=None):
+    def prepare(self, title, items, description=None, fmt='zip', cb=None):
         archive = Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)),
                           description=description)
         cert = Certificate()
         tmpdir = self._cache_dir('data', write=True)
-        name, path, auth = dump_archive(archive, folder, cert, cb, tmpdir)
+        if isinstance(items, basestring):
+            items = [items]
+
+        def mycb(path, rel):
+            if cb is not None:
+                cb(path, rel)
+            elif not path:
+                print "Encrypting.."
+            else:
+                print path.encode('utf8')
+        name, path, auth = dump_archive(archive, items, cert, mycb, tmpdir)
         link = Links(local=pathname2url(os.path.relpath(path, self.home)))
         archive.meta.size = os.path.getsize(path)
         tmpargs = {'delete': False,

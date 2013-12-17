@@ -427,7 +427,14 @@ class LaArchiveCommand(LaBaseCommand):
             if not os.path.isdir(directory):
                 print "The specified folder does not exist."
                 return
-            self.cache.prepare(title, directory, description=description)
+
+            def mycb(path, rel):
+                if not path:
+                    print "Encrypting.."
+                else:
+                    print path.encode('utf8'), "=>", rel.encode('utf8')
+            self.cache.prepare(title, directory,
+                               description=description, cb=mycb)
             print "archive prepared"
 
         except Exception as e:

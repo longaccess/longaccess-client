@@ -11,6 +11,7 @@ from lacli.cipher import get_cipher
 from lacli.hash import HashIO
 from shutil import copyfileobj
 from zipfile import ZipFile, ZIP_DEFLATED
+from itertools import starmap
 
 
 _slugify_strip_re = re.compile(r'[^\w\s-]')
@@ -75,18 +76,34 @@ class MyHashObj(object):
         return Auth(**args)
 
 
-def dump_archive(archive, folder, cert, cb=None, tmpdir='/tmp',
+def dump_archive(archive, items, cert, cb=None, tmpdir='/tmp',
                  hashf='sha512'):
     name = archive_handle([archive, cert])
     cipher = get_cipher(archive, cert)
     hashobj = MyHashObj(hashf)
-    path, writer = _writer(name, os.path.abspath(folder),
+
+    path, writer = _writer(name, items,
                            cipher, tmpdir, hashobj)
-    map(cb, writer)
+    list(starmap(cb, writer))
     return (name, path, hashobj.auth())
 
 
-def _writer(name, folder, cipher, tmpdir, hashobj=None):
+def walk_folders(folders):
+    for folder in folders:
+        if not os.path.exists(folder):
+            continue
+        if not os.path.isdir(folder):
+            yield (folder, os.path.basename(folder))
+        else:
+            for root, _, fs in os.walk(folder):
+                for f in fs:
+                    path = os.path.join(root, f)
+                    strip = os.path.dirname(folder)
+                    rel = os.path.relpath(path, strip)
+                    yield (path, rel)
+
+
+def _writer(name, items, cipher, tmpdir, hashobj=None):
     tmpargs = {'delete': False,
                'suffix': ".longaccess",
                'dir': tmpdir,
@@ -99,15 +116,12 @@ def _writer(name, folder, cipher, tmpdir, hashobj=None):
                    'dir': tmpdir}
         with NamedTemporaryFile(**tmpargs) as zf:
             with ZipFile(zf, 'w', ZIP_DEFLATED, True) as zpf:
-                for root, _, fs in os.walk(folder):
-                    for f in (os.path.join(root, f) for f in fs):
-                        path = os.path.join(root, f)
-                        zpf.write(path, os.path.relpath(path, folder))
-                        print f.encode('utf8')
-                        yield f
+                for path, rel in walk_folders(map(os.path.abspath, items)):
+                    zpf.write(path, rel.encode('utf8'))
+                    yield (path, rel)
             zf.flush()
             zf.seek(0)
-            print "Encrypting.."
+            yield (None, None)  # the end
             with CryptIO(dst, cipher, hashobj=hashobj) as fdst:
                 copyfileobj(zf, fdst, 1024)
         dst.close()
