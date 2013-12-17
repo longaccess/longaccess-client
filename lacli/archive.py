@@ -84,14 +84,17 @@ def dump_archive(archive, items, cert, cb=None, tmpdir='/tmp',
 
     path, writer = _writer(name, items,
                            cipher, tmpdir, hashobj)
-    list(starmap(cb, writer))
+    try:
+        list(starmap(cb, writer))
+    except Exception as e:
+        if os.path.exists(path):
+            os.unlink(path)  # don't leave trash
+        raise e
     return (name, path, hashobj.auth())
 
 
 def walk_folders(folders):
     for folder in folders:
-        if not os.path.exists(folder):
-            continue
         if not os.path.isdir(folder):
             yield (folder, os.path.basename(folder))
         else:
