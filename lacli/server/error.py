@@ -4,6 +4,7 @@ from lacli.server.interface.ClientInterface.ttypes import ErrorType
 from lacli.log import getLogger
 from twisted.python import log as twisted_log
 from functools import wraps
+import errno
 
 
 def tthrow(f):
@@ -19,6 +20,10 @@ def tthrow(f):
             raise InvalidOperation(ErrorType.Authentication, e.msg)
         except NotImplementedError as e:
             raise InvalidOperation(ErrorType.NotImplemented, str(e))
+        except OSError as e:
+            if e.errno == errno.ENOENT:
+                raise InvalidOperation(ErrorType.FileNotFound,
+                                       filename=e.filename)
         except Exception as e:
             getLogger().debug("unhandled exception",
                               exc_info=True)

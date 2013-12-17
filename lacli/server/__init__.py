@@ -9,6 +9,7 @@ from thrift.protocol import TBinaryProtocol
 from lacli.server.interface.ClientInterface import CLI, ttypes
 from lacli.server.error import tthrow
 import sys
+import os
 
 
 class LaServerCommand(LaBaseCommand, CLI.Processor):
@@ -97,9 +98,26 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
     @tthrow
     def CreateArchive(self, paths):
         """
-          Archive CreateArchive(1: list<string> filePaths)
         """
-        raise NotImplementedError("not implemented")
+
+        def progress(path, rel):
+            if not path:
+                msg("Encrypting..")
+            else:
+                msg(rel.encode('utf8'))
+
+        fname, docs = self.cache.prepare(
+            "_temp", paths, description="_temp", cb=progress)
+
+        return ttypes.Archive(
+            os.path.basename(fname),
+            ttypes.ArchiveStatus.Local,
+            ttypes.ArchiveInfo(
+                docs['archive'].title,
+                docs['archive'].description,
+                docs['archive'].meta.size,
+                ttypes.DateInfo(),
+                docs['auth'].md5.encode('hex')))
 
     @tthrow
     def GetUploads(self):

@@ -62,9 +62,11 @@ class Cache(object):
                     getLogger().debug(fn, exc_info=True)
 
     def prepare(self, title, items, description=None, fmt='zip', cb=None):
-        archive = Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)),
-                          description=description)
-        cert = Certificate()
+        docs = {
+            'archive': Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)),
+                               description=description),
+            'cert': Certificate(),
+        }
         tmpdir = self._cache_dir('data', write=True)
         if isinstance(items, basestring):
             items = [items]
@@ -76,13 +78,16 @@ class Cache(object):
                 print "Encrypting.."
             else:
                 print path.encode('utf8')
-        name, path, auth = dump_archive(archive, items, cert, mycb, tmpdir)
-        link = Links(local=pathname2url(os.path.relpath(path, self.home)))
-        archive.meta.size = os.path.getsize(path)
+        name, path, docs['auth'] = dump_archive(
+            docs['archive'], items, docs['cert'], mycb, tmpdir)
+        rel = os.path.relpath(path, self.home)
+        docs['links'] = Links(local=pathname2url(rel))
+        docs['archive'].meta.size = os.path.getsize(path)
         tmpargs = {'delete': False,
                    'dir': self._cache_dir('archives', write=True)}
         with NamedTemporaryFile(prefix=name, suffix=".adf", **tmpargs) as f:
-            make_adf([archive, cert, auth, link], out=f)
+            make_adf(list(docs.itervalues()), out=f)
+            return (f.name, docs)
 
     def save_upload(self, fname, docs, upload):
         docs['links'].upload = upload['uri']

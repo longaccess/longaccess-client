@@ -24,6 +24,7 @@ class ErrorType(object):
   Validation = 4
   Other = 5
   NotImplemented = 6
+  FileNotFound = 7
 
   _VALUES_TO_NAMES = {
     0: "NoError",
@@ -33,6 +34,7 @@ class ErrorType(object):
     4: "Validation",
     5: "Other",
     6: "NotImplemented",
+    7: "FileNotFound",
   }
 
   _NAMES_TO_VALUES = {
@@ -43,6 +45,7 @@ class ErrorType(object):
     "Validation": 4,
     "Other": 5,
     "NotImplemented": 6,
+    "FileNotFound": 7,
   }
 
 class ArchiveStatus(object):
@@ -51,6 +54,7 @@ class ArchiveStatus(object):
   Paused = 2
   Stopped = 3
   Failed = 4
+  Local = 5
 
   _VALUES_TO_NAMES = {
     0: "Completed",
@@ -58,6 +62,7 @@ class ArchiveStatus(object):
     2: "Paused",
     3: "Stopped",
     4: "Failed",
+    5: "Local",
   }
 
   _NAMES_TO_VALUES = {
@@ -66,6 +71,7 @@ class ArchiveStatus(object):
     "Paused": 2,
     "Stopped": 3,
     "Failed": 4,
+    "Local": 5,
   }
 
 class CertExportFormat(object):
@@ -91,17 +97,20 @@ class InvalidOperation(TException):
   Attributes:
    - what
    - why
+   - filename
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.I32, 'what', None, None, ), # 1
     (2, TType.STRING, 'why', None, None, ), # 2
+    (3, TType.STRING, 'filename', None, None, ), # 3
   )
 
-  def __init__(self, what=None, why=None,):
+  def __init__(self, what=None, why=None, filename=None,):
     self.what = what
     self.why = why
+    self.filename = filename
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -122,6 +131,11 @@ class InvalidOperation(TException):
           self.why = iprot.readString();
         else:
           iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRING:
+          self.filename = iprot.readString();
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -139,6 +153,10 @@ class InvalidOperation(TException):
     if self.why is not None:
       oprot.writeFieldBegin('why', TType.STRING, 2)
       oprot.writeString(self.why)
+      oprot.writeFieldEnd()
+    if self.filename is not None:
+      oprot.writeFieldBegin('filename', TType.STRING, 3)
+      oprot.writeString(self.filename)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()

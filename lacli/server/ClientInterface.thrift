@@ -7,11 +7,13 @@ enum ErrorType {
   Authentication = 3,
   Validation = 4,
   Other = 5,
-  NotImplemented = 6
+  NotImplemented = 6,
+  FileNotFound = 7
 }
 exception InvalidOperation {
   1: ErrorType what,
   2: string why
+  3: optional string filename,
 }
 struct DateInfo {
   1: i32 Day,
@@ -52,6 +54,7 @@ enum ArchiveStatus {
   Paused=2,
   Stopped= 3,
   Failed = 4, 
+  Local = 5
 }
 struct Archive {
   1: string LocalID,  
