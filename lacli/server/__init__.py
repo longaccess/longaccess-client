@@ -8,6 +8,7 @@ from thrift.transport import TTwisted
 from thrift.protocol import TBinaryProtocol
 from lacli.server.interface.ClientInterface import CLI, ttypes
 from lacli.server.error import tthrow
+from itertools import starmap
 import sys
 import os
 
@@ -61,6 +62,34 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         getLogger().debug("unhandled error: ", exc_info=True)
         return error
 
+    def toArchive(self, fname, docs):
+        created = docs['archive'].meta.created
+        size = docs['archive'].meta.size
+        title = docs['archive'].title
+        description = docs['archive'].description
+        md5 = docs['auth'].md5.encode('hex')
+        status = self.cache.archive_status(docs)
+        ident = os.path.basename(fname)
+        if title is not None:
+            title = title.encode('utf8')
+        if description is not None:
+            description = description.encode('utf8')
+        return ttypes.Archive(
+            ident,
+            status,
+            ttypes.ArchiveInfo(
+                title,
+                description,
+                size,
+                ttypes.DateInfo(
+                    created.day,
+                    created.month,
+                    created.year,
+                    created.hour,
+                    created.minute,
+                    created.second),
+                md5))
+
     def PingCLI(self):
         msg('pingCLI()')
         return True
@@ -109,22 +138,15 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         fname, docs = self.cache.prepare(
             "_temp", paths, description="_temp", cb=progress)
 
-        return ttypes.Archive(
-            os.path.basename(fname),
-            ttypes.ArchiveStatus.Local,
-            ttypes.ArchiveInfo(
-                docs['archive'].title,
-                docs['archive'].description,
-                docs['archive'].meta.size,
-                ttypes.DateInfo(),
-                docs['auth'].md5.encode('hex')))
+        return self.toArchive(fname, docs)
 
     @tthrow
     def GetUploads(self):
         """
           list<Archive> GetUploads(),
         """
-        raise NotImplementedError("not implemented")
+        archives = self.cache._for_adf('archives')
+        return list(starmap(self.toArchive, archives.iteritems()))
 
     @tthrow
     @login
