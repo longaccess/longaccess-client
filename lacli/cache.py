@@ -153,6 +153,7 @@ class Cache(object):
             uploaded=created.strftime("%c"),
             expires=expires.strftime("%c"),
             title=archive.title,
+	    size=archive.meta.size,
             desc=archive.description,
             md5=" . ".join(fours(pairs(iter(md5)))),
             fmt=archive.meta.format,
