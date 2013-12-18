@@ -6,14 +6,11 @@ enum ErrorType {
   Network = 2,
   Authentication = 3,
   Validation = 4,
-  Other = 5,
-  NotImplemented = 6,
-  FileNotFound = 7
+  Other = 5
 }
 exception InvalidOperation {
   1: ErrorType what,
   2: string why
-  3: optional string filename,
 }
 struct DateInfo {
   1: i32 Day,
@@ -27,13 +24,13 @@ struct DateInfo {
 struct TransferStatus {
   1: string StatusDescription, 
   2: string ETA,
-  3: i32 RemainingMB,
+  3: i32 RemainingBytes,
   4: double Progress
 }
 struct ArchiveInfo {
   1: string Title,
   2: string Description,
-  3: i32 SizeInMb,
+  3: i32 SizeInBytes,
   4: DateInfo CreatedDate,
   5: string Md5HexDigits,
 }
@@ -44,8 +41,8 @@ struct Capsule {
   4: string Title,
   5: string User,
   6: DateInfo ExpirationDate,
-  7: i32 TotalSizeInMb,
-  8: i32 AvailableSizeInMb,
+  7: i32 TotalSizeInBytes,
+  8: i32 AvailableSizeInBytes,
   9: list<ArchiveInfo> CapsuleContents
 }
 enum ArchiveStatus {
@@ -54,7 +51,6 @@ enum ArchiveStatus {
   Paused=2,
   Stopped= 3,
   Failed = 4, 
-  Local = 5
 }
 struct Archive {
   1: string LocalID,  
@@ -72,6 +68,14 @@ struct Certificate {
   2: Signature Sig,
   3: ArchiveInfo RelatedArchive   
 }
+struct Settings
+{
+  1: string StoredUserName,
+  2: string StoredPassword,
+  3: bool RememberMe,
+  4: string ArchivesFolder,
+  5: string CertificatesFolder
+}
 enum CertExportFormat
 {
   HTML = 0,
@@ -84,6 +88,8 @@ service CLI {
   bool PingCLI(),
 
   bool LoginUser(1: string username, 2: string Pass,3: bool Remember) throws (1:InvalidOperation error),
+
+  bool UserIsLoggedIn(),
   
   bool Logout() throws (1:InvalidOperation error),  
   
@@ -104,18 +110,13 @@ service CLI {
   
   void CancelUpload(1: string ArchiveLocalID) throws (1:InvalidOperation error),  
   
-  list<Certificate> GetCertificates(),
-  
-  string GetCertificateFolder(),
-
-  string GetArchivesFolder(),
-  
-  void SetCertificateFolder(1: string path),
-  
+  list<Certificate> getCertificates(),
+   
   binary ExportCertificate(1: string ArchiveID,2: CertExportFormat format) throws (1:InvalidOperation error), 
 
-  string GetDefaultExtractionPath(),
- 
   void Decrypt(1: string archivePath,2: string key,3: string destinationPath) throws (1:InvalidOperation error)  
   
+  Settings GetSettings(),
+
+  void SetSettings(1: Settings settings)
 }
