@@ -14,6 +14,7 @@ from lacli.adf import archive_size, Certificate, Archive, Meta, creation
 from lacli.decorators import command, login
 from lacli.exceptions import DecryptionError
 from lacli.compose import compose
+from lacli.progress import ConsoleProgressHandler
 from contextlib import contextmanager
 from abc import ABCMeta, abstractmethod
 
@@ -370,7 +371,10 @@ class LaArchiveCommand(LaBaseCommand):
                 print "upload is already completed"
             else:
                 try:
-                    saved = self.upload(capsule, docs, fname)
+                    size = docs['archive'].meta.size
+                    handler = ConsoleProgressHandler(size, fname=fname)
+                    with handler as progq:
+                        saved = self.upload(capsule, docs, fname, progq)
                     if not self.batch:
                         print ""
                         print "Upload finished, waiting for verification"
@@ -408,13 +412,13 @@ class LaArchiveCommand(LaBaseCommand):
         else:
             print _error
 
-    def upload(self, cid, docs, fname):
+    def upload(self, cid, docs, fname, progq):
         archive = docs['archive']
         auth = docs['auth']
         path = self.cache.data_file(docs['links'])
         with self.session.upload(cid, archive, auth) as upload:
             Upload(self.session, self.nprocs, self.debug).upload(
-                path, upload)
+                path, upload, progq)
             return self.cache.save_upload(fname, docs, upload)
 
     @command(directory=unicode, title=unicode, description=unicode)

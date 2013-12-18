@@ -9,9 +9,15 @@ from thrift.protocol import TBinaryProtocol
 from lacli.server.interface.ClientInterface import CLI, ttypes
 from lacli.server.error import tthrow
 from itertools import starmap
+from lacli.progress import BaseProgressHandler
 import sys
 import os
 
+
+class ServerProgressHandler(BaseProgressHandler):
+    def update(self, progress):
+        msg('Progress: ' + progress)
+        
 
 class LaServerCommand(LaBaseCommand, CLI.Processor):
     """Run a RPC server
@@ -167,8 +173,9 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         if capsule.get('remaining', 0) < docs['archive'].meta.size:
             raise ValueError("Capsule is not big enough")
 
-        self.registry.cmd.archive.upload(
-            capsule, docs, archive)
+        with ServerProgressHandler(docs['archive'].meta.size) as progq:
+            self.registry.cmd.archive.upload(
+                capsule, docs, archive, progq)
 
     @tthrow
     def ResumeUpload(self, archive):
