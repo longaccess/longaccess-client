@@ -66,21 +66,21 @@ class Api(object):
 
     @with_api_response
     def _get(self, url):
-        return self.session.get(url)
+        yield self.session.get(url)
 
     @with_api_response
     def _post(self, url, data=None):
         headers = {}
         if data is not None:
             headers['content-type'] = 'application/json'
-        return self.session.post(url, headers=headers, data=data)
+        yield self.session.post(url, headers=headers, data=data)
 
     @with_api_response
     def _patch(self, url, data=None):
         headers = {}
         if data is not None:
             headers['content-type'] = 'application/json'
-        return self.session.patch(url, headers=headers, data=data)
+        yield self.session.patch(url, headers=headers, data=data)
 
     def _upload_status(self, uri, first=None):
         def parse(rsp):

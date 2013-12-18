@@ -32,7 +32,8 @@ def with_api_response(f):
     @wraps(f)
     def wrap(*args, **kwargs):
         try:
-            r = f(*args, **kwargs)
+            i = f(*args, **kwargs)
+            r = next(i)
             r.raise_for_status()
             return r.json()
         except ConnectionError as e:
