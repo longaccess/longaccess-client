@@ -26,7 +26,7 @@ class gen_thrift(Command):
                             '-v', '--gen', 'py:twisted,new_style',
                             os.path.join(root, 'lacli', 'server', 'ClientInterface.thrift')])
         else:
-            self.announce("thrift executable not found, skipping")
+            self.warn("thrift executable not found, skipping")
 
 try:
     import pandoc
