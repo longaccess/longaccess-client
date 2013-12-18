@@ -133,29 +133,34 @@ class Cache(object):
         if hasattr(cipher, 'mode'):
             cipher = cipher.mode
         created = parse_timestamp(archive.meta.created)
-        expires = later(created, years=30)
+        expires = None
+        aid = "-"
         if 'signature' in docs:
-            expires = parse_timestamp(docs['signature'].expires)
-            created = parse_timestamp(docs['signature'].created)
+            aid = docs['signature'].aid or aid
+            if docs['signature'].expires is not None:
+		expires = parse_timestamp(docs['signature'].expires)
+            if docs['signature'].created is not None:
+                created = parse_timestamp(docs['signature'].created)
         md5 = b2a_hex(docs['auth'].md5).upper()
         key = b2a_hex(docs['cert'].key).upper()
         hk = pairs(fours(pairs(iter(key))), " . ")
 
         return unicode(resource_string(__name__, "data/certificate.html")).format(
             json=as_json(docs),
-            aid=docs['signature'].aid,
+            aid=aid,
             keyB=next(hk),
             keyC=next(hk),
             keyD=next(hk),
             keyE=next(hk),
-            name=archive.meta.name,
-            email=archive.meta.email,
+            name=archive.meta.name or "",
+            email=archive.meta.email or "",
             uploaded=created.strftime("%c"),
-            expires=expires.strftime("%c"),
-            title=archive.title,
-            desc=archive.description,
-            md5=" . ".join(fours(pairs(iter(md5)))),
-            fmt=archive.meta.format,
+            expires=(expires and expires.strftime("%c")) or "unknown",
+            title=archive.title or "",
+	    size=archive.meta.size,
+            desc=archive.description or "",
+	    md5=" . ".join(fours(pairs(iter(md5)))),
+	    fmt=archive.meta.format,
             cipher=cipher).encode('utf8')
 
     def shred_file(self, fname, srm=None):
