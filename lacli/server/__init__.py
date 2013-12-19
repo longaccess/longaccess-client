@@ -1,9 +1,12 @@
+#import geventreactor
+#geventreactor.install()
+
 from lacli.decorators import command
 from lacli.log import getLogger
 from lacli.command import LaBaseCommand
-from lacli.decorators import contains, login
+from lacli.decorators import contains, login, expand_args
 from twisted.python.log import startLogging, msg, err
-from twisted.internet import reactor
+from twisted.internet import reactor, defer, threads
 from thrift.transport import TTwisted
 from thrift.protocol import TBinaryProtocol
 from lacli.server.interface.ClientInterface import CLI, ttypes
@@ -45,6 +48,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         factory = TBinaryProtocol.TBinaryProtocolFactory()
         return TTwisted.ThriftServerFactory(
             processor=self, iprot_factory=factory)
+
 
     @command(port=int)
     def do_run(self, port=9090):
@@ -98,30 +102,34 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
 
     def PingCLI(self):
         msg('pingCLI()')
-        return True
+        d = defer.Deferred()
+        reactor.callLater(1, d.callback, True)
+        return d
 
     @tthrow
+    @defer.inlineCallbacks
     def LoginUser(self, username, password, remember):
-        self.logincmd.login_batch(username, password)
+        yield self.logincmd.login_async(username, password)
         if remember:
             msg('Saving credentials for <'+self.logincmd.email+'>')
             self.registry.save_session(
                 self.logincmd.username, self.logincmd.password)
-        return True
+        defer.returnValue(True)
 
     @tthrow
     def Logout(self):
         self.logincmd.logout_batch()
         return True
 
-    @contains(list)
+    @defer.inlineCallbacks
     def capsules(self):
-        cs = self.session.capsules()
-        for c in cs:
-            yield ttypes.Capsule(
+        cs = yield self.session.async_capsules()
+        defer.returnValue([
+            ttypes.Capsule(
                 '', str(c['id']), c['resource_uri'],
                 c['title'], '', ttypes.DateInfo(),
                 c['size'], c['remaining'], [])
+            for c in cs])
 
     @tthrow
     @login
@@ -141,10 +149,10 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             else:
                 msg(rel.encode('utf8'))
 
-        fname, docs = self.cache.prepare(
+        d = threads.deferToThread(self.cache.prepare,
             "_temp", paths, description="_temp", cb=progress)
-
-        return self.toArchive(fname, docs)
+        d.addCallback(expand_args(self.toArchive))
+        return d
 
     @tthrow
     def GetUploads(self):
@@ -256,3 +264,4 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             3: string destinationPath)
         """
         raise NotImplementedError("not implemented")
+# vim: et:sw=4:ts=4

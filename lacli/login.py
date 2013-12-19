@@ -58,7 +58,7 @@ class LaLoginCommand(LaBaseCommand):
         try:
             self.login_batch(username, password)
             print "authentication succesfull as", self.email
-        except:
+        except Exception as e:
             print "authentication failed"
             return
 

@@ -1,6 +1,7 @@
 from urlparse import urljoin
 from lacli.log import getLogger
 from lacli.decorators import cached_property, deferred_property, with_api_response, contains
+from lacli.exceptions import ApiAuthException
 from lacli.date import parse_timestamp
 from lacli.defer_block import block
 from contextlib import contextmanager
@@ -11,6 +12,66 @@ from functools import partial
 import json
 import grequests
 import requests
+import treq
+
+from twisted.web.client import HTTPClientFactory
+HTTPClientFactory.noisy = True
+
+
+class TwistedRequestsFactory(object):
+    def __init__(self):
+        pass
+
+    class TreqSession(object):
+        auth = None
+        verify = None
+        
+
+    class TwistedRequestsSession(object):
+        def __init__(self, session):
+            self.session = session
+
+        @defer.inlineCallbacks
+        def get(self, *args, **kwargs):
+            try:
+                r = yield treq.get(
+                      *args, 
+                      auth=self.session.auth,
+                      **kwargs 
+                  )
+                getLogger().debug("response code : "+str(r.code))
+                if r.code == 401:
+                    raise ApiAuthException()
+                r = yield treq.content(r)
+                getLogger().debug("response: "+str(r))
+                defer.returnValue(json.loads(r))
+            except Exception as e:
+                getLogger().debug("EXC: "+str(e))
+                raise e
+
+        @defer.inlineCallbacks
+        def post(self, *args, **kwargs):
+            r = yield treq.post(
+                  *args, 
+                  auth=self.session.auth,
+                  **kwargs 
+              )
+            defer.returnValue(r)
+
+        def patch(self, *args, **kwargs):
+            return treq.patch(
+                  *args, 
+                  auth=self.session.auth,
+                  **kwargs 
+              )
+
+    def __call__(self, prefs={}):
+        session = self.TreqSession()
+        if 'user' in prefs and 'pass' in prefs:
+            session.auth = (prefs['user'], prefs['pass'])
+        if 'verify' in prefs:
+            session.verify = prefs['verify']
+        return Api(prefs, self.TwistedRequestsSession(session))
 
 class AsyncRequestsFactory(object):
     def __init__(self):
@@ -87,7 +148,7 @@ def DummyRequestsFactory(prefs={}):
     return DummySession(DummyResponse)
 
 
-RequestsFactory = AsyncRequestsFactory()
+RequestsFactory = TwistedRequestsFactory()
 
 
 class Api(object):
@@ -101,6 +162,7 @@ class Api(object):
     def root(self):
         getLogger().debug("requesting API root from {}".format(self.url))
         r = yield self._get(self.url)
+        getLogger().debug("API root: {}".format(r))
         defer.returnValue(r)
 
     @deferred_property
@@ -112,7 +174,7 @@ class Api(object):
 
     @defer.inlineCallbacks
     def _get(self, url):
-        r = yield self.session.get(url)
+        r = yield self.session.get(url.encode('utf8'))
         defer.returnValue(r)
 
     @defer.inlineCallbacks

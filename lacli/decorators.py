@@ -7,8 +7,15 @@ from docopt import docopt, DocoptExit
 from functools import update_wrapper, wraps, partial
 from requests.exceptions import ConnectionError, HTTPError
 from lacli.exceptions import (ApiErrorException, ApiAuthException,
-                              ApiUnavailableException, ApiNoSessionError)
+                              ApiUnavailableException, ApiNoSessionError, BaseAppException)
 from grequests import AsyncRequest, send
+
+
+def expand_args(f):
+    @wraps(f)
+    def wrap(args=[], kwargs={}):
+        return f(*args, **kwargs)
+    return wrap
 
 
 class deferred_property(object):
@@ -74,6 +81,8 @@ def with_api_response(f):
             else:
                 raise ApiErrorException(e)
         except ApiNoSessionError:
+            raise
+        except BaseAppException:
             raise
         except Exception as e:
             raise ApiErrorException(e)
