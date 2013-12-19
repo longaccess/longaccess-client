@@ -1,11 +1,40 @@
 import shlex
 import sys
 
+from twisted.internet import defer
+from twisted.python.failure import Failure
 from docopt import docopt, DocoptExit
-from functools import update_wrapper, wraps
+from functools import update_wrapper, wraps, partial
 from requests.exceptions import ConnectionError, HTTPError
 from lacli.exceptions import (ApiErrorException, ApiAuthException,
                               ApiUnavailableException, ApiNoSessionError)
+from grequests import AsyncRequest, send
+
+
+class deferred_property(object):
+    def __init__(self, f):
+        self.f = defer.inlineCallbacks(f)
+        update_wrapper(self, self.f)
+
+    def update(self, obj, name, value):
+        obj.__dict__[name]=value
+        return value
+
+    def __get__(self, obj, cls):
+        if obj is None:
+            return self
+        name = self.f.__name__
+        if name not in obj.__dict__:
+            obj.__dict__[name] = self.f(obj)
+            obj.__dict__[name].addBoth(
+                partial(self.update, obj, name))
+        ret = obj.__dict__[name]
+        if isinstance(ret, Failure):
+            ret.raiseException()
+        return ret
+
+    def __set__(self, obj, value):
+        obj.__dict__[self.f.__name__] = value
 
 
 class cached_property(object):
@@ -32,8 +61,7 @@ def with_api_response(f):
     @wraps(f)
     def wrap(*args, **kwargs):
         try:
-            i = f(*args, **kwargs)
-            r = next(i)
+            r = f(*args, **kwargs)
             r.raise_for_status()
             return r.json()
         except ConnectionError as e:

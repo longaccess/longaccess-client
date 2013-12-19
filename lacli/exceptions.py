@@ -53,3 +53,7 @@ class DecryptionError(BaseAppException):
     def __init__(self, reason=None):
         super(DecryptionError, self).__init__()
         self.reason = reason
+
+
+class Timeout(BaseAppException):
+    msg = "Timeout"
