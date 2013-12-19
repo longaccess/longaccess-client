@@ -663,3 +663,4 @@ class LaArchiveCommand(LaBaseCommand):
                 print "Please remove manually"
             else:
                 print "Deleted archive", archive.title
+# vim: et:sw=4:ts=4
