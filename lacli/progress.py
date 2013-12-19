@@ -38,8 +38,9 @@ class BaseProgressHandler(queueHandler):
 
 
 class ConsoleProgressHandler(BaseProgressHandler):
-    def __init__(self, fname="", *args, **kwargs):
-	super(ConsoleProgressHandler, self).__init__(*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        fname = kwargs.pop('fname', "-")
+        super(ConsoleProgressHandler, self).__init__(*args, **kwargs)
         self.bar = ProgressBar(widgets=[
             fname, ' : ', Bar(),
             ' ', ETA(), ' ', FileTransferSpeed()], maxval=self.total)
