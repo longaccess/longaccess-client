@@ -12,7 +12,8 @@ enum ErrorType {
 }
 exception InvalidOperation {
   1: ErrorType what,
-  2: string why
+  2: string why,
+  3: optional string filename
 }
 struct DateInfo {
   1: i32 Day,
