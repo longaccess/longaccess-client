@@ -6,7 +6,9 @@ enum ErrorType {
   Network = 2,
   Authentication = 3,
   Validation = 4,
-  Other = 5
+  Other = 5,
+  NotImplemented = 6,
+  FileNotFound = 7
 }
 exception InvalidOperation {
   1: ErrorType what,
@@ -25,7 +27,7 @@ struct TransferStatus {
   1: string StatusDescription, 
   2: string ETA,
   3: i32 RemainingBytes,
-  4: double Progress
+  4: double Progress  
 }
 struct ArchiveInfo {
   1: string Title,
@@ -50,7 +52,8 @@ enum ArchiveStatus {
   InProgress = 1,
   Paused=2,
   Stopped= 3,
-  Failed = 4, 
+  Failed = 4,
+  Local = 5
 }
 struct Archive {
   1: string LocalID,  
@@ -110,7 +113,7 @@ service CLI {
   
   void CancelUpload(1: string ArchiveLocalID) throws (1:InvalidOperation error),  
   
-  list<Certificate> getCertificates(),
+  list<Certificate> GetCertificates(),
    
   binary ExportCertificate(1: string ArchiveID,2: CertExportFormat format) throws (1:InvalidOperation error), 
 
