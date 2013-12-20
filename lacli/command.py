@@ -567,39 +567,9 @@ class LaArchiveCommand(LaBaseCommand):
                 if cert_id in certs:
                     extract(certs[cert_id]['cert'], certs[cert_id]['archive'])
                 else:
-                    try:
-                        from lacli.views.decrypt import view, app, window
-
-                        def quit():
-                            view.hide()
-                            app.quit()
-
-                        def decrypt(x, dest):
-                            cert = Certificate(x.decode('hex'))
-                            archive = Archive(
-                                'title', Meta('zip', 'aes-256-ctr'))
-                            try:
-                                extract(cert, archive, dest)
-                                quit()
-                            except DecryptionError as e:
-                                print "Error decrypting"
-                                getLogger().debug("Error decrypting", exc_info=True)
-                                view.rootObject().setProperty("hasError", True)
-                            except IOError as e:
-                                print "Error extracting"
-                                getLogger().debug("Error extracting", exc_info=True)
-                                view.rootObject().setProperty("hasError", True)
-
-                        view.rootObject().decrypt.connect(decrypt)
-                        view.engine().quit.connect(quit)
-                        window.show()
-                        app.exec_()
-                    except ImportError as e:
-                        getLogger().debug("Key input gui unavailable",
+                    getLogger().debug("Key input gui unavailable and key not found",
                                           exc_info=True)
-                        print "Key input gui unavailable."
-                    except Exception:
-                        pass
+                    print "error: key not found"
 
             except Exception as e:
                 getLogger().debug("exception while restoring",
