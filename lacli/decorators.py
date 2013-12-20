@@ -8,8 +8,6 @@ from functools import update_wrapper, wraps, partial
 from requests.exceptions import ConnectionError, HTTPError
 from lacli.exceptions import (ApiErrorException, ApiAuthException,
                               ApiUnavailableException, ApiNoSessionError, BaseAppException)
-from grequests import AsyncRequest, send
-
 
 def expand_args(f):
     @wraps(f)

@@ -10,7 +10,6 @@ from twisted.python import failure
 from functools import partial
 
 import json
-import grequests
 import requests
 import treq
 
@@ -72,50 +71,6 @@ class TwistedRequestsFactory(object):
         if 'verify' in prefs:
             session.verify = prefs['verify']
         return Api(prefs, self.TwistedRequestsSession(session))
-
-class AsyncRequestsFactory(object):
-    def __init__(self):
-        pass
-
-    class AsyncRequestsSession(object):
-        def __init__(self, session):
-            self.session = session
-            self.pool = grequests.Pool(10)
-
-        def handle(self, deferred, f):
-            try:
-                response = f()
-                getLogger().debug("response: "+str(response))
-                deferred.callback(response)
-                return response
-            except Exception as e:
-                deferred.errback(failure.Failure(e))
-
-        def async(self, *args, **kwargs):
-            d = defer.Deferred()
-            kwargs['session'] = self.session
-            r = grequests.AsyncRequest(*args, **kwargs)
-            rf = with_api_response(r.send)
-            self.pool.spawn(partial(self.handle, d, rf))
-            grequests.send(r, pool=self.pool)
-            return d
-
-        def get(self, *args, **kwargs):
-            return self.async('GET', *args, **kwargs)
-
-        def post(self, *args, **kwargs):
-            return self.async('POST', *args, **kwargs)
-
-        def patch(self, *args, **kwargs):
-            return self.async('PATCH', *args, **kwargs)
-
-    def __call__(self, prefs={}):
-        session = requests.Session()
-        if 'user' in prefs and 'pass' in prefs:
-            session.auth = (prefs['user'], prefs['pass'])
-        if 'verify' in prefs:
-            session.verify = prefs['verify']
-        return Api(prefs, self.AsyncRequestsSession(session))
 
 
 class DummyResponse(object):
