@@ -3,11 +3,13 @@ import sys
 
 from twisted.internet import defer
 from twisted.python.failure import Failure
+from twisted.internet import reactor
 from docopt import docopt, DocoptExit
 from functools import update_wrapper, wraps, partial
 from requests.exceptions import ConnectionError, HTTPError
 from lacli.exceptions import (ApiErrorException, ApiAuthException,
                               ApiUnavailableException, ApiNoSessionError, BaseAppException)
+from crochet import setup, wait_for_reactor
 
 def expand_args(f):
     @wraps(f)
@@ -126,7 +128,19 @@ def command(**types):
     return decorate
 
 
-class login(object):
+def block(f):
+    """ Decorate a method to block in crochet reactor
+    """
+    fblocking = wait_for_reactor(f)
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        if not reactor.running:
+            setup()
+        return fblocking(*args, **kwargs)
+    return wrap
+
+
+class login_async(object):
     def __init__(self, f, obj=None):
         self.f = f
         self.obj = obj
@@ -134,6 +148,16 @@ class login(object):
 
     def __get__(self, obj, cls):
         return wraps(self.f)(login(self.f, obj))
+
+    def dologin(self, prefs):
+        return self.obj.registry.cmd.login.login_async(
+            prefs.get('user'), prefs.get('pass'))
+
+    @defer.inlineCallbacks
+    def loginfirst(self, prefs, *args, **kwargs):
+        yield self.dologin(prefs)
+        r = yield self.f(self.obj, *args, **kwargs)
+        defer.returnValue(r)
 
     def __call__(self, *args, **kwargs):
         if len(args) > 0:
@@ -143,16 +167,29 @@ class login(object):
             elif self.obj == args[0]:
                 args = args[1:]
 
-        prefs = {'user': None, 'pass': None}
+        prefs = None
         if self.obj.registry.session:
             prefs = self.obj.registry.session.prefs
+        if not prefs:
+            prefs = self.obj.registry.init_prefs()
 
         if not self.obj.session or self.obj.registry.cmd.login.email is None:
-            if self.obj.batch:
-                self.obj.registry.cmd.login.login_batch(
-                    prefs.get('user'), prefs.get('pass'))
-            else:
-                cmdline = [prefs[a] for a in ['user', 'pass']
-                           if prefs.get(a)]
-                self.obj.registry.cmd.do_login(" ".join(cmdline))
+            return self.loginfirst(prefs, *args, **kwargs)
         return self.f(self.obj, *args, **kwargs)
+
+
+class login(login_async):
+    def dologin(self, prefs):
+        if self.obj.batch:
+            self.obj.registry.cmd.login.login_batch(
+                prefs.get('user'), prefs.get('pass'))
+        else:
+            cmdline = [prefs[a] for a in ['user', 'pass']
+                       if prefs.get(a)]
+            self.obj.registry.cmd.username = prefs['user']
+            self.obj.registry.cmd.password = prefs['pass']
+            self.obj.registry.cmd.do_login(" ".join(cmdline))
+
+    @block
+    def loginfirst(self, *args, **kwargs):
+       return super(login, self).loginfirst(*args, **kwargs)

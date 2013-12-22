@@ -15,19 +15,24 @@ class LaRegistry(object):
     session = None
 
     def __init__(self, cache, prefs, cmd):
+        if prefs['api'].get('url') is None:
+            prefs['api']['url'] = API_URL
         self.cache = cache
         self.prefs = prefs
         self.cmd = cmd
-        self.session = self.new_session()
 
-    def new_session(self, prefs=None):
-        if not prefs:
-            prefs = self.prefs['api']
+    def init_prefs(self):
+        prefs = self.prefs['api']
         if prefs.get('url') is None:
             prefs['url'] = API_URL
         if not prefs['user']:
             prefs['user'] = self._saved_session[0]
             prefs['pass'] = self._saved_session[1]
+        return prefs
+
+    def new_session(self, prefs=None):
+        if not prefs:
+            prefs = self.init_prefs()
         return self.prefs['api']['factory'](prefs)
 
     @cached_property
