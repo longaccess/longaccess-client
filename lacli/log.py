@@ -62,6 +62,9 @@ def setupLogging(level, logfile=None, queue=False):
                     'handlers': ['console'],
                     'propagate': True
                 },
+                'twisted': {
+                    'handlers': ['console']
+                }
             },
             'root': {
                 'level': level,
