@@ -102,10 +102,10 @@ class Cache(object):
         else:
             return ArchiveStatus.Local  # TODO: check for errors
 
-    def save_upload(self, fname, docs, upload):
-        docs['links'].upload = upload['uri']
-        docs['archive'].meta.email = upload['account']['email']
-        docs['archive'].meta.name = upload['account']['displayname']
+    def save_upload(self, fname, docs, uri, account):
+        docs['links'].upload = uri 
+        docs['archive'].meta.email = account['email']
+        docs['archive'].meta.name = account['displayname']
         with self._archive_open(fname, 'w') as f:
             make_adf(list(docs.itervalues()), out=f)
         return {

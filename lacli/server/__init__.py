@@ -1,10 +1,7 @@
-#import geventreactor
-#geventreactor.install()
-
 from lacli.decorators import command
 from lacli.log import getLogger
 from lacli.command import LaBaseCommand
-from lacli.decorators import contains, login, expand_args
+from lacli.decorators import contains, login_async, expand_args
 from twisted.python.log import startLogging, msg, err
 from twisted.internet import reactor, defer, threads
 from thrift.transport import TTwisted
@@ -19,7 +16,7 @@ import os
 
 class ServerProgressHandler(BaseProgressHandler):
     def update(self, progress):
-        msg('Progress: ' + progress)
+        msg('Progress: ' + str(progress))
         
 
 class LaServerCommand(LaBaseCommand, CLI.Processor):
@@ -106,14 +103,22 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         reactor.callLater(1, d.callback, True)
         return d
 
+
+    @tthrow
+    def UserIsLoggedIn(self):
+        if self.session is None or self.registry.cmd.login.email is None:
+            return False
+        return True
+        
+
     @tthrow
     @defer.inlineCallbacks
     def LoginUser(self, username, password, remember):
-        yield self.logincmd.login_async(username, password)
-        if remember:
-            msg('Saving credentials for <'+self.logincmd.email+'>')
-            self.registry.save_session(
-                self.logincmd.username, self.logincmd.password)
+        if self.session is None or self.registry.cmd.login.email is None:
+            yield self.logincmd.login_async(username, password)
+            if remember:
+                self.registry.save_session(
+                    self.logincmd.username, self.logincmd.password)
         defer.returnValue(True)
 
     @tthrow
@@ -132,7 +137,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             for c in cs])
 
     @tthrow
-    @login
+    @login_async
     def GetCapsules(self):
         """
         """
@@ -163,7 +168,8 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         return list(starmap(self.toArchive, archives.iteritems()))
 
     @tthrow
-    @login
+    @login_async
+    @defer.inlineCallbacks
     def UploadToCapsule(self, archive, capsule, title, description):
         """
           void UploadToCapsule(1: string ArchiveLocalID, 2: string CapsuleID,
@@ -174,16 +180,21 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         if status != ttypes.ArchiveStatus.Local:
             raise ValueError("Archive state invalid")
 
-        capsule = self.session.capsule_ids().get(int(capsule))
-        if capsule is None:
+        cs = yield self.session.async_capsules()
+        for c in cs:
+            if c['id'] == int(capsule):
+                if c.get('remaining', 0) >= docs['archive'].meta.size:
+                    capsule = c
+                    break
+                else:
+                    raise ValueError("Capsule is not big enough")
+        else:
             raise ValueError("Capsule not found")
 
-        if capsule.get('remaining', 0) < docs['archive'].meta.size:
-            raise ValueError("Capsule is not big enough")
-
         with ServerProgressHandler(docs['archive'].meta.size) as progq:
-            self.registry.cmd.archive.upload(
+            saved = yield self.registry.cmd.archive.upload_async(
                 capsule, docs, archive, progq)
+            # todo poll for status
 
     @tthrow
     def ResumeUpload(self, archive):
@@ -207,7 +218,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         raise NotImplementedError("not implemented")
 
     @tthrow
-    @login
+    @login_async
     def CancelUpload(self, archive):
         """
           void CancelUpload(1: string ArchiveLocalID)

@@ -24,7 +24,10 @@ class deferred_property(object):
         update_wrapper(self, self.f)
 
     def update(self, obj, name, value):
-        obj.__dict__[name]=value
+        if isinstance(value, Failure):
+            del obj.__dict__[name]
+        else:
+            obj.__dict__[name]=value
         return value
 
     def __get__(self, obj, cls):
@@ -35,10 +38,7 @@ class deferred_property(object):
             obj.__dict__[name] = self.f(obj)
             obj.__dict__[name].addBoth(
                 partial(self.update, obj, name))
-        ret = obj.__dict__[name]
-        if isinstance(ret, Failure):
-            ret.raiseException()
-        return ret
+        return obj.__dict__[name]
 
     def __set__(self, obj, value):
         obj.__dict__[self.f.__name__] = value

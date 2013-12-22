@@ -15,6 +15,7 @@ from lacli.decorators import command, login
 from lacli.exceptions import DecryptionError
 from lacli.compose import compose
 from lacli.progress import ConsoleProgressHandler
+from twisted.internet import defer
 from contextlib import contextmanager
 from abc import ABCMeta, abstractmethod
 
@@ -412,14 +413,19 @@ class LaArchiveCommand(LaBaseCommand):
         else:
             print _error
 
-    def upload(self, cid, docs, fname, progq):
+    @defer.inlineCallbacks
+    def upload_async(self, cid, docs, fname, progq):
         archive = docs['archive']
         auth = docs['auth']
         path = self.cache.data_file(docs['links'])
-        with self.session.upload(cid, archive, auth) as upload:
-            Upload(self.session, self.nprocs, self.debug).upload(
-                path, upload, progq)
-            return self.cache.save_upload(fname, docs, upload)
+        op = yield self.session.upload(cid, archive)
+        yield Upload(self.session, self.nprocs, self.debug).upload(path, op, progq)
+        yield op.finalize(auth)
+        account = yield self.session.async_account
+        yield self.cache.save_upload(fname, docs, op.uri, account)
+
+    def upload(self, *args, **kwargs):
+        block(self.upload_async)(*args, **kwargs)
 
     @command(directory=unicode, title=unicode, description=unicode)
     def do_create(self, directory=None, title="my archive", description=None):
