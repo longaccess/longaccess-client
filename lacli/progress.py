@@ -46,8 +46,8 @@ class BaseProgressHandler(queueHandler):
 
     @abstractmethod
     def keydone(self, msg):
-        getLogger().debug("saved key: " + str(msg.key)
-            + " (" + str(msg.size) + ")")
+        getLogger().debug("saved key: " + str(msg['key'])
+            + " (" + str(msg['size']) + ")")
 
 
 class ConsoleProgressHandler(BaseProgressHandler):
@@ -68,7 +68,7 @@ class ConsoleProgressHandler(BaseProgressHandler):
         stderr.flush()
 
     def keydone(self, msg):
-        super(ConsoleProgressHandler, self).save(msg)
+        super(ConsoleProgressHandler, self).keydone(msg)
 
 
 progress = None
@@ -85,5 +85,6 @@ def make_progress(msg):
 
 
 def save_progress(key, size):
+
     global progress
     progress.put({'save': True, 'key': key, 'size': size})

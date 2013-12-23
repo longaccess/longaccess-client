@@ -11,7 +11,7 @@ from lacli.log import getLogger
 from lacli.upload import Upload
 from lacli.archive import restore_archive
 from lacli.adf import archive_size, Certificate, Archive, Meta, creation
-from lacli.decorators import command, login
+from lacli.decorators import command, login, block
 from lacli.exceptions import DecryptionError
 from lacli.compose import compose
 from lacli.progress import ConsoleProgressHandler
@@ -422,10 +422,11 @@ class LaArchiveCommand(LaBaseCommand):
         yield Upload(self.session, self.nprocs, self.debug).upload(path, op, progq)
         yield op.finalize(auth)
         account = yield self.session.async_account
-        yield self.cache.save_upload(fname, docs, op.uri, account)
+        saved = yield self.cache.save_upload(fname, docs, op.uri, account)
+        defer.returnValue(saved)
 
     def upload(self, *args, **kwargs):
-        block(self.upload_async)(*args, **kwargs)
+        return block(self.upload_async)(*args, **kwargs)
 
     @command(directory=unicode, title=unicode, description=unicode)
     def do_create(self, directory=None, title="my archive", description=None):
