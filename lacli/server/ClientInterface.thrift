@@ -27,13 +27,13 @@ struct DateInfo {
 struct TransferStatus {
   1: string StatusDescription, 
   2: string ETA,
-  3: i32 RemainingBytes,
+  3: i64 RemainingBytes,
   4: double Progress  
 }
 struct ArchiveInfo {
   1: string Title,
   2: string Description,
-  3: i32 SizeInBytes,
+  3: i64 SizeInBytes,
   4: DateInfo CreatedDate,
   5: string Md5HexDigits,
 }
@@ -44,8 +44,8 @@ struct Capsule {
   4: string Title,
   5: string User,
   6: DateInfo ExpirationDate,
-  7: i32 TotalSizeInBytes,
-  8: i32 AvailableSizeInBytes,
+  7: i64 TotalSizeInBytes,
+  8: i64 AvailableSizeInBytes,
   9: list<ArchiveInfo> CapsuleContents
 }
 enum ArchiveStatus {
@@ -89,7 +89,9 @@ enum CertExportFormat
 //===========Methods===================
 service CLI {
 
-  bool PingCLI(),
+  bool PingCLI(), //if it returns false the it will close and restart
+
+  void CloseWhenPossible(),
 
   bool LoginUser(1: string username, 2: string Pass,3: bool Remember) throws (1:InvalidOperation error),
 
