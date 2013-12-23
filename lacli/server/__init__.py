@@ -1,6 +1,7 @@
 from lacli.decorators import command
 from lacli.log import getLogger
 from lacli.compose import compose
+from lacli.adf import make_adf
 from lacli.command import LaBaseCommand
 from lacli.decorators import contains, login_async, expand_args
 from twisted.python.log import startLogging, msg, err
@@ -12,6 +13,7 @@ from lacli.server.error import tthrow
 from itertools import starmap
 from lacli.progress import BaseProgressHandler
 from binascii import b2a_hex
+from StringIO import StringIO
 import sys
 import os
 import errno
@@ -140,33 +142,35 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         getLogger().debug("unhandled error: ", exc_info=True)
         return error
 
-    def toArchive(self, fname, docs):
-        created = docs['archive'].meta.created
-        size = docs['archive'].meta.size
+    def toArchiveInfo(self, docs):
         title = docs['archive'].title
+        size = docs['archive'].meta.size
+        created = docs['archive'].meta.created
         description = docs['archive'].description
         md5 = docs['auth'].md5.encode('hex')
-        status = self.cache.archive_status(docs)
-        ident = os.path.basename(fname)
         if title is not None:
             title = title.encode('utf8')
         if description is not None:
             description = description.encode('utf8')
+        return ttypes.ArchiveInfo(
+            title,
+            description,
+            size,
+            ttypes.DateInfo(
+                created.day,
+                created.month,
+                created.year,
+                created.hour,
+                created.minute,
+                created.second),
+            md5)
+    def toArchive(self, fname, docs):
+        status = self.cache.archive_status(docs)
+        ident = os.path.basename(fname)
         return ttypes.Archive(
             ident,
             status,
-            ttypes.ArchiveInfo(
-                title,
-                description,
-                size,
-                ttypes.DateInfo(
-                    created.day,
-                    created.month,
-                    created.year,
-                    created.hour,
-                    created.minute,
-                    created.second),
-                md5))
+            self.toArchiveInfo(docs))
 
     def PingCLI(self):
         msg('pingCLI()')
@@ -321,40 +325,20 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             sig.creator,
             "")
 
-    def toCertificate(self, fname, docs):
+    def toCertificate(self, ident, docs):
         return ttypes.Certificate(
             b2a_hex(docs['cert'].key).upper(),
             self.toSignature(docs),
-            self.toArchive(fname, docs))
+            self.toArchiveInfo(docs),
+            ident)
 
     @tthrow
     def GetCertificates(self):
         """
           list<Certificate> getCertificates(),
         """
-        certs = self.cache.certs()
+        certs = self.cache._for_adf('certs')
         return list(starmap(self.toCertificate, certs.iteritems()))
-
-    @tthrow
-    def GetCertificateFolder(self):
-        """
-          string GetCertificateFolder(),
-        """
-        raise NotImplementedError("not implemented")
-
-    @tthrow
-    def GetArchivesFolder(self):
-        """
-          string GetarchivesFolder(),
-        """
-        raise NotImplementedError("not implemented")
-
-    @tthrow
-    def SetCertificateFolder(self, path):
-        """
-          void SetCertificateFolder(1: string path),
-        """
-        raise NotImplementedError("not implemented")
 
     @tthrow
     def ExportCertificate(self, archive, fmt):
@@ -362,7 +346,19 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
           binary ExportCertificate(1: string ArchiveID,
             2: CertExportFormat format)
         """
-        raise NotImplementedError("not implemented")
+        docs = self.cache.get_adf(archive, 'certs')
+        out = StringIO()
+        if fmt == ttypes.CertExportFormat.PDF:
+            raise NotImplementedError("not implemented")
+        elif fmt == ttypes.CertExportFormat.YAML:
+            make_adf(list(docs.itervalues()), out=out, pretty=True)
+            return out.getvalue() 
+        elif fmt == ttypes.CertExportFormat.HTML:
+            out.write(self.cache._printable_cert(docs))
+            return out.getvalue() 
+        else:
+            raise NotImplementedError("Unknown format")
+            
 
     @tthrow
     def GetDefaultExtractionPath(self):
