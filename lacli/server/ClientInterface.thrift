@@ -89,7 +89,9 @@ enum CertExportFormat
 //===========Methods===================
 service CLI {
 
-  bool PingCLI(),
+  bool PingCLI(), //if it returns false the it will close and restart
+
+  void CloseWhenPossible(),
 
   bool LoginUser(1: string username, 2: string Pass,3: bool Remember) throws (1:InvalidOperation error),
 
