@@ -1,5 +1,32 @@
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Command
+from setuptools.command.build_py import build_py as _build_py
+from distutils.spawn import find_executable
 from lacli import __version__
+import os
+
+
+class gen_thrift(Command):
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        thrift = find_executable('thrift')
+        if thrift is not None:
+            root = os.path.abspath(os.path.dirname(__file__))
+            out = os.path.join(root, 'lacli', 'server', 'interface')
+            self.mkpath(out)
+            self.announce("thrift found, regenerating files in " + out)
+            if not self.dry_run:
+                self.spawn([thrift, '-out', out,
+                            '-v', '--gen', 'py:twisted,new_style',
+                            os.path.join(root, 'lacli', 'server', 'ClientInterface.thrift')])
+        else:
+            self.warn("thrift executable not found, skipping")
 
 try:
     import pandoc
@@ -10,6 +37,15 @@ try:
 except (IOError, ImportError):
     description = 'This is the prototype client program' + \
         'for interacting with the Longaccess service.'
+
+
+class build_py(_build_py):
+    def thrift_gen(self, files):
+        pass
+
+    def run(self):
+        _build_py.run_command(self, 'gen_thrift')
+        _build_py.run(self)
 
 setup(version=__version__,
       name="lacli",
@@ -22,7 +58,8 @@ setup(version=__version__,
       packages=find_packages(exclude=['features*', '*.t']),
       install_requires=['boto>=2.13.2', 'python-dateutil', 'filechunkio',
                         'docopt', 'progressbar', 'logutils', 'requests',
-                        'unidecode', 'pycrypto', 'pyaml'],
+                        'unidecode', 'pycrypto', 'pyaml', 'Twisted', 'crochet',
+                        'treq', 'pyOpenSSL', 'thrift'],
       tests_require=['testtools'],
       test_suite="lacli.t",
       entry_points="""
@@ -30,6 +67,7 @@ setup(version=__version__,
       lacli = lacli.main:main
       ladec = lacli.cipher.dec:main
       """,
+      cmdclass={'build_py': build_py, 'gen_thrift': gen_thrift},
       package_data={'lacli': ['data/certificate.html']},
       classifiers=[
           'Development Status :: 4 - Beta',

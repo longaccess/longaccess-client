@@ -10,6 +10,7 @@ Commands (run lacli <command> -h for options):
     capsule         manage capsules
     certificate     manage certificates
     login           configure access credentials
+    server          run a RPC server
 
 Options:
     -i, --interactive              interactive mode
@@ -30,6 +31,7 @@ from lacli.log import setupLogging
 from docopt import docopt, DocoptExit
 from lacli.command import LaCapsuleCommand, LaCertsCommand, LaArchiveCommand
 from lacli.login import LaLoginCommand
+from lacli.server import LaServerCommand
 from lacli import __version__
 from lacli.api import RequestsFactory
 from lacli.cache import Cache
@@ -119,6 +121,7 @@ class LaCommand(cmd.Cmd):
         self.capsule = LaCapsuleCommand(registry)
         self.certificate = LaCertsCommand(registry)
         self.login = LaLoginCommand(registry)
+        self.server = LaServerCommand(registry)
 
     def do_EOF(self, line):
         print
@@ -156,6 +159,9 @@ class LaCommand(cmd.Cmd):
 
     def do_login(self, line):
         self.login.onecmd('login ' + line)
+
+    def do_server(self, line):
+        self.server.onecmd('server ' + line)
 
 
 def main(args=sys.argv[1:]):

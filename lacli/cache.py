@@ -1,3 +1,4 @@
+import json
 import os
 import shlex
 from urlparse import urlparse
@@ -11,6 +12,7 @@ from lacli.log import getLogger
 from lacli.archive import dump_archive, archive_handle
 from lacli.exceptions import InvalidArchiveError
 from lacli.decorators import contains
+from lacli.server.interface.ClientInterface.ttypes import ArchiveStatus
 from urllib import pathname2url
 from tempfile import NamedTemporaryFile
 from binascii import b2a_hex
@@ -52,33 +54,84 @@ class Cache(object):
         dname = self._cache_dir('uploads', write='w' in mode)
         return open(os.path.join(dname, name), mode)
 
+    def get_adf(self, fname, category='archives'):
+        with open(os.path.join(self._cache_dir(category), fname)) as f:
+            return load_archive(f)
+
+    def _validate_upload(self, lines):
+        parts = []
+        last = chunk = False
+        for line in lines:
+            key = json.loads(line)
+            size = key['size']
+            if chunk is False:  # initialize chunk size
+                chunk = last = size
+            if size < last and last == chunk:
+                last = size  # chunk is smaller than all previous
+            assert size == chunk or size == last, "Too many different sizes"
+            parts.append(key)
+        return parts
+
+    def _get_uploads(self):
+        uploads = {}
+        for fn in iglob(os.path.join(self._cache_dir('uploads'), '*')):
+            aid = os.path.basename(fn)
+            uploads[aid] = {}
+            with open(fn) as f:
+                uploads[aid] = self._validate_upload(f)
+        return uploads
+                     
+
     @contains(dict)
     def _for_adf(self, category):
         for fn in iglob(os.path.join(self._cache_dir(category), '*.adf')):
             with open(fn) as f:
                 try:
-                    yield (fn, load_archive(f))
+                    yield (os.path.basename(fn), load_archive(f))
                 except InvalidArchiveError:
                     getLogger().debug(fn, exc_info=True)
 
-    def prepare(self, title, folder, description=None, fmt='zip', cb=None):
-        archive = Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)),
-                          description=description)
-        cert = Certificate()
+    def prepare(self, title, items, description=None, fmt='zip', cb=None):
+        docs = {
+            'archive': Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)),
+                               description=description),
+            'cert': Certificate(),
+        }
         tmpdir = self._cache_dir('data', write=True)
-        name, path, auth = dump_archive(archive, folder, cert, cb, tmpdir)
-        link = Links(local=pathname2url(os.path.relpath(path, self.home)))
-        archive.meta.size = os.path.getsize(path)
+        if isinstance(items, basestring):
+            items = [items]
+
+        def mycb(path, rel):
+            if cb is not None:
+                cb(path, rel)
+            elif not path:
+                print "Encrypting.."
+            else:
+                print path.encode('utf8')
+        name, path, docs['auth'] = dump_archive(
+            docs['archive'], items, docs['cert'], mycb, tmpdir)
+        rel = os.path.relpath(path, self.home)
+        docs['links'] = Links(local=pathname2url(rel))
+        docs['archive'].meta.size = os.path.getsize(path)
         tmpargs = {'delete': False,
                    'dir': self._cache_dir('archives', write=True)}
         with NamedTemporaryFile(prefix=name, suffix=".adf", **tmpargs) as f:
-            make_adf([archive, cert, auth, link], out=f)
+            make_adf(list(docs.itervalues()), out=f)
+            return (f.name, docs)
 
-    def save_upload(self, fname, docs, upload):
-        docs['links'].upload = upload['uri']
-        docs['archive'].meta.email = upload['account']['email']
-        docs['archive'].meta.name = upload['account']['displayname']
-        with open(fname, 'w') as f:
+    def archive_status(self, docs):
+        if 'signature' in docs:
+            return ArchiveStatus.Completed
+        elif 'links' in docs and docs['links'].upload:
+            return ArchiveStatus.InProgress
+        else:
+            return ArchiveStatus.Local  # TODO: check for errors
+
+    def save_upload(self, fname, docs, uri, account):
+        docs['links'].upload = uri 
+        docs['archive'].meta.email = account['email']
+        docs['archive'].meta.name = account['displayname']
+        with self._archive_open(fname, 'w') as f:
             make_adf(list(docs.itervalues()), out=f)
         return {
             'fname': fname,
@@ -86,20 +139,29 @@ class Cache(object):
             'archive': docs['archive']
         }
 
+    def upload_error(self, fname):
+        docs = []
+        with self._archive_open(fname) as _upload:
+            docs = load_archive(_upload)
+        docs['links'].upload = None
+        with self._archive_open(fname, 'w') as _upload:
+            make_adf(list(docs.itervalues()), out=_upload)
+        return docs
+
     def upload_complete(self, fname, status):
         """
         adds the archive key to the signature part of the ADF file
         """
         assert 'archive_key' in status, "no archive key"
         docs = []
-        with open(fname) as _upload:
+        with self._archive_open(fname) as _upload:
             docs = load_archive(_upload)
         docs['signature'] = Signature(aid=status['archive_key'],
                                       uri=status.get('archive'),
                                       expires=status.get('expires'),
                                       created=status.get('created'),
                                       creator=docs['archive'].meta.name)
-        with open(fname, 'w') as _upload:
+        with self._archive_open(fname, 'w') as _upload:
             make_adf(list(docs.itervalues()), out=_upload)
         return docs
 
@@ -187,6 +249,11 @@ class Cache(object):
             except Exception:
                 getLogger().debug("error running {}".format(command),
                                   exc_info=True)
+
+    def shred_archive(self, fname, srm=None):
+        fname = os.path.join(self._cache_dir('archives'), fname)
+        self.shred_file(fname, srm)
+        return fname
 
     def shred_cert(self, aid, countdown=[], srm=None):
         path = None

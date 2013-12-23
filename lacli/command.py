@@ -11,9 +11,12 @@ from lacli.log import getLogger
 from lacli.upload import Upload
 from lacli.archive import restore_archive
 from lacli.adf import archive_size, Certificate, Archive, Meta, creation
-from lacli.decorators import command, login
+from lacli.decorators import command, login, block
 from lacli.exceptions import DecryptionError
 from lacli.compose import compose
+from lacli.progress import ConsoleProgressHandler
+from twisted.internet import defer
+from contextlib import contextmanager
 from abc import ABCMeta, abstractmethod
 
 
@@ -33,6 +36,10 @@ class LaBaseCommand(cmd.Cmd, object):
     @property
     def batch(self):
         return self.registry.prefs['command']['batch']
+
+    @batch.setter
+    def batch(self, newvalue):
+        self.registry.prefs['command']['batch'] = newvalue
 
     @property
     def cache(self):
@@ -359,27 +366,17 @@ class LaArchiveCommand(LaBaseCommand):
                 _error += "no capsules found"
 
         if fname and capsule:
-            archive = docs['archive']
             link = docs['links']
-            path = self.cache.data_file(link)
-
-            auth = None
-            if 'auth' in docs:
-                auth = docs['auth']
 
             if link.upload or link.download:
                 print "upload is already completed"
-            elif not path:
-                print "no local copy exists."
-            elif path:
+            else:
                 try:
-                    saved = None
-                    with self.session.upload(capsule, archive, auth) as upload:
-                        Upload(self.session, self.nprocs, self.debug).upload(
-                            path, upload)
-                        saved = self.cache.save_upload(fname, docs, upload)
-
-                    if saved and not self.batch:
+                    size = docs['archive'].meta.size
+                    handler = ConsoleProgressHandler(size, fname=fname)
+                    with handler as progq:
+                        saved = self.upload(capsule, docs, fname, progq)
+                    if not self.batch:
                         print ""
                         print "Upload finished, waiting for verification"
                         print "Press Ctrl-C to check manually later"
@@ -387,6 +384,7 @@ class LaArchiveCommand(LaBaseCommand):
                             status = self.session.upload_status(saved['link'])
                             if status['status'] == "error":
                                 print "status: error"
+                                self.cache.upload_error(fname)
                                 break
                             elif status['status'] == "completed":
                                 print "status: completed"
@@ -408,11 +406,27 @@ class LaArchiveCommand(LaBaseCommand):
 
                     print "\ndone."
                 except Exception as e:
+                    self.cache.upload_error(fname)
                     getLogger().debug("exception while uploading",
                                       exc_info=True)
                     print "error: " + str(e)
         else:
             print _error
+
+    @defer.inlineCallbacks
+    def upload_async(self, cid, docs, fname, progq):
+        archive = docs['archive']
+        auth = docs['auth']
+        path = self.cache.data_file(docs['links'])
+        op = yield self.session.upload(cid, archive)
+        yield Upload(self.session, self.nprocs, self.debug).upload(path, op, progq)
+        yield op.finalize(auth)
+        account = yield self.session.async_account
+        saved = yield self.cache.save_upload(fname, docs, op.uri, account)
+        defer.returnValue(saved)
+
+    def upload(self, *args, **kwargs):
+        return block(self.upload_async)(*args, **kwargs)
 
     @command(directory=unicode, title=unicode, description=unicode)
     def do_create(self, directory=None, title="my archive", description=None):
@@ -423,7 +437,14 @@ class LaArchiveCommand(LaBaseCommand):
             if not os.path.isdir(directory):
                 print "The specified folder does not exist."
                 return
-            self.cache.prepare(title, directory, description=description)
+
+            def mycb(path, rel):
+                if not path:
+                    print "Encrypting.."
+                else:
+                    print path.encode('utf8'), "=>", rel.encode('utf8')
+            self.cache.prepare(title, directory,
+                               description=description, cb=mycb)
             print "archive prepared"
 
         except Exception as e:
@@ -553,39 +574,9 @@ class LaArchiveCommand(LaBaseCommand):
                 if cert_id in certs:
                     extract(certs[cert_id]['cert'], certs[cert_id]['archive'])
                 else:
-                    try:
-                        from lacli.views.decrypt import view, app, window
-
-                        def quit():
-                            view.hide()
-                            app.quit()
-
-                        def decrypt(x, dest):
-                            cert = Certificate(x.decode('hex'))
-                            archive = Archive(
-                                'title', Meta('zip', 'aes-256-ctr'))
-                            try:
-                                extract(cert, archive, dest)
-                                quit()
-                            except DecryptionError as e:
-                                print "Error decrypting"
-                                getLogger().debug("Error decrypting", exc_info=True)
-                                view.rootObject().setProperty("hasError", True)
-                            except IOError as e:
-                                print "Error extracting"
-                                getLogger().debug("Error extracting", exc_info=True)
-                                view.rootObject().setProperty("hasError", True)
-
-                        view.rootObject().decrypt.connect(decrypt)
-                        view.engine().quit.connect(quit)
-                        window.show()
-                        app.exec_()
-                    except ImportError as e:
-                        getLogger().debug("Key input gui unavailable",
+                    getLogger().debug("Key input gui unavailable and key not found",
                                           exc_info=True)
-                        print "Key input gui unavailable."
-                    except Exception:
-                        pass
+                    print "error: key not found"
 
             except Exception as e:
                 getLogger().debug("exception while restoring",
@@ -629,7 +620,7 @@ class LaArchiveCommand(LaBaseCommand):
                 sys.stdout.write(", {}".format(num))
             print "... deleting"
 
-        self.cache.shred_file(fname, srm)
+        self.cache.shred_archive(fname, srm)
         if os.path.exists(fname):
             if not srm:
                 print srmprompt
@@ -649,3 +640,4 @@ class LaArchiveCommand(LaBaseCommand):
                 print "Please remove manually"
             else:
                 print "Deleted archive", archive.title
+# vim: et:sw=4:ts=4
