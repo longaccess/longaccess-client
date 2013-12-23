@@ -59,7 +59,7 @@ setup(version=__version__,
       install_requires=['boto>=2.13.2', 'python-dateutil', 'filechunkio',
                         'docopt', 'progressbar', 'logutils', 'requests',
                         'unidecode', 'pycrypto', 'pyaml', 'Twisted', 'crochet',
-                        'treq', 'pyOpenSSL', 'thrift'],
+                        'treq', 'pyOpenSSL', 'thrift', 'blessings'],
       tests_require=['testtools'],
       test_suite="lacli.t",
       entry_points="""
