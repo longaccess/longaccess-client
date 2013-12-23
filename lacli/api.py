@@ -57,6 +57,7 @@ class TwistedRequestsFactory(object):
             r = yield self.get_content(r)
             defer.returnValue(r)
 
+        @defer.inlineCallbacks
         def patch(self, *args, **kwargs):
             r = yield treq.patch(
                   *args, 
