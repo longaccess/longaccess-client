@@ -16,6 +16,8 @@ from lacli.exceptions import DecryptionError
 from lacli.compose import compose
 from abc import ABCMeta, abstractmethod
 
+from richtext import RichTextUI as UIClass
+ui = UIClass()
 
 class LaBaseCommand(cmd.Cmd, object):
     __metaclass__ = ABCMeta
@@ -111,12 +113,17 @@ class LaCertsCommand(LaBaseCommand):
         certs = self.cache._for_adf('certs')
 
         if len(certs):
+            ui.print_certificates_header()
             for cert in sorted(certs.itervalues(), key=creation):
                 aid = cert['signature'].aid
                 title = cert['archive'].title
                 size = archive_size(cert['archive'])
-                print u"{:>10} {:>6} {:<}".format(
-                    aid, size, title)
+                ui.print_certificates_line( certificate={
+                        'aid': aid,
+                        'size':size,
+                        'title': title,
+                        'created':cert['archive'].meta.created
+                    })
                 if self.debug > 2:
                     for doc in cert.itervalues():
                         pyaml.dump(doc, sys.stdout)
@@ -439,8 +446,10 @@ class LaArchiveCommand(LaBaseCommand):
         archives = self.cache._for_adf('archives')
 
         if len(archives):
+            ui.print_archives_header()
             bydate = sorted(archives.itervalues(), key=creation)
             for n, archive in enumerate(bydate):
+                # archive = archive[1]
                 status = "LOCAL"
                 cert = ""
                 if 'signature' in archive:
@@ -452,8 +461,14 @@ class LaArchiveCommand(LaBaseCommand):
                         cert = archive['links'].upload
                 title = archive['archive'].title
                 size = archive_size(archive['archive'])
-                print u"{:03d} {:>6} {:>20} {:>10} {:>10}".format(
-                    n+1, size, title, status, cert)
+                ui.print_archives_line(archive = {
+                        'num': n+1,
+                        'size': size,
+                        'title': title,
+                        'status': status,
+                        'cert':cert,
+                        'created':archive['archive'].meta.created
+                    })
                 if self.debug > 2:
                     for doc in archive.itervalues():
                         pyaml.dump(doc, sys.stdout)
