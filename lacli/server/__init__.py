@@ -11,6 +11,7 @@ from lacli.server.interface.ClientInterface import CLI, ttypes
 from lacli.server.error import tthrow
 from itertools import starmap
 from lacli.progress import BaseProgressHandler
+from binascii import b2a_hex
 import sys
 import os
 import errno
@@ -306,12 +307,33 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         """
         raise NotImplementedError("not implemented")
 
+    def toSignature(self, docs):
+        sig = docs['signature']
+        return ttypes.Signature(
+            sig.aid,
+            ttypes.DateInfo(
+                sig.created.day,
+                sig.created.month,
+                sig.created.year,
+                sig.created.hour,
+                sig.created.minute,
+                sig.created.second),
+            sig.creator,
+            "")
+
+    def toCertificate(self, fname, docs):
+        return ttypes.Certificate(
+            b2a_hex(docs['cert'].key).upper(),
+            self.toSignature(docs),
+            self.toArchive(fname, docs))
+
     @tthrow
     def GetCertificates(self):
         """
           list<Certificate> getCertificates(),
         """
-        raise NotImplementedError("not implemented")
+        certs = self.cache.certs()
+        return list(starmap(self.toCertificate, certs.iteritems()))
 
     @tthrow
     def GetCertificateFolder(self):
