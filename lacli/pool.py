@@ -246,7 +246,7 @@ class MPUpload(object):
                 make_progress({'part': seq, 'tx': 0})
             skip = self.source.chunkstart(uploaded)
             newsource = MPFile(self.source.path, skip)
-        save_progress()
+        save_progress(key, key.size)
         return (key.etag, newsource)
 
     def do_part(self, seq, **kwargs):

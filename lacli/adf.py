@@ -285,8 +285,11 @@ json_cert_re = re.compile(r"""
 
 def load_archive(f):
 
-    match = json_cert_re.search(
-        mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ))
+    try:
+        f = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+    except Exception as e:
+        raise InvalidArchiveError(e)
+    match = json_cert_re.search(f)
     d = {}
     if match:  # we have a json encoded cert in this file
         try:
