@@ -356,4 +356,9 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             3: string destinationPath)
         """
         raise NotImplementedError("not implemented")
+
+    @tthrow
+    def CloseWhenPossible(self):
+        reactor.callLater(1, reactor.stop)
+
 # vim: et:sw=4:ts=4
