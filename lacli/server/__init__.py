@@ -1,5 +1,6 @@
 from lacli.decorators import command
 from lacli.log import getLogger
+from lacli.compose import compose
 from lacli.command import LaBaseCommand
 from lacli.decorators import contains, login_async, expand_args
 from twisted.python.log import startLogging, msg, err
@@ -12,11 +13,79 @@ from itertools import starmap
 from lacli.progress import BaseProgressHandler
 import sys
 import os
+import errno
+import json
+
+
+class UploadState(object):
+    states = {}
+    
+    @classmethod
+    def init(cls, cache):
+        cls.cache = cache
+        cls.states = cache._get_uploads()
+
+    @classmethod
+    def save(cls, fn, key):
+        cls.states.setdefault(fn, []).append(key)
+    
+    def __init__(self, archive, keys=None):
+        self.cache = type(self).cache
+        self.archive = archive
+        self.logfile = None
+        self.keys = keys
+        self._progress = 0
+
+    @property
+    def progress(self):
+        f = lambda x, y: x + y['size']
+        return self._progress + reduce(f, self.keys, 0)
+
+    def __enter__(self):
+        try:
+            self.logfile = self.cache._upload_open(self.archive, mode='r+')
+        except IOError as e:
+            if e.errno == errno.ENOENT:
+                self.logfile = self.cache._upload_open(self.archive, mode='w+')
+            else:
+                raise e
+        self.keys = self.cache._validate_upload(self.logfile)
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.logfile.close()
+        self.logfile = self._progress = None
+
+    def keydone(self, key, size):
+        assert self.logfile is not None, "Log not open"
+        new = { 'name': key, 'size': size}
+        self.logfile.write(json.dumps(new))
+        type(self).save(self.archive, new)
+        self.keys.append(new)
+        self._progress = 0
+
+    def update(self, progress):
+        self._progress += progress
+
+    @property
+    def seq(self):
+        assert self.keys is not None, "Keys not available"
+        return len(self.keys)
 
 
 class ServerProgressHandler(BaseProgressHandler):
+    def __init__(self, state=None, **kwargs):
+        assert state is not None, "ServerProgressHandler requires a state object"
+        self.state = state
+        super(ServerProgressHandler, self).__init__(**kwargs)
+        for seq, key in enumerate(self.state.keys):
+            self.handle({'part': seq, 'tx': key.size})
+        
     def update(self, progress):
-        msg('Progress: ' + str(progress))
+        self.state.update(progress)
+
+    def keydone(self, msg):
+        self.state.keydone(msg['key'].name, msg['size'])
         
 
 class LaServerCommand(LaBaseCommand, CLI.Processor):
@@ -33,6 +102,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
     def __init__(self, *args, **kwargs):
         super(LaServerCommand, self).__init__(*args, **kwargs)
         self.logincmd = self.registry.cmd.login
+        UploadState.init(self.cache)
         CLI.Processor.__init__(self, self)
 
     def makecmd(self, options):
@@ -147,7 +217,6 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
     def CreateArchive(self, paths):
         """
         """
-
         def progress(path, rel):
             if not path:
                 msg("Encrypting..")
@@ -191,10 +260,12 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         else:
             raise ValueError("Capsule not found")
 
-        with ServerProgressHandler(docs['archive'].meta.size) as progq:
-            saved = yield self.registry.cmd.archive.upload_async(
-                capsule, docs, archive, progq)
-            # todo poll for status
+        size = docs['archive'].meta.size
+        with UploadState(archive) as state:
+            with ServerProgressHandler(size=size, state=state) as progq:
+                saved = yield self.registry.cmd.archive.upload_async(
+                    capsule, docs, archive, progq)
+                # todo poll for status
 
     @tthrow
     def ResumeUpload(self, archive):
@@ -203,12 +274,22 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         """
         raise NotImplementedError("not implemented")
 
+    def toTransferStatus(self, state):
+        return ttypes.TransferStatus(
+            'description',
+            'eta',
+            0,
+            state.progress)
+
     @tthrow
     def QueryArchiveStatus(self, archive):
         """
           TransferStatus QueryArchiveStatus(1: string ArchiveLocalID)
         """
-        raise NotImplementedError("not implemented")
+        if archive not in UploadState.states:
+            raise ValueError("archive not found")
+        state = UploadState(archive, UploadState.states[archive])
+        return self.toTransferStatus(state)
 
     @tthrow
     def PauseUpload(self, archive):

@@ -1,3 +1,4 @@
+import json
 import os
 import shlex
 from urlparse import urlparse
@@ -56,6 +57,30 @@ class Cache(object):
     def get_adf(self, fname, category='archives'):
         with open(os.path.join(self._cache_dir(category), fname)) as f:
             return load_archive(f)
+
+    def _validate_upload(self, lines):
+        parts = []
+        last = chunk = False
+        for line in lines:
+            key = json.loads(line)
+            size = key['size']
+            if chunk is False:  # initialize chunk size
+                chunk = last = size
+            if size < last and last == chunk:
+                last = size  # chunk is smaller than all previous
+            assert size == chunk or size == last, "Too many different sizes"
+            parts.append(key)
+        return parts
+
+    def _get_uploads(self):
+        uploads = {}
+        for fn in iglob(os.path.join(self._cache_dir('uploads'), '*')):
+            aid = os.path.basename(fn)
+            uploads[aid] = {}
+            with open(fn) as f:
+                uploads[aid] = self._validate_upload(f)
+        return uploads
+                     
 
     @contains(dict)
     def _for_adf(self, category):

@@ -9,22 +9,30 @@ from abc import ABCMeta, abstractmethod
 class BaseProgressHandler(queueHandler):
     __metaclass__ = ABCMeta
 
-    def __init__(self, size):
+    def __init__(self, size=None):
         self.total = size
         self.tx = {}
+        self.progress = 0
         self.previous = 0
+
+    def update_current(self, msg):
+        self.tx[msg['part']] = int(msg['tx'])
+        return sum(self.tx.values())
+
+    def save_current(self):
+        self.progress += sum(self.tx.values())
+        self.tx = {}
+        return self.progress
 
     def handle(self, msg):
         progress = self.previous
         if 'complete' in msg:
             progress = self.total
         elif 'part' in msg:
-            self.tx[msg['part']] = int(msg['tx'])
-            progress += sum(self.tx.values())
+            progress += self.update_current(msg)
         elif 'save' in msg:
-            self.previous += sum(self.tx.values())
-            progress = self.previous
-            self.tx = {}
+            self.keydone(msg)
+            progress = self.save_current()
         self.update(progress)
 
     def __enter__(self):
@@ -34,7 +42,12 @@ class BaseProgressHandler(queueHandler):
 
     @abstractmethod
     def update(self, progress):
-	getLogger().debug("got progress: " + str(progress))
+        getLogger().debug("got progress: " + str(progress))
+
+    @abstractmethod
+    def keydone(self, msg):
+        getLogger().debug("saved key: " + str(msg.key)
+            + " (" + str(msg.size) + ")")
 
 
 class ConsoleProgressHandler(BaseProgressHandler):
@@ -54,6 +67,9 @@ class ConsoleProgressHandler(BaseProgressHandler):
         self.bar.update(progress)
         stderr.flush()
 
+    def keydone(self, msg):
+        super(ConsoleProgressHandler, self).save(msg)
+
 
 progress = None
 
@@ -68,6 +84,6 @@ def make_progress(msg):
     progress.put(msg)
 
 
-def save_progress():
+def save_progress(key, size):
     global progress
-    progress.put({'save': True})
+    progress.put({'save': True, 'key': key, 'size': size})
