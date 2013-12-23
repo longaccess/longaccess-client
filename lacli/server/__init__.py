@@ -383,4 +383,19 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
     def CloseWhenPossible(self):
         reactor.callLater(1, reactor.stop)
 
+    @tthrow
+    def GetSettings(self):
+        return ttypes.Settings(
+            self.registry.cmd.login.username or "",
+            self.registry.cmd.login.password or "",
+            False,
+            self.cache._cache_dir('archives'),
+            self.cache._cache_dir('certs'))
+
+    @tthrow
+    def SetSettings(self, settings):
+        self.registry.cmd.login.username = settings.StoredUserName
+        self.registry.cmd.login.password = settings.StoredPassword
+        # TODO handle rememberme and folder settings
+
 # vim: et:sw=4:ts=4
