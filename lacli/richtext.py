@@ -33,13 +33,14 @@ class RichTextUI:
             archive_title = archive['title'][0:len(h_parts[-1])-2]+'..'
         else:
             archive_title = archive['title']
+        archive_title = archive_title.replace('\n',' ')
         print self.archive_design['frmt'].format(
             archive['num'],
             archive['cert'],
             archive['status'],
             archive['size'],
             archive['created'].strftime('%Y-%m-%d'),
-            archive_title) 
+            archive_title.encode('utf-8')) 
 
     def print_certificates_header(self):
         print self.cert_design['titles']
@@ -51,9 +52,10 @@ class RichTextUI:
             certificate_title = certificate['title'][0:len(h_parts[-1])-2]+'..'
         else:
             certificate_title = certificate['title']
+        certificate_title = certificate_title.replace('\n', ' ')
         print self.cert_design['frmt'].format(
             certificate['aid'],
             certificate['size'],
             certificate['created'].strftime('%Y-%m-%d'),
-            certificate_title) 
+            certificate_title.encode('utf-8')) 
     

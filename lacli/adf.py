@@ -362,12 +362,16 @@ def archive_size(archive):
     if archive.meta.size:
         kib = archive.meta.size // 1024
         mib = kib // 1024
+        gib = mib // 1024
+
         if not kib:
-            size = "{}B".format(archive.meta.size)
+            size = "{} B".format(archive.meta.size)
         elif not mib:
-            size = "{}KiB".format(kib)
+            size = "{} KB".format(kib)
+        elif not gib:
+            size = "{} MB".format(mib)
         else:
-            size = "{}MiB".format(mib)
+            size = "{} GB".format(gib)
     return size
 
 

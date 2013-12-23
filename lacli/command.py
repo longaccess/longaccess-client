@@ -637,7 +637,7 @@ class LaArchiveCommand(LaBaseCommand):
             "file(s) manually:"))
 
         if not self.batch:
-            print "Deleting archive", index, "({}) in 5".format(archive.title),
+            print "Deleting archive", index, "({}) in 5".format(archive.title.encode('utf8')),
             for num in [4, 3, 2, 1]:
                 sys.stdout.flush()
                 time.sleep(1)
