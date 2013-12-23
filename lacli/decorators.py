@@ -9,7 +9,7 @@ from functools import update_wrapper, wraps, partial
 from requests.exceptions import ConnectionError, HTTPError
 from lacli.exceptions import (ApiErrorException, ApiAuthException,
                               ApiUnavailableException, ApiNoSessionError, BaseAppException)
-from crochet import setup, wait_for_reactor
+from crochet import setup, run_in_reactor, TimeoutError
 
 def expand_args(f):
     @wraps(f)
@@ -131,12 +131,17 @@ def command(**types):
 def block(f):
     """ Decorate a method to block in crochet reactor
     """
-    fblocking = wait_for_reactor(f)
+    fblocking = run_in_reactor(f)
     @wraps(f)
     def wrap(*args, **kwargs):
         if not reactor.running:
             setup()
-        return fblocking(*args, **kwargs)
+        result = fblocking(*args, **kwargs)
+        try:
+            return result.wait(1000)
+        except TimeoutError:
+            result.cancel()
+            raise
     return wrap
 
 
@@ -179,6 +184,9 @@ class login_async(object):
 
 
 class login(login_async):
+    def __init__(self, *args, **kwargs):
+        super(login, self).__init__(*args, **kwargs)
+    
     def dologin(self, prefs):
         if self.obj.batch:
             self.obj.registry.cmd.login.login_batch(
@@ -190,6 +198,5 @@ class login(login_async):
             self.obj.registry.cmd.password = prefs['pass']
             self.obj.registry.cmd.do_login(" ".join(cmdline))
 
-    @block
     def loginfirst(self, *args, **kwargs):
        return super(login, self).loginfirst(*args, **kwargs)
