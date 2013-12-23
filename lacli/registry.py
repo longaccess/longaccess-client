@@ -20,6 +20,7 @@ class LaRegistry(object):
         self.cache = cache
         self.prefs = prefs
         self.cmd = cmd
+        self.session = self.new_session()
 
     def init_prefs(self):
         prefs = self.prefs['api']
