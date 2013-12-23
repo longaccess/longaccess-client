@@ -120,7 +120,13 @@ def _writer(name, items, cipher, tmpdir, hashobj=None):
         with NamedTemporaryFile(**tmpargs) as zf:
             with ZipFile(zf, 'w', ZIP_DEFLATED, True) as zpf:
                 for path, rel in walk_folders(map(os.path.abspath, items)):
-                    zpf.write(path, rel.encode('utf8'))
+                    try:
+                        zpf.write(path, rel.encode('utf8'))
+                    except Exception as e:
+                        if not hasattr(e, 'filename'):
+                            setattr(e, 'filename', path)
+                        dst.close()
+                        raise e
                     yield (path, rel)
             zf.flush()
             zf.seek(0)
