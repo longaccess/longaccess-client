@@ -118,17 +118,6 @@ class UploadOperation(object):
         self.capsule = capsule
         self.api = api
 
-    def parse_status(self, rsp):
-        if rsp:
-            if 'created' in rsp:
-                rsp['created'] = parse_timestamp(rsp['created'])
-            if 'expires' in rsp:
-                rsp['expires'] = parse_timestamp(rsp['expires'])
-            if 'archive' in rsp:
-                rsp['archive'] = urljoin(self.url, rsp['archive'])
-        return rsp
-
-
     @defer.inlineCallbacks
     def start(self):
         endpoints = yield self.api.endpoints
@@ -139,12 +128,12 @@ class UploadOperation(object):
         })
         r = yield self.api._post(endpoints['upload'], data=data)
         self.uri = urljoin(self.api.url, r['resource_uri'])
-        defer.returnValue(self.parse_status(r))
+        defer.returnValue(self.api.parse_status(r))
 
     @defer.inlineCallbacks
     def poll(self):
         r = yield self.api._get(self.uri)
-        defer.returnValue(self.parse_status(r))
+        defer.returnValue(self.api.parse_status(r))
 
     @property
     def status(self):
@@ -242,3 +231,22 @@ class Api(object):
     @block
     def account(self):
         return self.async_account
+
+    @defer.inlineCallbacks
+    def upload_status_async(self, uri):
+        r = yield self._get(uri)
+        defer.returnValue(self.parse_status(r))
+
+    @block
+    def upload_status(self, uri):
+        return self.upload_status_async(uri)
+
+    def parse_status(self, rsp):
+        if rsp:
+            if 'created' in rsp:
+                rsp['created'] = parse_timestamp(rsp['created'])
+            if 'expires' in rsp:
+                rsp['expires'] = parse_timestamp(rsp['expires'])
+            if 'archive' in rsp:
+                rsp['archive'] = urljoin(self.url, rsp['archive'])
+        return rsp
