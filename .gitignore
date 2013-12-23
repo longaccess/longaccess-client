@@ -48,3 +48,5 @@ pyinstall/upload.sh
 
 # qt resource module
 pyinstall/qrc_decrypt.py
+
+gen-csharp

@@ -1,6 +1,8 @@
-from lacli.decorators import command
+from lacli.decorators import command, block
 from lacli.command import LaBaseCommand
 from lacli.log import getLogger
+from lacli.exceptions import ApiAuthException
+from twisted.internet import defer
 from re import match, IGNORECASE
 from getpass import getpass
 
@@ -11,6 +13,7 @@ class LaLoginCommand(LaBaseCommand):
     Usage: lacli login [<username> <password>]
     """
     prompt = 'lacli:login> '
+    email = None
 
     def makecmd(self, options):
         cmd = ["login"]
@@ -45,42 +48,51 @@ class LaLoginCommand(LaBaseCommand):
 
         save = (self.username, self.password)
 
-        if username:
-            self.username = username
-            self.password = None
+        if not username and not self.batch:
+            username = self.input("Username/email: ")
 
-        if password:
-            self.password = password
+        if not password and not self.batch:
+            password = getpass("Password: ")
 
-        if not self.username and not self.batch:
-            self.username = self.input("Username/email: ")
-
-        if not self.password and not self.batch:
-            self.password = getpass("Password: ")
-
-        # replace session for all commands
-        self.session = self.registry.new_session()
-
-        email = None
         try:
-            email = self.session.account['email']
-            print "authentication succesfull as", email
-        except:
-            self.username = self.password = None
+            self.login_batch(username, password)
+            print "authentication succesfull as", self.email
+            if not self.batch:
+                if self.username != save[0] or self.password != save[1]:
+                    if match('y(es)?$',
+                             self.input("Save credentials? "), IGNORECASE):
+                        self.registry.save_session(self.username, self.password)
+        except Exception as e:
             getLogger().debug("auth failure", exc_info=True)
             print "authentication failed"
 
-        if email and not self.batch:
-            if self.username != save[0] or self.password != save[1]:
-                if match('y(es)?$',
-                         self.input("Save credentials? "), IGNORECASE):
-                    self.registry.save_session(self.username, self.password)
+
+    def login_batch(self, username, password):
+        block(self.login_async)(username, password)
+
+    @defer.inlineCallbacks
+    def login_async(self, username, password):
+        self.username = username
+        self.password = password
+        session = self.registry.new_session()
+        try:
+            account = yield session.async_account
+            self.email = account['email']
+            self.session = session
+        except Exception as e:
+            self.username = self.password = None
+            getLogger().debug("auth failure", exc_info=True)
+            raise ApiAuthException(username=username, exc=e)
 
     @command()
     def do_logout(self):
         """
         Usage: logout
         """
+        self.logout_batch()
+
+    def logout_batch(self):
         self.username = None
         self.password = None
+        self.email = None
         self.registry.session = None

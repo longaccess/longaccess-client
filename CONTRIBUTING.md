@@ -35,12 +35,12 @@ use four spaces for indentation and generally follow [PEP8][].
 Copyright Assignment
 --------------------
 
-The Longaccess company is the copyright holder for GNU Emacs. For more
-information about the company see:
+LONG ACCESS Private Company is the copyright holder for Longaccess. For more
+information about the company see:l
 
 http://www.longaccess.com
 
 Small contributions can be accepted without any special copyright assignment on
 the part of the contributor but, generally speaking, contributors are required
-to assign copyright to the Longaccess company. Please get in touch with us for
+to assign copyright to LONG ACCESS Private Company. Please get in touch with us for
 more details.
