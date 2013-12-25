@@ -1,6 +1,6 @@
 from urlparse import urljoin
 from lacli.decorators import cached_property, deferred_property, with_api_response, contains, block
-from lacli.exceptions import ApiAuthException
+from lacli.exceptions import ApiAuthException, UploadEmptyError, ApiUnavailableException, ApiErrorException
 from lacli.date import parse_timestamp
 from contextlib import contextmanager
 from twisted.internet import defer
@@ -32,6 +32,11 @@ class TwistedRequestsFactory(object):
         def get_content(self, r):
             if r.code == 401:
                 yield failure.Failure(ApiAuthException())
+            if r.code == 404:
+                yield failure.Failure(ApiUnavailableException())
+            if r.code > 300:
+                yield failure.Failure(ApiErrorException(
+                    " ".join([r.code, r.phrase])))
             r = yield treq.content(r)
             defer.returnValue(json.loads(r))
 
