@@ -118,10 +118,11 @@ RequestsFactory = TwistedRequestsFactory()
 class UploadOperation(object):
     uri = None
 
-    def __init__(self, api, archive, capsule):
+    def __init__(self, api, archive, capsule, uri):
         self.archive = archive
         self.capsule = capsule
         self.api = api
+        self.uri = uri
 
     @defer.inlineCallbacks
     def start(self):
@@ -146,8 +147,11 @@ class UploadOperation(object):
              return self.start()
         return self.poll()
 
-    def finalize(self, auth=None):
-        patch = {'status': 'uploaded', 'size': self.archive.meta.size}
+    def finalize(self, auth=None, keys=[]):
+        if self.uri is None:
+            raise UploadEmptyError(
+                reason="Attempt to finalize upload that hasn't started")
+        patch = {'status': 'uploaded', 'size': self.archive.meta.size, 'parts': len(keys)}
         if auth is not None:
             patch['checksums'] = {}
             if hasattr(auth, 'sha512'):
@@ -197,8 +201,10 @@ class Api(object):
         r = yield self.session.patch(url.encode('utf8'), headers=headers, data=data)
         defer.returnValue(r)
 
-    def upload(self, capsule, archive):
-        return UploadOperation(self, archive, capsule)
+    def upload(self, capsule, archive, state):
+        uri = state.uri
+        op = UploadOperation(self, archive, capsule, uri)
+        return op
 
     @defer.inlineCallbacks
     def get_endpoint(self, name):

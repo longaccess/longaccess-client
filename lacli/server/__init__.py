@@ -11,85 +11,13 @@ from thrift.protocol import TBinaryProtocol
 from lacli.server.interface.ClientInterface import CLI, ttypes
 from lacli.server.error import tthrow
 from itertools import starmap
-from lacli.progress import BaseProgressHandler
+from lacli.progress import ServerProgressHandler
+from lacli.upload import UploadState
 from binascii import b2a_hex
 from StringIO import StringIO
 import sys
 import os
-import errno
-import json
 
-
-class UploadState(object):
-    states = {}
-    
-    @classmethod
-    def init(cls, cache):
-        cls.cache = cache
-        cls.states = cache._get_uploads()
-
-    @classmethod
-    def save(cls, fn, key):
-        cls.states.setdefault(fn, []).append(key)
-    
-    def __init__(self, archive, keys=None):
-        self.cache = type(self).cache
-        self.archive = archive
-        self.logfile = None
-        self.keys = keys
-        self._progress = 0
-
-    @property
-    def progress(self):
-        f = lambda x, y: x + y['size']
-        return self._progress + reduce(f, self.keys, 0)
-
-    def __enter__(self):
-        try:
-            self.logfile = self.cache._upload_open(self.archive, mode='r+')
-        except IOError as e:
-            if e.errno == errno.ENOENT:
-                self.logfile = self.cache._upload_open(self.archive, mode='w+')
-            else:
-                raise e
-        self.keys = self.cache._validate_upload(self.logfile)
-        return self
-
-    def __exit__(self, type, value, traceback):
-        self.logfile.close()
-        self.logfile = self._progress = None
-
-    def keydone(self, key, size):
-        assert self.logfile is not None, "Log not open"
-        new = { 'name': key, 'size': size}
-        self.logfile.write(json.dumps(new))
-        type(self).save(self.archive, new)
-        self.keys.append(new)
-        self._progress = 0
-
-    def update(self, progress):
-        self._progress += progress
-
-    @property
-    def seq(self):
-        assert self.keys is not None, "Keys not available"
-        return len(self.keys)
-
-
-class ServerProgressHandler(BaseProgressHandler):
-    def __init__(self, state=None, **kwargs):
-        assert state is not None, "ServerProgressHandler requires a state object"
-        self.state = state
-        super(ServerProgressHandler, self).__init__(**kwargs)
-        for seq, key in enumerate(self.state.keys):
-            self.handle({'part': seq, 'tx': key.size})
-        
-    def update(self, progress):
-        self.state.update(progress)
-
-    def keydone(self, msg):
-        self.state.keydone(msg['key'].name, msg['size'])
-        
 
 class LaServerCommand(LaBaseCommand, CLI.Processor):
     """Run a RPC server
@@ -266,10 +194,10 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             raise ValueError("Capsule not found")
 
         size = docs['archive'].meta.size
-        with UploadState(archive) as state:
+        with UploadState.get(archive, size) as state:
             with ServerProgressHandler(size=size, state=state) as progq:
                 saved = yield self.registry.cmd.archive.upload_async(
-                    capsule, docs, archive, progq)
+                    capsule, docs, archive, progq, state)
                 # todo poll for status
 
     @tthrow
@@ -293,8 +221,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         """
         if archive not in UploadState.states:
             raise ValueError("archive not found")
-        state = UploadState(archive, UploadState.states[archive])
-        return self.toTransferStatus(state)
+        return self.toTransferStatus(UploadState.states[archive])
 
     @tthrow
     def PauseUpload(self, archive):

@@ -1,4 +1,5 @@
 from __future__ import division
+import signal
 import os
 import cmd
 import glob
@@ -8,7 +9,7 @@ import time
 import operator
 from pipes import quote
 from lacli.log import getLogger
-from lacli.upload import Upload
+from lacli.upload import Upload, UploadState
 from lacli.archive import restore_archive
 from lacli.adf import archive_size, Certificate, Archive, Meta, creation
 from lacli.decorators import command, login, block
@@ -278,6 +279,7 @@ class LaArchiveCommand(LaBaseCommand):
 
     def __init__(self, *args, **kwargs):
         super(LaArchiveCommand, self).__init__(*args, **kwargs)
+        UploadState.init(self.cache)
         self.nprocs = None
 
     def setopt(self, options):
@@ -373,9 +375,14 @@ class LaArchiveCommand(LaBaseCommand):
             else:
                 try:
                     size = docs['archive'].meta.size
-                    handler = ConsoleProgressHandler(size, fname=fname)
-                    with handler as progq:
-                        saved = self.upload(capsule, docs, fname, progq)
+                    with UploadState.get(fname, size) as state:
+                        signal.signal(signal.SIGINT, state.signal)
+
+                        handler = ConsoleProgressHandler(
+                            size=size, fname=fname, state=state)
+                        with handler as progq:
+                            saved = self.upload(
+                                capsule, docs, fname, progq, state)
                     if not self.batch:
                         print ""
                         print "Upload finished, waiting for verification"
@@ -414,19 +421,26 @@ class LaArchiveCommand(LaBaseCommand):
             print _error
 
     @defer.inlineCallbacks
-    def upload_async(self, cid, docs, fname, progq):
+    def upload_async(self, cid, docs, fname, progq, state):
         archive = docs['archive']
         auth = docs['auth']
         path = self.cache.data_file(docs['links'])
-        op = yield self.session.upload(cid, archive)
-        yield Upload(self.session, self.nprocs, self.debug).upload(path, op, progq)
-        yield op.finalize(auth)
+        op = yield self.session.upload(cid, archive, state)
+        if op.uri is None:
+            yield op.status  # init uri and status
+            state.save_op(op)
+        uploader = Upload(self.session, self.nprocs, self.debug, state)
+        if state.progress < state.size:
+            yield uploader.upload(path, op, progq)
+        import pdb; pdb.set_trace()
+        yield op.finalize(auth, state.keys)
         account = yield self.session.async_account
         saved = yield self.cache.save_upload(fname, docs, op.uri, account)
         defer.returnValue(saved)
 
+    @block
     def upload(self, *args, **kwargs):
-        return block(self.upload_async)(*args, **kwargs)
+        return self.upload_async(*args, **kwargs)
 
     @command(directory=unicode, title=unicode, description=unicode)
     def do_create(self, directory=None, title="my archive", description=None):
@@ -457,11 +471,14 @@ class LaArchiveCommand(LaBaseCommand):
         """
         Usage: list
         """
-        archives = self.cache._for_adf('archives')
+        archives = list(self.cache._for_adf('archives').iteritems())
+        uploads = self.cache._get_uploads()
 
         if len(archives):
-            bydate = sorted(archives.itervalues(), key=creation)
-            for n, archive in enumerate(bydate):
+            bydate = sorted(archives, key=compose(creation, operator.itemgetter(1)))
+            for n, docs in enumerate(bydate):
+                fname = docs[0]
+                archive = docs[1]
                 status = "LOCAL"
                 cert = ""
                 if 'signature' in archive:
@@ -471,6 +488,8 @@ class LaArchiveCommand(LaBaseCommand):
                     status = "UPLOADED"
                     if self.verbose:
                         cert = archive['links'].upload
+                elif fname in uploads:
+                    status = "UPLOADING"
                 title = archive['archive'].title
                 size = archive_size(archive['archive'])
                 print u"{:03d} {:>6} {:>20} {:>10} {:>10}".format(

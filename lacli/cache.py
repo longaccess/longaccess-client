@@ -60,9 +60,13 @@ class Cache(object):
 
     def _validate_upload(self, lines):
         parts = []
+        uri = None
         last = chunk = False
         for line in lines:
             key = json.loads(line)
+            if 'uri' in key:
+                uri = key['uri']
+                continue
             size = key['size']
             if chunk is False:  # initialize chunk size
                 chunk = last = size
@@ -70,7 +74,7 @@ class Cache(object):
                 last = size  # chunk is smaller than all previous
             assert size == chunk or size == last, "Too many different sizes"
             parts.append(key)
-        return parts
+        return (uri, parts)
 
     def _get_uploads(self):
         uploads = {}
@@ -127,12 +131,14 @@ class Cache(object):
         else:
             return ArchiveStatus.Local  # TODO: check for errors
 
-    def save_upload(self, fname, docs, uri, account):
-        docs['links'].upload = uri 
-        docs['archive'].meta.email = account['email']
-        docs['archive'].meta.name = account['displayname']
-        with self._archive_open(fname, 'w') as f:
-            make_adf(list(docs.itervalues()), out=f)
+    def save_upload(self, fname, docs, uri=None, account=None):
+        if uri is not None:
+            docs['links'].upload = uri 
+            if account is not None:
+                docs['archive'].meta.email = account['email']
+                docs['archive'].meta.name = account['displayname']
+            with self._archive_open(fname, 'w') as f:
+                make_adf(list(docs.itervalues()), out=f)
         return {
             'fname': fname,
             'link': docs['links'].upload,
