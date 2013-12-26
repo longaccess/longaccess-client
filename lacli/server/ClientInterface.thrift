@@ -70,7 +70,8 @@ struct Signature {
 struct Certificate {
   1: string HexDigitsKey,
   2: Signature Sig,
-  3: ArchiveInfo RelatedArchive   
+  3: ArchiveInfo RelatedArchive,
+  4: string LocalID
 }
 struct Settings
 {
