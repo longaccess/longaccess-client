@@ -34,6 +34,13 @@ def tthrow(f):
                 raise InvalidOperation(ErrorType.Other, "Access denied or file in use")
             getLogger().debug("unknown exception", exc_info=True)
             raise InvalidOperation(ErrorType.Other, "Unknown error")
+        except IOError as e:
+            if e.errno == errno.ENOENT:
+                raise InvalidOperation(ErrorType.FileNotFound,
+                                       "File not found",
+                                       filename=e.filename)
+            getLogger().debug("unknown exception", exc_info=True)
+            raise InvalidOperation(ErrorType.Other, "Unknown error")
         except ValueError as e:
             raise InvalidOperation(ErrorType.Validation, str(e))
         except Exception as e:
