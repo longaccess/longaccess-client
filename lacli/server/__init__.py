@@ -215,6 +215,8 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             3: string title, 4: string description)
         """
         docs = self.cache.get_adf(archive)
+        docs['archive'].title = title
+        docs['archive'].description = description
         status = self.cache.archive_status(archive, docs)
         if status != ttypes.ArchiveStatus.Local:
             raise ValueError("Archive state invalid")
