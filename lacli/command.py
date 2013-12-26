@@ -441,24 +441,32 @@ class LaArchiveCommand(LaBaseCommand):
 
     @defer.inlineCallbacks
     def upload_async(self, docs, fname, progq, state):
-        archive = docs['archive']
-        auth = docs['auth']
-        path = self.cache.data_file(docs['links'])
-        op = yield self.session.upload(state.capsule, archive, state)
-        if op.uri is None:
-            yield op.status  # init uri and status
-            state.save_op(op)
-        uploader = Upload(self.session, self.nprocs, self.debug, state)
-        if state.progress < state.size:
-            yield uploader.upload(path, op, progq)
-        yield op.finalize(auth, state.keys)
-        account = yield self.session.async_account
-        saved = yield self.cache.save_upload(fname, docs, op.uri, account)
-        defer.returnValue(saved)
+        try:
+            archive = docs['archive']
+            auth = docs['auth']
+            path = self.cache.data_file(docs['links'])
+            import pdb; pdb.set_trace()
+            op = yield self.session.upload(state.capsule, archive, state)
+            if op.uri is None:
+                import pdb; pdb.set_trace()
+                yield op.status  # init uri and status
+                state.save_op(op)
+            uploader = Upload(self.session, self.nprocs, self.debug, state)
+            if state.progress < state.size:
+                import pdb; pdb.set_trace()
+                yield uploader.upload(path, op, progq)
+            import pdb; pdb.set_trace()
+            yield op.finalize(auth, state.keys)
+            account = yield self.session.async_account
+            saved = yield self.cache.save_upload(fname, docs, op.uri, account)
+            defer.returnValue(saved)
+        except Exception:
+            getLogger().debug("Exception uploading", exc_info=True)
+            raise
 
     @block
     def upload(self, *args, **kwargs):
-        return self.upload_async(*args, **kwargs)
+            return self.upload_async(*args, **kwargs)
 
     @command(directory=unicode, title=unicode, description=unicode)
     def do_create(self, directory=None, title="my archive", description=None):

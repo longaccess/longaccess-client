@@ -36,7 +36,7 @@ class TwistedRequestsFactory(object):
                 yield failure.Failure(ApiUnavailableException())
             if r.code > 300:
                 yield failure.Failure(ApiErrorException(
-                    " ".join([r.code, r.phrase])))
+                    " ".join([str(r.code), str(r.phrase)])))
             r = yield treq.content(r)
             defer.returnValue(json.loads(r))
 
@@ -143,9 +143,14 @@ class UploadOperation(object):
 
     @property
     def status(self):
-        if self.uri is None:
-             return self.start()
-        return self.poll()
+        try:
+            if self.uri is None:
+                 return self.start()
+            return self.poll()
+        except Exception:
+            getLogger().debug("Exception while getting status", exc_info=True)
+            rause
+          
 
     def finalize(self, auth=None, keys=[]):
         if self.uri is None:
