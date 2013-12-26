@@ -226,10 +226,13 @@ class Api(object):
         
     @contains(list)
     def capsule_list(self, cs):
-        for c in cs.get('objects'):
-            yield dict([(k, c.get(k, None))
+        for c in cs.get('objects'): 
+            ret = dict([(k, c.get(k, None))
                         for k in ['title', 'remaining', 'size',
-                                  'id', 'resource_uri']])
+                                  'id', 'resource_uri', 'created', 'expires']])
+            ret['created'] = parse_timestamp(ret['created'])
+            ret['expires'] = parse_timestamp(ret['expires'])
+            yield ret
 
     @contains(dict)
     def capsule_ids(self):
