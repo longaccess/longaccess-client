@@ -1,7 +1,8 @@
 from lacli.decorators import command
 from lacli.log import getLogger
 from lacli.compose import compose
-from lacli.adf import make_adf
+from lacli.adf import make_adf, Archive, Certificate, Meta, Cipher
+from lacli.archive import restore_archive
 from lacli.command import LaBaseCommand
 from lacli.decorators import contains, login_async, expand_args
 from lacli.exceptions import PauseEvent
@@ -348,19 +349,19 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             
 
     @tthrow
-    def GetDefaultExtractionPath(self):
-        """
-          string GetDefaultExtractionPath(),
-        """
-        raise NotImplementedError("not implemented")
-
-    @tthrow
     def Decrypt(self, path, key, dest):
         """
           void Decrypt(1: string archivePath,2: string key,
             3: string destinationPath)
         """
-        raise NotImplementedError("not implemented")
+        cert = Certificate(key.decode('hex'))
+        archive = Archive("_temp", Meta('zip', Cipher('aes-256-ctr', 1)),
+                               description="_temp")
+        def _print(f):
+            msg("Extracting {}".format(f))
+        return threads.deferToThread(
+            restore_archive, archive, path, cert, dest,
+            self.cache._cache_dir('tmp', write=True), _print)
 
     @tthrow
     def CloseWhenPossible(self):
