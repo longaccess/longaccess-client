@@ -3,6 +3,7 @@ from multiprocessing import Queue
 from logutils.queue import QueueListener
 from boto import config as boto_config
 from twisted.internet.defer import setDebugging as debugTwisted
+from twisted.python import log as twisted_log
 
 
 
@@ -32,46 +33,55 @@ def setupLogging(level, logfile=None, queue=False):
         boto_config.set('Boto', 'debug', '2')
         debugTwisted(True)
 
-    if logfile is None:
-        logging.config.dictConfig({
-            'version': 1,
-            'formatters': {
-                'simple': {
-                    'class': 'logging.Formatter',
-                    'format': simplefmt,
-                }
-            },
-            'handlers': {
-                'console': {
-                    'class': 'logging.StreamHandler',
-                    'level': level,
-                    'formatter': 'simple',
-                },
-            },
-            'loggers': {
-                'boto': {
-                    'handlers': ['console'],
-                },
-                'lacli': {
-                    'handlers': ['console']
-                },
-                'multiprocessing': {
-                    'handlers': ['console']
-                },
-                'requests.packages.urllib3': {
-                    'handlers': ['console'],
-                    'propagate': True
-                },
-                'twisted': {
-                    'handlers': ['console']
-                }
-            },
-            'root': {
+    logconf = {
+        'version': 1,
+        'formatters': {
+            'simple': {
+                'class': 'logging.Formatter',
+                'format': simplefmt,
+            }
+        },
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
                 'level': level,
+                'formatter': 'simple',
+            }
+        },
+        'loggers': {
+            'boto': {
+                'handlers': ['console'],
+                'propagate': True
             },
-        })
-    else:
-        raise NotImplementedError("Log to file is not implemented yet")
+            'lacli': {
+                'handlers': ['console'],
+                'propagate': True
+            },
+            'multiprocessing': {
+                'handlers': ['console'],
+                'propagate': True
+            },
+            'requests.packages.urllib3': {
+                'handlers': ['console'],
+                'propagate': True
+            },
+            'twisted': {
+                'handlers': ['console'],
+                'propagate': True
+            }
+        },
+        'root': { 'level': level }
+    }
+
+    logging.config.dictConfig(logconf)
+
+    if logfile is not None:
+        handler = logging.StreamHandler(logfile)
+        handler.setFormatter(logging.Formatter(simplefmt))
+        logging.getLogger('').addHandler(handler)
+
+    observer = twisted_log.PythonLoggingObserver()
+    observer.start()
 
 
 class queueHandler(object):

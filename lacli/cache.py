@@ -316,6 +316,9 @@ class Cache(object):
         except:
             return None
 
+    def log_open(self):
+        return open(os.path.join(self._cache_dir('logs', True), "log.txt"), 'w+')
+
 
 if __name__ == "__main__":
     import hashlib

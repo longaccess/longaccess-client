@@ -115,7 +115,7 @@ class LaCommand(cmd.Cmd):
 
     def __init__(self, cache, prefs):
         cmd.Cmd.__init__(self)
-        setupLogging(prefs['command']['debug'])
+        setupLogging(prefs['command']['debug'], logfile=cache.log_open())
         registry = LaRegistry(cache, prefs, self)
         self.archive = LaArchiveCommand(registry)
         self.capsule = LaCapsuleCommand(registry)
