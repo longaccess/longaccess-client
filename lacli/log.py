@@ -2,6 +2,9 @@ import logging
 from multiprocessing import Queue
 from logutils.queue import QueueListener
 from boto import config as boto_config
+from twisted.internet.defer import setDebugging as debugTwisted
+
+
 
 
 simplefmt = '%(name)-15s %(levelname)-8s %(processName)-10s %(message)s'
@@ -27,6 +30,7 @@ def setupLogging(level, logfile=None, queue=False):
     else:
         level = 'DEBUG'
         boto_config.set('Boto', 'debug', '2')
+        debugTwisted(True)
 
     if logfile is None:
         logging.config.dictConfig({

@@ -1,10 +1,76 @@
 from urlparse import urljoin
 from lacli.log import getLogger
-from lacli.decorators import cached_property, with_api_response, contains
+from lacli.decorators import cached_property, deferred_property, with_api_response, contains
+from lacli.exceptions import ApiAuthException
 from lacli.date import parse_timestamp
+from lacli.defer_block import block
 from contextlib import contextmanager
+from twisted.internet import defer
+from twisted.python import failure
+from functools import partial
 
 import json
+import requests
+import treq
+
+from twisted.web.client import HTTPClientFactory
+HTTPClientFactory.noisy = True
+
+
+class TwistedRequestsFactory(object):
+    def __init__(self):
+        pass
+
+    class TreqSession(object):
+        auth = None
+        verify = None
+        
+
+    class TwistedRequestsSession(object):
+        def __init__(self, session):
+            self.session = session
+
+        @defer.inlineCallbacks
+        def get(self, *args, **kwargs):
+            try:
+                r = yield treq.get(
+                      *args, 
+                      auth=self.session.auth,
+                      **kwargs 
+                  )
+                getLogger().debug("response code : "+str(r.code))
+                if r.code == 401:
+                    raise ApiAuthException()
+                r = yield treq.content(r)
+                getLogger().debug("response: "+str(r))
+                defer.returnValue(json.loads(r))
+            except Exception as e:
+                getLogger().debug("EXC: "+str(e))
+                raise e
+
+        @defer.inlineCallbacks
+        def post(self, *args, **kwargs):
+            r = yield treq.post(
+                  *args, 
+                  auth=self.session.auth,
+                  **kwargs 
+              )
+            defer.returnValue(r)
+
+        def patch(self, *args, **kwargs):
+            return treq.patch(
+                  *args, 
+                  auth=self.session.auth,
+                  **kwargs 
+              )
+
+    def __call__(self, prefs={}):
+        session = self.TreqSession()
+        if 'user' in prefs and 'pass' in prefs:
+            session.auth = (prefs['user'], prefs['pass'])
+        if 'verify' in prefs:
+            session.verify = prefs['verify']
+        return Api(prefs, self.TwistedRequestsSession(session))
 
 
 class DummyResponse(object):
@@ -37,14 +103,7 @@ def DummyRequestsFactory(prefs={}):
     return DummySession(DummyResponse)
 
 
-def RequestsFactory(prefs={}):
-    import requests
-    session = requests.Session()
-    if 'user' in prefs and 'pass' in prefs:
-        session.auth = (prefs['user'], prefs['pass'])
-    if 'verify' in prefs:
-        session.verify = prefs['verify']
-    return Api(prefs, session)
+RequestsFactory = TwistedRequestsFactory()
 
 
 class Api(object):
@@ -54,33 +113,40 @@ class Api(object):
         self.prefs = prefs
         self.session = session
 
-    @cached_property
+    @deferred_property
     def root(self):
         getLogger().debug("requesting API root from {}".format(self.url))
-        return self._get(self.url)
+        r = yield self._get(self.url)
+        getLogger().debug("API root: {}".format(r))
+        defer.returnValue(r)
 
-    @cached_property
+    @deferred_property
     def endpoints(self):
-        return dict(((n, urljoin(self.url, r['list_endpoint']))
-                    for n, r in self.root.iteritems()))
+        root = yield self.root
+        r = yield dict(((n, urljoin(self.url, r['list_endpoint']))
+                    for n, r in root.iteritems()))
+        defer.returnValue(r)
 
-    @with_api_response
+    @defer.inlineCallbacks
     def _get(self, url):
-        return self.session.get(url)
+        r = yield self.session.get(url.encode('utf8'))
+        defer.returnValue(r)
 
-    @with_api_response
+    @defer.inlineCallbacks
     def _post(self, url, data=None):
         headers = {}
         if data is not None:
             headers['content-type'] = 'application/json'
-        return self.session.post(url, headers=headers, data=data)
+        r = yield self.session.post(url, headers=headers, data=data)
+        defer.returnValue(r)
 
-    @with_api_response
+    @defer.inlineCallbacks
     def _patch(self, url, data=None):
         headers = {}
         if data is not None:
             headers['content-type'] = 'application/json'
-        return self.session.patch(url, headers=headers, data=data)
+        r = yield self.session.patch(url, headers=headers, data=data)
+        defer.returnValue(r)
 
     def _upload_status(self, uri, first=None):
         def parse(rsp):
@@ -96,7 +162,7 @@ class Api(object):
         if first:
             yield parse(first)
         while True:
-            yield parse(self._get(uri))
+            yield parse(block(self._get(uri)))
 
     @contextmanager
     def upload(self, capsule, archive, auth=None):
@@ -130,9 +196,9 @@ class Api(object):
                 'description': archive.description or '',
                 'capsule': capsule['resource_uri']
             })
-        status = self._post(self.endpoints['upload'], data=req_data)
+        status = block(self._post(self.endpoints['upload'], data=req_data))
         uri = urljoin(self.url, status['resource_uri'])
-        account = self._get(self.endpoints['account'])
+        account = block(self._get(self.endpoints['account']))
         yield {
             'tokens': self._upload_status(uri, status),
             'uri': uri,
@@ -145,17 +211,31 @@ class Api(object):
                 patch['checksums']['sha512'] = auth.sha512.encode("hex")
             if hasattr(auth, 'md5'):
                 patch['checksums']['md5'] = auth.md5.encode("hex")
-        self._patch(uri, data=json.dumps(patch))
+        block(self._patch(uri, data=json.dumps(patch)))
 
     def upload_status(self, uri):
         return next(self._upload_status(uri))
 
-    @contains(list)
+    @defer.inlineCallbacks
+    def get_endpoint(self, name):
+        endpoints = yield self.endpoints
+        url = endpoints[name]
+        getLogger().debug("requesting {} from {}".format(name, url))
+        r = yield self._get(url)
+        defer.returnValue(r)
+
+    @defer.inlineCallbacks
+    def async_capsules(self):
+        r = yield self.get_endpoint('capsule')
+        defer.returnValue(self.capsule_list(r))
+
     def capsules(self):
-        url = self.endpoints['capsule']
-        getLogger().debug("requesting capsules from {}".format(url))
-        for cs in self._get(url)['objects']:
-            yield dict([(k, cs.get(k, None))
+        return block(self.async_capsules())
+        
+    @contains(list)
+    def capsule_list(self, cs):
+        for c in cs.get('objects'):
+            yield dict([(k, c.get(k, None))
                         for k in ['title', 'remaining', 'size',
                                   'id', 'resource_uri']])
 
@@ -164,6 +244,11 @@ class Api(object):
         for capsule in self.capsules():
             yield (capsule['id'], capsule)
 
+    @deferred_property
+    def async_account(self):
+        r = yield self.get_endpoint('account')
+        defer.returnValue(r)
+
     @cached_property
     def account(self):
-        return self._get(self.endpoints['account'])
+        return block(self.async_account)

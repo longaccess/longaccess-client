@@ -11,3 +11,7 @@ requests==2.0.0
 pyaml==13.07.1
 thrift==0.9.1
 Twisted==13.2.0
+crochet==1.0.0
+pyOpenSSL==0.13.1
+treq==0.2.0
+crochet==1.0.0
