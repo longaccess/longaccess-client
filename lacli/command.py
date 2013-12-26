@@ -242,17 +242,20 @@ class LaCapsuleCommand(LaBaseCommand):
         """
         try:
             capsules = self.session.capsules()
-
+            n = 0
             if len(capsules):
-                print "Available capsules:"
+                ui.print_capsules_header()
                 for capsule in capsules:
-                    print u"{:<10}:{:>10}".format(
-                        'title', capsule.pop('title'))
-                    for i, v in capsule.iteritems():
-                        if i == 'resource_uri':
-                            continue
-                        print "{:<10}:{:>10}".format(i, v)
-                    print "\n"
+                    n = n+1
+                    ui.print_capsules_line(capsule = {
+                        'num': n,
+                        'size': capsule['size'],
+                        'remaining': capsule['remaining'],
+                        'title': capsule['title'],
+                        'id': capsule['id'],
+                        'created': capsule['created'],
+                        'expires':capsule['expires'],
+                    })
             else:
                 print "No available capsules."
         except Exception as e:
