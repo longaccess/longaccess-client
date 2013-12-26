@@ -22,7 +22,8 @@ class UploadState(object):
         a = cache._for_adf('archives')
         sz = lambda f: a[f]['archive'].meta.size
         cls.states = {k: cls(k, sz(k), **v)
-            for k, v in uploads.iteritems()}
+            for k, v in uploads.iteritems()
+            if k in a}
 
     @classmethod
     def get(cls, fname, size=None, capsule=None):
