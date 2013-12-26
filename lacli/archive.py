@@ -44,7 +44,7 @@ def archive_handle(docs):
 
 def restore_archive(archive, path, cert, folder, tmpdir, cb=None):
     cipher = get_cipher(archive, cert)
-    with open(path) as infile:
+    with open(path, 'rb') as infile:
         with NamedTemporaryFile() as dst:
             with CryptIO(infile, cipher) as cf:
                 copyfileobj(cf, dst)
