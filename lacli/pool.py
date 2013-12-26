@@ -5,14 +5,15 @@ from lacli.date import parse_timestamp, remaining_time
 from lacli.progress import make_progress, save_progress
 from itertools import imap, repeat, izip
 from lacli.log import getLogger
-from lacli.exceptions import UploadEmptyError, WorkerFailureError
+from lacli.exceptions import UploadEmptyError, WorkerFailureError, PauseEvent
+from lacli.control import readControl
 from boto import connect_s3
 from boto.utils import compute_md5
 from boto.s3.key import Key
 from filechunkio import FileChunkIO
 from sys import maxint
 from tempfile import mkdtemp, mkstemp
-from multiprocessing import TimeoutError
+from multiprocessing import TimeoutError, active_children
 
 
 class MPConnection(object):
@@ -149,7 +150,7 @@ class FilePart(FileChunkIO):
 
 class MPUpload(object):
 
-    def __init__(self, connection, source, key, retries=4):
+    def __init__(self, connection, source, key, step=None, retries=4):
         self.connection = connection
         self.source = source
         self.retries = retries
@@ -158,16 +159,17 @@ class MPUpload(object):
         self.complete = None
         self.tempdir = None
         self.bucket = None
+        self.step = step
 
     def __str__(self):
-        return "<MPUload key={} id={} source={}>".format(
+        return "<MPUpload key={} id={} source={}>".format(
             self.key, self.upload_id, self.source)
 
-    def iterargs(self):
+    def iterargs(self, chunks):
         partinfo = repeat(None)
         if not self.source.isfile:
             partinfo = self.source._savedchunks(self.tempdir)
-        for seq, info in izip(xrange(self.source.chunks), partinfo):
+        for seq, info in izip(xrange(chunks), partinfo):
             yield {'uploader': self, 'seq': seq, 'fname': info}
 
     def _getupload(self):
@@ -204,7 +206,13 @@ class MPUpload(object):
     def submit_job(self, pool):
         getLogger().debug("total of %d upload jobs for workers..",
                           self.source.chunks)
-        return pool.imap(upload_part, self.iterargs())
+        chunks = self.source.chunks
+        step = self.step
+        if step is None:
+            step = len(active_children()) or 5
+        if chunks > step:
+            chunks = step    
+        return pool.imap(upload_part, self.iterargs(chunks))
 
     def complete_multipart(self, etags):
         xml = '<CompleteMultipartUpload>\n'
@@ -219,13 +227,16 @@ class MPUpload(object):
 
     def get_result(self, rs):
         etags = []
-        key = None
+        key = name = None
         newsource = None
         if rs is not None:
             try:
                 while True:
                     key = rs.next(self.connection.timeout())
+                    getLogger().debug("got key {} with etag: {}".format(key.name, key.etag))
                     etags.append(key.etag)
+            except PauseEvent:
+                raise
             except StopIteration:
                 pass
             except WorkerFailureError:
@@ -238,15 +249,22 @@ class MPUpload(object):
 
         if hasattr(self.upload, 'complete_upload'):
             key = self.complete_multipart(etags)
+            name = key.key_name
+        else:
+            name = key.name
 
         uploaded = len(etags)
         total = self.source.chunks
+        getLogger().debug("Uploaded {} out of {} chunks".format(uploaded, total))
+        size = self.source.size
         if uploaded < total:
             for seq in xrange(uploaded, total):
                 make_progress({'part': seq, 'tx': 0})
             skip = self.source.chunkstart(uploaded)
             newsource = MPFile(self.source.path, skip)
-        save_progress(key, key.size)
+            size = size - newsource.size
+        getLogger().debug("saving progress for {}".format(key))
+        save_progress(name, size)
         return (key.etag, newsource)
 
     def do_part(self, seq, **kwargs):
@@ -260,6 +278,7 @@ class MPUpload(object):
             with self.source.chunkfile(seq, **kwargs) as part:
                 try:
                     def cb(tx, total):
+                        readControl()
                         make_progress({'part': seq,
                                        'tx': tx,
                                        'total': total})
@@ -286,6 +305,8 @@ class MPUpload(object):
                         )
                         key = self.upload
                         getLogger().debug("uploaded single part key %s", key)
+                except PauseEvent:
+                    raise    
                 except Exception as exc:
                     getLogger().debug("exception while uploading part %d",
                                       seq, exc_info=True)
@@ -303,5 +324,7 @@ def upload_part(kwargs):
         seq = kwargs.pop('seq')
         uploader = kwargs.pop('uploader')
         return uploader.do_part(seq, **kwargs)
+    except PauseEvent:
+        raise
     except Exception as e:
         raise WorkerFailureError(e)

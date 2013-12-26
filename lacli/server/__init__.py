@@ -4,92 +4,22 @@ from lacli.compose import compose
 from lacli.adf import make_adf
 from lacli.command import LaBaseCommand
 from lacli.decorators import contains, login_async, expand_args
+from lacli.exceptions import PauseEvent
 from twisted.python.log import startLogging, msg, err
-from twisted.internet import reactor, defer, threads
+from twisted.internet import reactor, defer, threads, task
 from thrift.transport import TTwisted
 from thrift.protocol import TBinaryProtocol
 from lacli.server.interface.ClientInterface import CLI, ttypes
 from lacli.server.error import tthrow
 from itertools import starmap
-from lacli.progress import BaseProgressHandler
+from lacli.progress import ServerProgressHandler
+from lacli.upload import UploadState
 from binascii import b2a_hex
 from StringIO import StringIO
 import sys
 import os
 import errno
-import json
 
-
-class UploadState(object):
-    states = {}
-    
-    @classmethod
-    def init(cls, cache):
-        cls.cache = cache
-        cls.states = cache._get_uploads()
-
-    @classmethod
-    def save(cls, fn, key):
-        cls.states.setdefault(fn, []).append(key)
-    
-    def __init__(self, archive, keys=None):
-        self.cache = type(self).cache
-        self.archive = archive
-        self.logfile = None
-        self.keys = keys
-        self._progress = 0
-
-    @property
-    def progress(self):
-        f = lambda x, y: x + y['size']
-        return self._progress + reduce(f, self.keys, 0)
-
-    def __enter__(self):
-        try:
-            self.logfile = self.cache._upload_open(self.archive, mode='r+')
-        except IOError as e:
-            if e.errno == errno.ENOENT:
-                self.logfile = self.cache._upload_open(self.archive, mode='w+')
-            else:
-                raise e
-        self.keys = self.cache._validate_upload(self.logfile)
-        return self
-
-    def __exit__(self, type, value, traceback):
-        self.logfile.close()
-        self.logfile = self._progress = None
-
-    def keydone(self, key, size):
-        assert self.logfile is not None, "Log not open"
-        new = { 'name': key, 'size': size}
-        self.logfile.write(json.dumps(new))
-        type(self).save(self.archive, new)
-        self.keys.append(new)
-        self._progress = 0
-
-    def update(self, progress):
-        self._progress += progress
-
-    @property
-    def seq(self):
-        assert self.keys is not None, "Keys not available"
-        return len(self.keys)
-
-
-class ServerProgressHandler(BaseProgressHandler):
-    def __init__(self, state=None, **kwargs):
-        assert state is not None, "ServerProgressHandler requires a state object"
-        self.state = state
-        super(ServerProgressHandler, self).__init__(**kwargs)
-        for seq, key in enumerate(self.state.keys):
-            self.handle({'part': seq, 'tx': key.size})
-        
-    def update(self, progress):
-        self.state.update(progress)
-
-    def keydone(self, msg):
-        self.state.keydone(msg['key'].name, msg['size'])
-        
 
 class LaServerCommand(LaBaseCommand, CLI.Processor):
     """Run a RPC server
@@ -164,8 +94,9 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
                 created.minute,
                 created.second),
             md5)
+
     def toArchive(self, fname, docs):
-        status = self.cache.archive_status(docs)
+        status = self.cache.archive_status(fname, docs)
         ident = os.path.basename(fname)
         return ttypes.Archive(
             ident,
@@ -241,6 +172,40 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         archives = self.cache._for_adf('archives')
         return list(starmap(self.toArchive, archives.iteritems()))
 
+    def reset_upload(self, archive, times=3):
+        try:
+            return UploadState.reset(archive)
+        except OSError as e:
+            if e.errno == errno.EACCES and times > 0:
+                return task.deferLater(reactor, 2,
+                    self.reset_upload, archive, times-1)
+            raise
+
+    @defer.inlineCallbacks
+    def _upload(self, f, d, s):
+        size = d['archive'].meta.size
+        acmd = self.registry.cmd.archive
+        with s:
+            try:
+                with ServerProgressHandler(size=size, state=s) as progq:
+                    saved = yield acmd.upload_async(d, f, progq, s)
+                status = yield acmd._poll_status_async(saved['link'])
+            except PauseEvent as e:
+                getLogger().debug("upload paused.")
+                return
+            except Exception as e:
+                getLogger().debug("error in upload", exc_info=True)
+                s.error(e)
+                return
+            if status['status'] == "error":
+                getLogger().debug("upload error")
+                s.error(True)
+            elif status['status'] == "completed":
+                fname = saved['fname']
+                getLogger().debug("upload completed")
+                self.cache.save_cert(self.cache.upload_complete(fname, status))
+                self.reset_upload(f)
+
     @tthrow
     @login_async
     @defer.inlineCallbacks
@@ -250,10 +215,10 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             3: string title, 4: string description)
         """
         docs = self.cache.get_adf(archive)
-        status = self.cache.archive_status(docs)
+        status = self.cache.archive_status(archive, docs)
         if status != ttypes.ArchiveStatus.Local:
             raise ValueError("Archive state invalid")
-
+        size = docs['archive'].meta.size
         cs = yield self.session.async_capsules()
         for c in cs:
             if c['id'] == int(capsule):
@@ -265,25 +230,32 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         else:
             raise ValueError("Capsule not found")
 
-        size = docs['archive'].meta.size
-        with UploadState(archive) as state:
-            with ServerProgressHandler(size=size, state=state) as progq:
-                saved = yield self.registry.cmd.archive.upload_async(
-                    capsule, docs, archive, progq)
-                # todo poll for status
+        state = UploadState.get(archive, size, capsule)
+        if state.exc is not None:
+            raise ValueError("Archive has error")
+
+        self._upload(archive, docs, state)
 
     @tthrow
     def ResumeUpload(self, archive):
         """
           void ResumeUpload(1: string ArchiveLocalID)
         """
-        raise NotImplementedError("not implemented")
+        docs = self.cache.get_adf(archive)
+        status = self.cache.archive_status(archive, docs)
+        if status != ttypes.ArchiveStatus.InProgress:
+            raise ValueError("Archive state invalid")
+        state = UploadState.get(archive)
+        if state.exc is not None:
+            raise ValueError("Archive has error")
+
+        self._upload(archive, docs, state)
 
     def toTransferStatus(self, state):
         return ttypes.TransferStatus(
             'description',
             'eta',
-            0,
+            state.size - state.progress,
             state.progress)
 
     @tthrow
@@ -291,17 +263,28 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         """
           TransferStatus QueryArchiveStatus(1: string ArchiveLocalID)
         """
-        if archive not in UploadState.states:
-            raise ValueError("archive not found")
-        state = UploadState(archive, UploadState.states[archive])
-        return self.toTransferStatus(state)
+        docs = self.cache.get_adf(archive)
+        status = self.cache.archive_status(archive, docs)
+        if status == ttypes.ArchiveStatus.Completed:
+            return ttypes.TransferStatus(
+                'description',
+                'eta',
+                0, 
+                docs['archive'].meta.size)
+        if status == ttypes.ArchiveStatus.InProgress:
+            if archive not in UploadState.states:
+                raise ValueError("archive not found")
+            return self.toTransferStatus(UploadState.states[archive])
+        raise ValueError("Archive state invalid")
 
     @tthrow
     def PauseUpload(self, archive):
         """
           void PauseUpload(1: string ArchiveLocalID)
         """
-        raise NotImplementedError("not implemented")
+        if archive not in UploadState.states:
+            raise ValueError("archive not found")
+        UploadState.states[archive].pause()
 
     @tthrow
     @login_async
@@ -309,7 +292,9 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         """
           void CancelUpload(1: string ArchiveLocalID)
         """
-        raise NotImplementedError("not implemented")
+        if archive in UploadState.states:
+            UploadState.states[archive].pause()
+        self.reset_upload(archive)
 
     def toSignature(self, docs):
         sig = docs['signature']

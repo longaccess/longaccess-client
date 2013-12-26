@@ -50,13 +50,29 @@ class BaseProgressHandler(queueHandler):
             + " (" + str(msg['size']) + ")")
 
 
-class ConsoleProgressHandler(BaseProgressHandler):
+class ServerProgressHandler(BaseProgressHandler):
+    def __init__(self, state=None, **kwargs):
+        assert state is not None, "ServerProgressHandler requires a state object"
+        self.state = state
+        super(ServerProgressHandler, self).__init__(**kwargs)
+        for seq, key in enumerate(self.state.keys):
+            self.progress += key['size']
+        
+    def update(self, progress):
+        self.state.update(progress)
+
+    def keydone(self, msg):
+        getLogger().debug("saving key " + str(msg['key']) + " to state file")
+        self.state.keydone(msg['key'], msg['size'])
+
+
+class ConsoleProgressHandler(ServerProgressHandler):
     def __init__(self, *args, **kwargs):
         fname = kwargs.pop('fname', "-")
-        super(ConsoleProgressHandler, self).__init__(*args, **kwargs)
         self.bar = ProgressBar(widgets=[
             fname, ' : ', Bar(),
-            ' ', ETA(), ' ', FileTransferSpeed()], maxval=self.total)
+            ' ', ETA(), ' ', FileTransferSpeed()], maxval=kwargs.get('size'))
+        super(ConsoleProgressHandler, self).__init__(*args, **kwargs)
 
     def handle(self, msg):
         if len(self.tx) == 0:
@@ -64,6 +80,7 @@ class ConsoleProgressHandler(BaseProgressHandler):
         super(ConsoleProgressHandler, self).handle(msg)
 
     def update(self, progress):
+        super(ConsoleProgressHandler, self).update(progress)
         self.bar.update(progress)
         stderr.flush()
 
@@ -85,6 +102,5 @@ def make_progress(msg):
 
 
 def save_progress(key, size):
-
     global progress
     progress.put({'save': True, 'key': key, 'size': size})

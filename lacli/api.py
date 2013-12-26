@@ -1,6 +1,6 @@
 from urlparse import urljoin
 from lacli.decorators import cached_property, deferred_property, with_api_response, contains, block
-from lacli.exceptions import ApiAuthException
+from lacli.exceptions import ApiAuthException, UploadEmptyError, ApiUnavailableException, ApiErrorException
 from lacli.date import parse_timestamp
 from contextlib import contextmanager
 from twisted.internet import defer
@@ -32,6 +32,11 @@ class TwistedRequestsFactory(object):
         def get_content(self, r):
             if r.code == 401:
                 yield failure.Failure(ApiAuthException())
+            if r.code == 404:
+                yield failure.Failure(ApiUnavailableException())
+            if r.code > 300:
+                yield failure.Failure(ApiErrorException(
+                    " ".join([r.code, r.phrase])))
             r = yield treq.content(r)
             defer.returnValue(json.loads(r))
 
@@ -113,10 +118,11 @@ RequestsFactory = TwistedRequestsFactory()
 class UploadOperation(object):
     uri = None
 
-    def __init__(self, api, archive, capsule):
+    def __init__(self, api, archive, capsule, uri):
         self.archive = archive
         self.capsule = capsule
         self.api = api
+        self.uri = uri
 
     @defer.inlineCallbacks
     def start(self):
@@ -141,8 +147,11 @@ class UploadOperation(object):
              return self.start()
         return self.poll()
 
-    def finalize(self, auth=None):
-        patch = {'status': 'uploaded', 'size': self.archive.meta.size}
+    def finalize(self, auth=None, keys=[]):
+        if self.uri is None:
+            raise UploadEmptyError(
+                reason="Attempt to finalize upload that hasn't started")
+        patch = {'status': 'uploaded', 'size': self.archive.meta.size, 'parts': len(keys)}
         if auth is not None:
             patch['checksums'] = {}
             if hasattr(auth, 'sha512'):
@@ -192,8 +201,13 @@ class Api(object):
         r = yield self.session.patch(url.encode('utf8'), headers=headers, data=data)
         defer.returnValue(r)
 
-    def upload(self, capsule, archive):
-        return UploadOperation(self, archive, capsule)
+    def upload(self, capsule, archive, state):
+        uri = state.uri
+        op = UploadOperation(self, archive, capsule, uri)
+        return op
+
+    def upload_cancel(self, state):
+        pass
 
     @defer.inlineCallbacks
     def get_endpoint(self, name):
