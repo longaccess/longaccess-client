@@ -1,9 +1,17 @@
-from blessings import Terminal
+try: 
+    from blessings import Terminal
+    WITH_BLESSINGS = True
+except ImportError:
+    WITH_BLESSINGS = False
 
 class RichTextUI:
     def __init__(self):
-        t = Terminal()
-        self.width = t.width
+
+        if WITH_BLESSINGS:
+            t = Terminal()
+            self.width = t.width
+        else:
+            self.width = 78
 
         h_titles = '#   ID         STATUS   SIZE   DATE         TITLE'
         h_pattern= '--- ---------- -------- ------ ------------ ---------------------------------'
