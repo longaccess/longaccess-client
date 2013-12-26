@@ -60,9 +60,13 @@ class Cache(object):
 
     def _validate_upload(self, lines):
         parts = []
+        ret = {}
         last = chunk = False
         for line in lines:
             key = json.loads(line)
+            if 'uri' in key:
+                ret = key
+                continue
             size = key['size']
             if chunk is False:  # initialize chunk size
                 chunk = last = size
@@ -70,7 +74,8 @@ class Cache(object):
                 last = size  # chunk is smaller than all previous
             assert size == chunk or size == last, "Too many different sizes"
             parts.append(key)
-        return parts
+        ret['keys'] = parts
+        return ret
 
     def _get_uploads(self):
         uploads = {}
@@ -81,6 +86,8 @@ class Cache(object):
                 uploads[aid] = self._validate_upload(f)
         return uploads
                      
+    def _del_upload(self, archive):
+        os.unlink(os.path.join(self._cache_dir('uploads'), archive))
 
     @contains(dict)
     def _for_adf(self, category):
@@ -119,20 +126,24 @@ class Cache(object):
             make_adf(list(docs.itervalues()), out=f)
             return (f.name, docs)
 
-    def archive_status(self, docs):
+    def archive_status(self, fname, docs):
         if 'signature' in docs:
             return ArchiveStatus.Completed
         elif 'links' in docs and docs['links'].upload:
             return ArchiveStatus.InProgress
+        elif fname in self._get_uploads():
+            return ArchiveStatus.InProgress
         else:
             return ArchiveStatus.Local  # TODO: check for errors
 
-    def save_upload(self, fname, docs, uri, account):
-        docs['links'].upload = uri 
-        docs['archive'].meta.email = account['email']
-        docs['archive'].meta.name = account['displayname']
-        with self._archive_open(fname, 'w') as f:
-            make_adf(list(docs.itervalues()), out=f)
+    def save_upload(self, fname, docs, uri=None, account=None):
+        if uri is not None:
+            docs['links'].upload = uri 
+            if account is not None:
+                docs['archive'].meta.email = account['email']
+                docs['archive'].meta.name = account['displayname']
+            with self._archive_open(fname, 'w') as f:
+                make_adf(list(docs.itervalues()), out=f)
         return {
             'fname': fname,
             'link': docs['links'].upload,

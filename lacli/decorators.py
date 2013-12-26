@@ -138,7 +138,7 @@ def block(f):
             setup()
         result = fblocking(*args, **kwargs)
         try:
-            return result.wait(1000)
+            return result.wait()
         except TimeoutError:
             result.cancel()
             raise
