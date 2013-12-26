@@ -276,7 +276,7 @@ class Cache(object):
         if path:
             for a in countdown:
                 pass
-            self.shred_file(path, srm)
+            self.shred_file(os.path.join(self._cache_dir('certs'), path), srm)
             return path
 
     def export_cert(self, aid):
