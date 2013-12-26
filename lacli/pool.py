@@ -5,7 +5,7 @@ from lacli.date import parse_timestamp, remaining_time
 from lacli.progress import make_progress, save_progress
 from itertools import imap, repeat, izip
 from lacli.log import getLogger
-from lacli.exceptions import UploadEmptyError, WorkerFailureError
+from lacli.exceptions import UploadEmptyError, WorkerFailureError, PauseEvent
 from lacli.control import readControl
 from boto import connect_s3
 from boto.utils import compute_md5
@@ -13,7 +13,7 @@ from boto.s3.key import Key
 from filechunkio import FileChunkIO
 from sys import maxint
 from tempfile import mkdtemp, mkstemp
-from multiprocessing import TimeoutError
+from multiprocessing import TimeoutError, active_children
 
 
 class MPConnection(object):
@@ -150,7 +150,7 @@ class FilePart(FileChunkIO):
 
 class MPUpload(object):
 
-    def __init__(self, connection, source, key, step=10, retries=4):
+    def __init__(self, connection, source, key, step=None, retries=4):
         self.connection = connection
         self.source = source
         self.retries = retries
@@ -207,8 +207,11 @@ class MPUpload(object):
         getLogger().debug("total of %d upload jobs for workers..",
                           self.source.chunks)
         chunks = self.source.chunks
-        if chunks > self.step:
-            chunks = self.step    
+        step = self.step
+        if step is None:
+            step = len(active_children()) or 5
+        if chunks > step:
+            chunks = step    
         return pool.imap(upload_part, self.iterargs(chunks))
 
     def complete_multipart(self, etags):
@@ -232,6 +235,8 @@ class MPUpload(object):
                     key = rs.next(self.connection.timeout())
                     getLogger().debug("got key {} with etag: {}".format(key.name, key.etag))
                     etags.append(key.etag)
+            except PauseEvent:
+                raise
             except StopIteration:
                 pass
             except WorkerFailureError:
@@ -250,6 +255,7 @@ class MPUpload(object):
 
         uploaded = len(etags)
         total = self.source.chunks
+        getLogger().debug("Uploaded {} out of {} chunks".format(uploaded, total))
         size = self.source.size
         if uploaded < total:
             for seq in xrange(uploaded, total):
@@ -318,5 +324,7 @@ def upload_part(kwargs):
         seq = kwargs.pop('seq')
         uploader = kwargs.pop('uploader')
         return uploader.do_part(seq, **kwargs)
+    except PauseEvent:
+        raise
     except Exception as e:
         raise WorkerFailureError(e)

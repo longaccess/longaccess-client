@@ -206,6 +206,9 @@ class Api(object):
         op = UploadOperation(self, archive, capsule, uri)
         return op
 
+    def upload_cancel(self, state):
+        pass
+
     @defer.inlineCallbacks
     def get_endpoint(self, name):
         endpoints = yield self.endpoints

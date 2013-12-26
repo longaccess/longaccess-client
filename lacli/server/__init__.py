@@ -4,8 +4,9 @@ from lacli.compose import compose
 from lacli.adf import make_adf
 from lacli.command import LaBaseCommand
 from lacli.decorators import contains, login_async, expand_args
+from lacli.exceptions import PauseEvent
 from twisted.python.log import startLogging, msg, err
-from twisted.internet import reactor, defer, threads
+from twisted.internet import reactor, defer, threads, task
 from thrift.transport import TTwisted
 from thrift.protocol import TBinaryProtocol
 from lacli.server.interface.ClientInterface import CLI, ttypes
@@ -17,6 +18,7 @@ from binascii import b2a_hex
 from StringIO import StringIO
 import sys
 import os
+import errno
 
 
 class LaServerCommand(LaBaseCommand, CLI.Processor):
@@ -92,8 +94,9 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
                 created.minute,
                 created.second),
             md5)
+
     def toArchive(self, fname, docs):
-        status = self.cache.archive_status(docs)
+        status = self.cache.archive_status(fname, docs)
         ident = os.path.basename(fname)
         return ttypes.Archive(
             ident,
@@ -169,6 +172,40 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         archives = self.cache._for_adf('archives')
         return list(starmap(self.toArchive, archives.iteritems()))
 
+    def reset_upload(self, archive, times=3):
+        try:
+            return UploadState.reset(archive)
+        except OSError as e:
+            if e.errno == errno.EACCES and times > 0:
+                return task.deferLater(reactor, 2,
+                    self.reset_upload, archive, times-1)
+            raise
+
+    @defer.inlineCallbacks
+    def _upload(self, f, d, s):
+        size = d['archive'].meta.size
+        acmd = self.registry.cmd.archive
+        with s:
+            try:
+                with ServerProgressHandler(size=size, state=s) as progq:
+                    saved = yield acmd.upload_async(d, f, progq, s)
+                status = yield acmd._poll_status_async(saved['link'])
+            except PauseEvent as e:
+                getLogger().debug("upload paused.")
+                return
+            except Exception as e:
+                getLogger().debug("error in upload", exc_info=True)
+                s.error(e)
+                return
+            if status['status'] == "error":
+                getLogger().debug("upload error")
+                s.error(True)
+            elif status['status'] == "completed":
+                fname = saved['fname']
+                getLogger().debug("upload completed")
+                self.cache.save_cert(self.cache.upload_complete(fname, status))
+                self.reset_upload(f)
+
     @tthrow
     @login_async
     @defer.inlineCallbacks
@@ -178,10 +215,10 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             3: string title, 4: string description)
         """
         docs = self.cache.get_adf(archive)
-        status = self.cache.archive_status(docs)
+        status = self.cache.archive_status(archive, docs)
         if status != ttypes.ArchiveStatus.Local:
             raise ValueError("Archive state invalid")
-
+        size = docs['archive'].meta.size
         cs = yield self.session.async_capsules()
         for c in cs:
             if c['id'] == int(capsule):
@@ -193,25 +230,32 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         else:
             raise ValueError("Capsule not found")
 
-        size = docs['archive'].meta.size
-        with UploadState.get(archive, size) as state:
-            with ServerProgressHandler(size=size, state=state) as progq:
-                saved = yield self.registry.cmd.archive.upload_async(
-                    capsule, docs, archive, progq, state)
-                # todo poll for status
+        state = UploadState.get(archive, size, capsule)
+        if state.exc is not None:
+            raise ValueError("Archive has error")
+
+        self._upload(archive, docs, state)
 
     @tthrow
     def ResumeUpload(self, archive):
         """
           void ResumeUpload(1: string ArchiveLocalID)
         """
-        raise NotImplementedError("not implemented")
+        docs = self.cache.get_adf(archive)
+        status = self.cache.archive_status(archive, docs)
+        if status != ttypes.ArchiveStatus.InProgress:
+            raise ValueError("Archive state invalid")
+        state = UploadState.get(archive)
+        if state.exc is not None:
+            raise ValueError("Archive has error")
+
+        self._upload(archive, docs, state)
 
     def toTransferStatus(self, state):
         return ttypes.TransferStatus(
             'description',
             'eta',
-            0,
+            state.size - state.progress,
             state.progress)
 
     @tthrow
@@ -219,16 +263,28 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         """
           TransferStatus QueryArchiveStatus(1: string ArchiveLocalID)
         """
-        if archive not in UploadState.states:
-            raise ValueError("archive not found")
-        return self.toTransferStatus(UploadState.states[archive])
+        docs = self.cache.get_adf(archive)
+        status = self.cache.archive_status(archive, docs)
+        if status == ttypes.ArchiveStatus.Completed:
+            return ttypes.TransferStatus(
+                'description',
+                'eta',
+                0, 
+                docs['archive'].meta.size)
+        if status == ttypes.ArchiveStatus.InProgress:
+            if archive not in UploadState.states:
+                raise ValueError("archive not found")
+            return self.toTransferStatus(UploadState.states[archive])
+        raise ValueError("Archive state invalid")
 
     @tthrow
     def PauseUpload(self, archive):
         """
           void PauseUpload(1: string ArchiveLocalID)
         """
-        raise NotImplementedError("not implemented")
+        if archive not in UploadState.states:
+            raise ValueError("archive not found")
+        UploadState.states[archive].pause()
 
     @tthrow
     @login_async
@@ -236,7 +292,9 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         """
           void CancelUpload(1: string ArchiveLocalID)
         """
-        raise NotImplementedError("not implemented")
+        if archive in UploadState.states:
+            UploadState.states[archive].pause()
+        self.reset_upload(archive)
 
     def toSignature(self, docs):
         sig = docs['signature']
