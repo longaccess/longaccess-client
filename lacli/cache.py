@@ -101,6 +101,7 @@ class Cache(object):
         new = { 'name': key, 'size': size}
         logfile.write(json.dumps(new)+"\n")
         logfile.flush()
+        return new
 
     @contains(dict)
     def _for_adf(self, category):
