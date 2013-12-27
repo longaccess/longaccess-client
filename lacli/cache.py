@@ -224,7 +224,7 @@ class Cache(object):
         if 'signature' in docs:
             aid = docs['signature'].aid or aid
             if docs['signature'].expires is not None:
-		expires = parse_timestamp(docs['signature'].expires)
+                expires = parse_timestamp(docs['signature'].expires)
             if docs['signature'].created is not None:
                 created = parse_timestamp(docs['signature'].created)
         md5 = b2a_hex(docs['auth'].md5).upper()
