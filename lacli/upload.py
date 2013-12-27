@@ -6,6 +6,7 @@ from lacli.control import ControlHandler
 from lacli.worker import WorkerPool
 from twisted.internet import defer, threads
 from itertools import count
+from multiprocessing import TimeoutError
 import json
 import errno
 import signal
@@ -166,6 +167,8 @@ class Upload(object):
                 except PauseEvent:
                     getLogger().debug("paused after uploading %d temporary keys", seq)
                     raise
+                except TimeoutError:
+                    getLogger().debug("timeout after uploading %d temporary keys", seq)
                 if source is None:
                     getLogger().debug("uploaded entire archive")
                     progq.put({'complete': True})

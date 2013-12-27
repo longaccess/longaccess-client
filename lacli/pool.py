@@ -243,6 +243,7 @@ class MPUpload(object):
                 getLogger().debug("error getting result.", exc_info=True)
             except TimeoutError:
                 getLogger().debug("stopping before credentials expire.")
+                raise
 
         if not etags:
             raise UploadEmptyError()
