@@ -1,4 +1,5 @@
 import json
+import collections
 import os
 import shlex
 from urlparse import urlparse
@@ -333,6 +334,26 @@ class Cache(object):
     def log_open(self):
         return open(os.path.join(self._cache_dir('logs', True), "log.txt"), 'w+')
 
+    def merge_prefs(self, prefs):
+        try:
+            def update(d, u):
+                for k, v in u.iteritems():
+                    if isinstance(v, collections.Mapping):
+                        d[k] = update(d.get(k, {}), v)
+                    else:
+                        d[k] = u[k]
+                return d
+
+            with open(os.path.join(self.home, "preferences.json"), 'r+') as pf:
+                return update(prefs, json.load(pf))
+        except Exception:
+            getLogger().debug("Error reading preferences", exc_info=True)
+            return prefs
+
+    def save_prefs(self, prefs):
+        with open(os.path.join(self.home, "preferences.json"), 'w') as pf:
+            json.dump({"gui": prefs['gui']}, pf)
+        
 
 if __name__ == "__main__":
     import hashlib
