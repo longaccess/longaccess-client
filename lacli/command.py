@@ -407,7 +407,14 @@ class LaArchiveCommand(LaBaseCommand):
                                 state.error(True)
                             elif status['status'] == "completed":
                                 print "status: completed"
-                                UploadState.reset(fname)
+                                for i in range(3):
+                                    try:
+                                        UploadState.reset(fname)
+                                    except OSError as e:
+                                        if i < 3 and e.errno == errno.EACCES:
+                                            continue
+                                        else:
+                                            raise e
                                 fname = saved['fname']
                                 cert, f = self.cache.save_cert(
                                     self.cache.upload_complete(fname, status))
