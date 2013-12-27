@@ -89,6 +89,19 @@ class Cache(object):
     def _del_upload(self, archive):
         os.unlink(os.path.join(self._cache_dir('uploads'), archive))
 
+    def _write_upload(self, uri, capsule, logfile):
+        new = { 'uri': uri }
+        if capsule is not None:
+            ks = ('resource_uri', 'size', 'title', 'remaining', 'id')
+            new['capsule'] = {k: capsule.get(k, None) for k in ks}
+        logfile.write(json.dumps(new)+"\n")
+        logfile.flush()
+
+    def _checkpoint_upload(self, key, size, logfile):
+        new = { 'name': key, 'size': size}
+        logfile.write(json.dumps(new)+"\n")
+        logfile.flush()
+
     @contains(dict)
     def _for_adf(self, category):
         for fn in iglob(os.path.join(self._cache_dir(category), '*.adf')):

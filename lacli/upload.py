@@ -88,9 +88,7 @@ class UploadState(object):
 
     def keydone(self, key, size):
         assert self.logfile is not None, "Log not open"
-        new = { 'name': key, 'size': size}
-        self.logfile.write(json.dumps(new)+"\n")
-        self.logfile.flush()
+        self.cache._checkpoint_upload(key, size, self.logfile)
         self.append(new)
         self._progress = 0
 
@@ -118,11 +116,7 @@ class UploadState(object):
         assert self.uri is None, "Can't change URI for upload state"
         if op.uri is None:
             return
-        new = { 'uri': op.uri }
-        if self.capsule is not None:
-            new['capsule'] = self.capsule
-        self.logfile.write(json.dumps(new)+"\n")
-        self.logfile.flush()
+        self.cache._write_upload(op.uri, self.capsule, self.logfile)
         self.uri = op.uri
 
     def error(self, exc):
