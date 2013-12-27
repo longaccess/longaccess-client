@@ -78,6 +78,12 @@ def settings(options):
             'verbose': options.get('--verbose'),
             'batch': batch
         },
+        'gui': {
+            'rememberme': False,
+            'username': None,
+            'password': None,
+            'email': None
+        }
     }
     if options.get('<command>'):
         prefs[options['<command>']] = options.get('<args>')
@@ -102,6 +108,9 @@ def settings(options):
                     if sys.stdin.readline().strip().lower() != 'yes':
                         sys.exit('Unable to proceed without home directory')
                     os.makedirs(os.path.expanduser(home))
+
+    cache = Cache(os.path.expanduser(home))
+    prefs = cache.merge_prefs(prefs)
 
     return (prefs, Cache(os.path.expanduser(home)))
 
