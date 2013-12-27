@@ -279,7 +279,7 @@ add_path_resolver(u'!signature', ["signature"])
 add_path_resolver(u'!key', ["keys", None])
 
 json_cert_re = re.compile(r"""
-<template><script>var json_certificate='([^']*)';</script></template>
+<template><script>var json_certificate='(.*)';</script></template>
 """)
 
 
