@@ -6,6 +6,7 @@ import glob
 import pyaml
 import sys
 import time
+import errno
 import operator
 from pipes import quote
 from lacli.log import getLogger
@@ -271,6 +272,7 @@ class LaArchiveCommand(LaBaseCommand):
            lacli archive create <dirname> -t <title> [--desc <description>]
            lacli archive extract [-o <dirname>] <path> [<cert_id>|-f <cert>]
            lacli archive delete <index> [<srm>...]
+           lacli archive reset <index>
            lacli archive --help
 
     Options:
@@ -320,6 +322,9 @@ class LaArchiveCommand(LaBaseCommand):
                     line.append(quote(options['--desc']))
         elif options['status']:
             line.append("status")
+            line.append(options['<index>'])
+        elif options['reset']:
+            line.append("reset")
             line.append(options['<index>'])
         elif options['extract']:
             line.append("extract")
@@ -403,7 +408,14 @@ class LaArchiveCommand(LaBaseCommand):
                                 state.error(True)
                             elif status['status'] == "completed":
                                 print "status: completed"
-                                UploadState.reset(fname)
+                                for i in range(3):
+                                    try:
+                                        UploadState.reset(fname)
+                                    except OSError as e:
+                                        if i < 3 and e.errno == errno.EACCES:
+                                            continue
+                                        else:
+                                            raise e
                                 fname = saved['fname']
                                 cert, f = self.cache.save_cert(
                                     self.cache.upload_complete(fname, status))
@@ -637,6 +649,24 @@ class LaArchiveCommand(LaBaseCommand):
 
     def complete_put(self, text, line, begidx, endidx):  # pragma: no cover
         return [os.path.basename(x) for x in glob.glob('{}*'.format(line[4:]))]
+
+    @command(index=int)
+    def do_reset(self, index):
+        """
+        Usage: reset <index>
+        """
+        docs = list(self.cache._for_adf('archives').iteritems())
+        docs = sorted(docs, key=compose(creation, operator.itemgetter(1)))
+
+        if index <= 0 or len(docs) < index:
+            print "No such archive."
+        else:
+            fname = docs[index-1][0]
+            if fname in UploadState.states:
+                UploadState.reset(fname)
+                print "archive upload status reset."
+            else:
+                print "No such upload."
 
     @command(index=int, srm=str)
     def do_delete(self, index=None, srm=None):

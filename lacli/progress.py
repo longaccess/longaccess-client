@@ -13,7 +13,6 @@ class BaseProgressHandler(queueHandler):
         self.total = size
         self.tx = {}
         self.progress = 0
-        self.previous = 0
 
     def update_current(self, msg):
         self.tx[msg['part']] = int(msg['tx'])
@@ -25,7 +24,7 @@ class BaseProgressHandler(queueHandler):
         return self.progress
 
     def handle(self, msg):
-        progress = self.previous
+        progress = self.progress
         if 'complete' in msg:
             progress = self.total
         elif 'part' in msg:
@@ -74,10 +73,9 @@ class ConsoleProgressHandler(ServerProgressHandler):
             ' ', ETA(), ' ', FileTransferSpeed()], maxval=kwargs.get('size'))
         super(ConsoleProgressHandler, self).__init__(*args, **kwargs)
 
-    def handle(self, msg):
-        if len(self.tx) == 0:
-            self.bar.start()
-        super(ConsoleProgressHandler, self).handle(msg)
+    def __enter__(self):
+        self.bar.start()
+        return super(ConsoleProgressHandler, self).__enter__()
 
     def update(self, progress):
         super(ConsoleProgressHandler, self).update(progress)
