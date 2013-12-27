@@ -540,17 +540,17 @@ class LaArchiveCommand(LaBaseCommand):
         """
         docs = list(self.cache._for_adf('archives').iteritems())
         docs = sorted(docs, key=compose(creation, operator.itemgetter(1)))
+        uploads = self.cache._get_uploads()
         if index <= 0 or len(docs) < index:
             print "No such archive"
         else:
             fname = docs[index-1][0]
             upload = docs[index-1][1]
-            if not upload['links'].upload:
-                if upload['links'].download:
-                    print "status: complete"
-                else:
-                    print "status: local"
-            else:
+            if fname in uploads:
+                upload['links'].upload = uploads[fname]['uri']
+            if 'signature' in upload:
+                print "status: complete"
+            elif 'links' in upload and upload['links'].upload:
                 try:
                     url = upload['links'].upload
                     status = self.session.upload_status(url)
@@ -571,6 +571,8 @@ class LaArchiveCommand(LaBaseCommand):
                     getLogger().debug("exception while checking status",
                                       exc_info=True)
                     print "error: " + str(e)
+            else:
+                print "status: local"
 
     @command(path=unicode, dest=unicode, cert_id=str, cert_file=unicode)
     def do_extract(self, path=None, dest=None, cert_id=None, cert_file=None):
