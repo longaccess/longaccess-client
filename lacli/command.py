@@ -6,6 +6,7 @@ import glob
 import pyaml
 import sys
 import time
+import errno
 import operator
 from pipes import quote
 from lacli.log import getLogger
