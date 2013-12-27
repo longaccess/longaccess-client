@@ -73,7 +73,6 @@ class RichTextUI:
             archive['status'],
             archive['size'],
             archive['created'].strftime('%Y-%m-%d'),
-            archive['expires'].strftime('%Y-%m-%d'),
             archive_title.encode('utf-8')) 
     
     def print_capsules_header(self):
