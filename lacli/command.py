@@ -408,14 +408,6 @@ class LaArchiveCommand(LaBaseCommand):
                                 state.error(True)
                             elif status['status'] == "completed":
                                 print "status: completed"
-                                for i in range(3):
-                                    try:
-                                        UploadState.reset(fname)
-                                    except OSError as e:
-                                        if i < 3 and e.errno == errno.EACCES:
-                                            continue
-                                        else:
-                                            raise e
                                 fname = saved['fname']
                                 cert, f = self.cache.save_cert(
                                     self.cache.upload_complete(fname, status))
@@ -427,6 +419,15 @@ class LaArchiveCommand(LaBaseCommand):
                                                 "to see your certificates, or",
                                                 "lacli certificate --help for",
                                                 "more options"))
+                                for i in range(3):
+                                    try:
+                                        UploadState.reset(fname)
+                                        break
+                                    except OSError as e:
+                                        if i < 3 and e.errno == errno.EACCES:
+                                            continue
+                                        else:
+                                            raise e
                             else:
                                 print "Unknown status received:", status['status']
 
