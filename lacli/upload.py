@@ -89,8 +89,7 @@ class UploadState(object):
 
     def keydone(self, key, size):
         assert self.logfile is not None, "Log not open"
-        self.cache._checkpoint_upload(key, size, self.logfile)
-        self.append(new)
+        self.append(self.cache._checkpoint_upload(key, size, self.logfile))
         self._progress = 0
 
     def update(self, progress):
