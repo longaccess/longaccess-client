@@ -13,7 +13,7 @@ We have binary packages for certain platforms, like MacOS X, Windows 8 64-bit, L
 Dependencies
 ------------
 
-The prebuilt binary packages are self-contained, i.e. they do not have any hard external dependencies. There is however a soft dependency on an external tool to securely delete files from the filesystem, see below for more information. When installing from source most dependencies are automatically installable via `pip`. On some platforms the installation might require manually installing development packages, e.g. on [Fedora Linux][] you might need to install the `python2-devel` package. Additionally if graphical user interface dialogs are desired [PySide][] must be available. If the RPC server is required the `thrift` and `twisted` packages are necessary.
+The prebuilt binary packages are self-contained, i.e. they do not have any hard external dependencies. There is however a soft dependency on an external tool to securely delete files from the filesystem, see below for more information. When installing from source most dependencies are automatically installable via `pip`. On some platforms the installation might require manually installing development packages, e.g. on [Fedora Linux][] you might need to install the `python2-devel` package. Additional packages, like `thrift` and `twisted` are necessary for the RPC server (used to communicate with GUI frontends).
 
 Usage
 -----
@@ -24,6 +24,7 @@ After installation the program is invoked as `lacli`. Run it with no arguments t
 * `lacli archive` helps you manage archives
 * `lacli certificate` helps you manage certificates
 * `lacli capsules` let's you view your available capsules 
+* `lacli server` runs the RPC server. You normally do not need this.
 
 Alternatively one may run the program interactively by running `lacli -i`.
 

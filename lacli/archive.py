@@ -44,7 +44,7 @@ def archive_handle(docs):
 
 def restore_archive(archive, path, cert, folder, tmpdir, cb=None):
     cipher = get_cipher(archive, cert)
-    with open(path) as infile:
+    with open(path, 'rb') as infile:
         with NamedTemporaryFile() as dst:
             with CryptIO(infile, cipher) as cf:
                 copyfileobj(cf, dst)
@@ -120,7 +120,13 @@ def _writer(name, items, cipher, tmpdir, hashobj=None):
         with NamedTemporaryFile(**tmpargs) as zf:
             with ZipFile(zf, 'w', ZIP_DEFLATED, True) as zpf:
                 for path, rel in walk_folders(map(os.path.abspath, items)):
-                    zpf.write(path, rel.encode('utf8'))
+                    try:
+                        zpf.write(path, rel.encode('utf8'))
+                    except Exception as e:
+                        if not hasattr(e, 'filename'):
+                            setattr(e, 'filename', path)
+                        dst.close()
+                        raise e
                     yield (path, rel)
             zf.flush()
             zf.seek(0)

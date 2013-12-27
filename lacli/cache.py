@@ -1,3 +1,4 @@
+import json
 import os
 import shlex
 from urlparse import urlparse
@@ -57,6 +58,51 @@ class Cache(object):
         with open(os.path.join(self._cache_dir(category), fname)) as f:
             return load_archive(f)
 
+    def _validate_upload(self, lines):
+        parts = []
+        ret = {}
+        last = chunk = False
+        for line in lines:
+            key = json.loads(line)
+            if 'uri' in key:
+                ret = key
+                continue
+            size = key['size']
+            if chunk is False:  # initialize chunk size
+                chunk = last = size
+            if size < last and last == chunk:
+                last = size  # chunk is smaller than all previous
+            assert size == chunk or size == last, "Too many different sizes"
+            parts.append(key)
+        ret['keys'] = parts
+        return ret
+
+    def _get_uploads(self):
+        uploads = {}
+        for fn in iglob(os.path.join(self._cache_dir('uploads'), '*')):
+            aid = os.path.basename(fn)
+            uploads[aid] = {}
+            with open(fn) as f:
+                uploads[aid] = self._validate_upload(f)
+        return uploads
+                     
+    def _del_upload(self, archive):
+        os.unlink(os.path.join(self._cache_dir('uploads'), archive))
+
+    def _write_upload(self, uri, capsule, logfile):
+        new = { 'uri': uri }
+        if capsule is not None:
+            ks = ('resource_uri', 'size', 'title', 'remaining', 'id')
+            new['capsule'] = {k: capsule.get(k, None) for k in ks}
+        logfile.write(json.dumps(new)+"\n")
+        logfile.flush()
+
+    def _checkpoint_upload(self, key, size, logfile):
+        new = { 'name': key, 'size': size}
+        logfile.write(json.dumps(new)+"\n")
+        logfile.flush()
+        return new
+
     @contains(dict)
     def _for_adf(self, category):
         for fn in iglob(os.path.join(self._cache_dir(category), '*.adf')):
@@ -94,20 +140,24 @@ class Cache(object):
             make_adf(list(docs.itervalues()), out=f)
             return (f.name, docs)
 
-    def archive_status(self, docs):
+    def archive_status(self, fname, docs):
         if 'signature' in docs:
             return ArchiveStatus.Completed
         elif 'links' in docs and docs['links'].upload:
             return ArchiveStatus.InProgress
+        elif fname in self._get_uploads():
+            return ArchiveStatus.InProgress
         else:
             return ArchiveStatus.Local  # TODO: check for errors
 
-    def save_upload(self, fname, docs, upload):
-        docs['links'].upload = upload['uri']
-        docs['archive'].meta.email = upload['account']['email']
-        docs['archive'].meta.name = upload['account']['displayname']
-        with self._archive_open(fname, 'w') as f:
-            make_adf(list(docs.itervalues()), out=f)
+    def save_upload(self, fname, docs, uri=None, account=None):
+        if uri is not None:
+            docs['links'].upload = uri 
+            if account is not None:
+                docs['archive'].meta.email = account['email']
+                docs['archive'].meta.name = account['displayname']
+            with self._archive_open(fname, 'w') as f:
+                make_adf(list(docs.itervalues()), out=f)
         return {
             'fname': fname,
             'link': docs['links'].upload,
@@ -175,7 +225,7 @@ class Cache(object):
         if 'signature' in docs:
             aid = docs['signature'].aid or aid
             if docs['signature'].expires is not None:
-		expires = parse_timestamp(docs['signature'].expires)
+                expires = parse_timestamp(docs['signature'].expires)
             if docs['signature'].created is not None:
                 created = parse_timestamp(docs['signature'].created)
         md5 = b2a_hex(docs['auth'].md5).upper()
@@ -240,7 +290,7 @@ class Cache(object):
         if path:
             for a in countdown:
                 pass
-            self.shred_file(path, srm)
+            self.shred_file(os.path.join(self._cache_dir('certs'), path), srm)
             return path
 
     def export_cert(self, aid):
@@ -279,6 +329,9 @@ class Cache(object):
             return os.path.join(self.home, parsed.path)
         except:
             return None
+
+    def log_open(self):
+        return open(os.path.join(self._cache_dir('logs', True), "log.txt"), 'w+')
 
 
 if __name__ == "__main__":

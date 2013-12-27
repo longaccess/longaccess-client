@@ -1,8 +1,10 @@
 import sys
 import os
+import signal
 
 from lacli.log import logToQueue, getLogger
 from lacli.progress import progressToQueue
+from lacli.control import controlByQueue
 from multiprocessing import cpu_count, pool, current_process, Process
 try:
     from setproctitle import setproctitle
@@ -10,11 +12,13 @@ except ImportError:
     setproctitle = lambda x: x
 
 
-def initworker(logq, progq, stdin=None):
+def initworker(logq, progq, ctrlq, stdin=None):
     """initializer that sets up logging and progress from sub procs """
     logToQueue(logq)
     progressToQueue(progq)
+    controlByQueue(ctrlq)
     setproctitle(current_process().name)
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
     if stdin is not None:
         sys.stdin = os.fdopen(stdin, 'r')
 
@@ -28,9 +32,9 @@ class WorkerProcess(Process):
 class WorkerPool(pool.Pool):
     Process = WorkerProcess
 
-    def __init__(self, prefs, logq, progq):
+    def __init__(self, prefs, logq, progq, ctrlq):
         nprocs = prefs['nprocs'] or max(cpu_count()-1, 1)
-        args = [logq, progq]
+        args = [logq, progq, ctrlq]
         if prefs['debugworker']:
             args.append(sys.stdin.fileno())
         super(WorkerPool, self).__init__(nprocs, initworker, args)

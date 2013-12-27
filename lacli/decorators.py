@@ -3,11 +3,13 @@ import sys
 
 from twisted.internet import defer
 from twisted.python.failure import Failure
+from twisted.internet import reactor
 from docopt import docopt, DocoptExit
 from functools import update_wrapper, wraps, partial
 from requests.exceptions import ConnectionError, HTTPError
 from lacli.exceptions import (ApiErrorException, ApiAuthException,
                               ApiUnavailableException, ApiNoSessionError, BaseAppException)
+from crochet import setup, run_in_reactor, TimeoutError
 
 def expand_args(f):
     @wraps(f)
@@ -22,7 +24,10 @@ class deferred_property(object):
         update_wrapper(self, self.f)
 
     def update(self, obj, name, value):
-        obj.__dict__[name]=value
+        if isinstance(value, Failure):
+            del obj.__dict__[name]
+        else:
+            obj.__dict__[name]=value
         return value
 
     def __get__(self, obj, cls):
@@ -33,10 +38,7 @@ class deferred_property(object):
             obj.__dict__[name] = self.f(obj)
             obj.__dict__[name].addBoth(
                 partial(self.update, obj, name))
-        ret = obj.__dict__[name]
-        if isinstance(ret, Failure):
-            ret.raiseException()
-        return ret
+        return obj.__dict__[name]
 
     def __set__(self, obj, value):
         obj.__dict__[self.f.__name__] = value
@@ -126,7 +128,24 @@ def command(**types):
     return decorate
 
 
-class login(object):
+def block(f):
+    """ Decorate a method to block in crochet reactor
+    """
+    fblocking = run_in_reactor(f)
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        if not reactor.running:
+            setup()
+        result = fblocking(*args, **kwargs)
+        try:
+            return result.wait()
+        except TimeoutError:
+            result.cancel()
+            raise
+    return wrap
+
+
+class login_async(object):
     def __init__(self, f, obj=None):
         self.f = f
         self.obj = obj
@@ -134,6 +153,16 @@ class login(object):
 
     def __get__(self, obj, cls):
         return wraps(self.f)(login(self.f, obj))
+
+    def dologin(self, prefs):
+        return self.obj.registry.cmd.login.login_async(
+            prefs.get('user'), prefs.get('pass'))
+
+    @defer.inlineCallbacks
+    def loginfirst(self, prefs, *args, **kwargs):
+        yield self.dologin(prefs)
+        r = yield self.f(self.obj, *args, **kwargs)
+        defer.returnValue(r)
 
     def __call__(self, *args, **kwargs):
         if len(args) > 0:
@@ -143,16 +172,31 @@ class login(object):
             elif self.obj == args[0]:
                 args = args[1:]
 
-        prefs = {'user': None, 'pass': None}
+        prefs = None
         if self.obj.registry.session:
             prefs = self.obj.registry.session.prefs
+        if not prefs:
+            prefs = self.obj.registry.init_prefs()
 
         if not self.obj.session or self.obj.registry.cmd.login.email is None:
-            if self.obj.batch:
-                self.obj.registry.cmd.login.login_batch(
-                    prefs.get('user'), prefs.get('pass'))
-            else:
-                cmdline = [prefs[a] for a in ['user', 'pass']
-                           if prefs.get(a)]
-                self.obj.registry.cmd.do_login(" ".join(cmdline))
+            return self.loginfirst(prefs, *args, **kwargs)
         return self.f(self.obj, *args, **kwargs)
+
+
+class login(login_async):
+    def __init__(self, *args, **kwargs):
+        super(login, self).__init__(*args, **kwargs)
+    
+    def dologin(self, prefs):
+        if self.obj.batch:
+            self.obj.registry.cmd.login.login_batch(
+                prefs.get('user'), prefs.get('pass'))
+        else:
+            cmdline = [prefs[a] for a in ['user', 'pass']
+                       if prefs.get(a)]
+            self.obj.registry.cmd.username = prefs['user']
+            self.obj.registry.cmd.password = prefs['pass']
+            self.obj.registry.cmd.do_login(" ".join(cmdline))
+
+    def loginfirst(self, *args, **kwargs):
+       return super(login, self).loginfirst(*args, **kwargs)

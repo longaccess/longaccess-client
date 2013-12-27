@@ -1,23 +1,28 @@
 from __future__ import division
+import signal
 import os
 import cmd
 import glob
 import pyaml
 import sys
 import time
+import errno
 import operator
 from pipes import quote
 from lacli.log import getLogger
-from lacli.upload import Upload
+from lacli.upload import Upload, UploadState
 from lacli.archive import restore_archive
 from lacli.adf import archive_size, Certificate, Archive, Meta, creation
-from lacli.decorators import command, login
+from lacli.decorators import command, login, block
 from lacli.exceptions import DecryptionError
 from lacli.compose import compose
 from lacli.progress import ConsoleProgressHandler
+from twisted.internet import defer, reactor, task
 from contextlib import contextmanager
 from abc import ABCMeta, abstractmethod
 
+from richtext import RichTextUI as UIClass
+ui = UIClass()
 
 class LaBaseCommand(cmd.Cmd, object):
     __metaclass__ = ABCMeta
@@ -117,12 +122,17 @@ class LaCertsCommand(LaBaseCommand):
         certs = self.cache._for_adf('certs')
 
         if len(certs):
+            ui.print_certificates_header()
             for cert in sorted(certs.itervalues(), key=creation):
                 aid = cert['signature'].aid
                 title = cert['archive'].title
                 size = archive_size(cert['archive'])
-                print u"{:>10} {:>6} {:<}".format(
-                    aid, size, title)
+                ui.print_certificates_line( certificate={
+                        'aid': aid,
+                        'size':size,
+                        'title': title,
+                        'created':cert['archive'].meta.created
+                    })
                 if self.debug > 2:
                     for doc in cert.itervalues():
                         pyaml.dump(doc, sys.stdout)
@@ -233,17 +243,20 @@ class LaCapsuleCommand(LaBaseCommand):
         """
         try:
             capsules = self.session.capsules()
-
+            n = 0
             if len(capsules):
-                print "Available capsules:"
+                ui.print_capsules_header()
                 for capsule in capsules:
-                    print u"{:<10}:{:>10}".format(
-                        'title', capsule.pop('title'))
-                    for i, v in capsule.iteritems():
-                        if i == 'resource_uri':
-                            continue
-                        print "{:<10}:{:>10}".format(i, v)
-                    print "\n"
+                    n = n+1
+                    ui.print_capsules_line(capsule = {
+                        'num': n,
+                        'size': capsule['size'],
+                        'remaining': capsule['remaining'],
+                        'title': capsule['title'],
+                        'id': capsule['id'],
+                        'created': capsule['created'],
+                        'expires':capsule['expires'],
+                    })
             else:
                 print "No available capsules."
         except Exception as e:
@@ -259,6 +272,7 @@ class LaArchiveCommand(LaBaseCommand):
            lacli archive create <dirname> -t <title> [--desc <description>]
            lacli archive extract [-o <dirname>] <path> [<cert_id>|-f <cert>]
            lacli archive delete <index> [<srm>...]
+           lacli archive reset <index>
            lacli archive --help
 
     Options:
@@ -277,6 +291,7 @@ class LaArchiveCommand(LaBaseCommand):
 
     def __init__(self, *args, **kwargs):
         super(LaArchiveCommand, self).__init__(*args, **kwargs)
+        UploadState.init(self.cache)
         self.nprocs = None
 
     def setopt(self, options):
@@ -307,6 +322,9 @@ class LaArchiveCommand(LaBaseCommand):
                     line.append(quote(options['--desc']))
         elif options['status']:
             line.append("status")
+            line.append(options['<index>'])
+        elif options['reset']:
+            line.append("reset")
             line.append(options['<index>'])
         elif options['extract']:
             line.append("extract")
@@ -372,19 +390,22 @@ class LaArchiveCommand(LaBaseCommand):
             else:
                 try:
                     size = docs['archive'].meta.size
-                    handler = ConsoleProgressHandler(size, fname=fname)
-                    with handler as progq:
-                        saved = self.upload(capsule, docs, fname, progq)
-                    if not self.batch:
-                        print ""
-                        print "Upload finished, waiting for verification"
-                        print "Press Ctrl-C to check manually later"
-                        while True:
-                            status = self.session.upload_status(saved['link'])
+                    with UploadState.get(fname, size, capsule) as state:
+                        signal.signal(signal.SIGINT, state.signal)
+
+                        handler = ConsoleProgressHandler(
+                            size=size, fname=fname, state=state)
+                        with handler as progq:
+                            saved = self.upload(docs, fname, progq, state)
+                        if not self.batch:
+                            print ""
+                            print "Upload finished, waiting for verification"
+                            print "Press Ctrl-C to check manually later"
+                            status = self._poll_status(saved['link'])
                             if status['status'] == "error":
                                 print "status: error"
                                 self.cache.upload_error(fname)
-                                break
+                                state.error(True)
                             elif status['status'] == "completed":
                                 print "status: completed"
                                 fname = saved['fname']
@@ -398,10 +419,17 @@ class LaArchiveCommand(LaBaseCommand):
                                                 "to see your certificates, or",
                                                 "lacli certificate --help for",
                                                 "more options"))
-                                break
+                                for i in range(3):
+                                    try:
+                                        UploadState.reset(fname)
+                                        break
+                                    except OSError as e:
+                                        if i < 3 and e.errno == errno.EACCES:
+                                            continue
+                                        else:
+                                            raise e
                             else:
-                                for i in xrange(30):
-                                    time.sleep(1)
+                                print "Unknown status received:", status['status']
 
                     print "\ndone."
                 except Exception as e:
@@ -412,14 +440,44 @@ class LaArchiveCommand(LaBaseCommand):
         else:
             print _error
 
-    def upload(self, cid, docs, fname, progq):
-        archive = docs['archive']
-        auth = docs['auth']
-        path = self.cache.data_file(docs['links'])
-        with self.session.upload(cid, archive, auth) as upload:
-            Upload(self.session, self.nprocs, self.debug).upload(
-                path, upload, progq)
-            return self.cache.save_upload(fname, docs, upload)
+    @defer.inlineCallbacks
+    def _poll_status_async(self, link):
+        u = yield self.session.upload_status_async(link)
+        if u['status'] == "completed" or u['status'] == "error":
+            defer.returnValue(u)
+        else:
+            yield task.deferLater(reactor, 5.0, _poll_status_async, link)
+
+    @block
+    def _poll_status(self, link):
+        return self._poll_status_async(link)
+
+    @defer.inlineCallbacks
+    def upload_async(self, docs, fname, progq, state):
+        try:
+            archive = docs['archive']
+            auth = docs['auth']
+            path = self.cache.data_file(docs['links'])
+            op = yield self.session.upload(state.capsule, archive, state)
+            status = yield op.status  # init uri and status
+            if status['status'] != 'pending':
+                raise Exception("Invalid status for upload: " + status['status'])
+            if state.uri is None:
+                state.save_op(op)
+            uploader = Upload(self.session, self.nprocs, self.debug, state)
+            if state.progress < state.size:
+                yield uploader.upload(path, op, progq)
+            yield op.finalize(auth, state.keys)
+            account = yield self.session.async_account
+            saved = yield self.cache.save_upload(fname, docs, op.uri, account)
+            defer.returnValue(saved)
+        except Exception:
+            getLogger().debug("Exception uploading", exc_info=True)
+            raise
+
+    @block
+    def upload(self, *args, **kwargs):
+            return self.upload_async(*args, **kwargs)
 
     @command(directory=unicode, title=unicode, description=unicode)
     def do_create(self, directory=None, title="my archive", description=None):
@@ -450,11 +508,15 @@ class LaArchiveCommand(LaBaseCommand):
         """
         Usage: list
         """
-        archives = self.cache._for_adf('archives')
+        archives = list(self.cache._for_adf('archives').iteritems())
+        uploads = self.cache._get_uploads()
 
         if len(archives):
-            bydate = sorted(archives.itervalues(), key=creation)
-            for n, archive in enumerate(bydate):
+            ui.print_archives_header()
+            bydate = sorted(archives, key=compose(creation, operator.itemgetter(1)))
+            for n, docs in enumerate(bydate):
+                fname = docs[0]
+                archive = docs[1]
                 status = "LOCAL"
                 cert = ""
                 if 'signature' in archive:
@@ -464,10 +526,18 @@ class LaArchiveCommand(LaBaseCommand):
                     status = "UPLOADED"
                     if self.verbose:
                         cert = archive['links'].upload
+                elif fname in uploads:
+                    status = "UPLOADING"
                 title = archive['archive'].title
                 size = archive_size(archive['archive'])
-                print u"{:03d} {:>6} {:>20} {:>10} {:>10}".format(
-                    n+1, size, title, status, cert)
+                ui.print_archives_line(archive = {
+                        'num': n+1,
+                        'size': size,
+                        'title': title,
+                        'status': status,
+                        'cert':cert,
+                        'created':archive['archive'].meta.created
+                    })
                 if self.debug > 2:
                     for doc in archive.itervalues():
                         pyaml.dump(doc, sys.stdout)
@@ -483,17 +553,17 @@ class LaArchiveCommand(LaBaseCommand):
         """
         docs = list(self.cache._for_adf('archives').iteritems())
         docs = sorted(docs, key=compose(creation, operator.itemgetter(1)))
+        uploads = self.cache._get_uploads()
         if index <= 0 or len(docs) < index:
             print "No such archive"
         else:
             fname = docs[index-1][0]
             upload = docs[index-1][1]
-            if not upload['links'].upload:
-                if upload['links'].download:
-                    print "status: complete"
-                else:
-                    print "status: local"
-            else:
+            if fname in uploads:
+                upload['links'].upload = uploads[fname]['uri']
+            if 'signature' in upload:
+                print "status: complete"
+            elif 'links' in upload and upload['links'].upload:
                 try:
                     url = upload['links'].upload
                     status = self.session.upload_status(url)
@@ -514,6 +584,8 @@ class LaArchiveCommand(LaBaseCommand):
                     getLogger().debug("exception while checking status",
                                       exc_info=True)
                     print "error: " + str(e)
+            else:
+                print "status: local"
 
     @command(path=unicode, dest=unicode, cert_id=str, cert_file=unicode)
     def do_extract(self, path=None, dest=None, cert_id=None, cert_file=None):
@@ -579,6 +651,24 @@ class LaArchiveCommand(LaBaseCommand):
     def complete_put(self, text, line, begidx, endidx):  # pragma: no cover
         return [os.path.basename(x) for x in glob.glob('{}*'.format(line[4:]))]
 
+    @command(index=int)
+    def do_reset(self, index):
+        """
+        Usage: reset <index>
+        """
+        docs = list(self.cache._for_adf('archives').iteritems())
+        docs = sorted(docs, key=compose(creation, operator.itemgetter(1)))
+
+        if index <= 0 or len(docs) < index:
+            print "No such archive."
+        else:
+            fname = docs[index-1][0]
+            if fname in UploadState.states:
+                UploadState.reset(fname)
+                print "archive upload status reset."
+            else:
+                print "No such upload."
+
     @command(index=int, srm=str)
     def do_delete(self, index=None, srm=None):
         """
@@ -606,7 +696,7 @@ class LaArchiveCommand(LaBaseCommand):
             "file(s) manually:"))
 
         if not self.batch:
-            print "Deleting archive", index, "({}) in 5".format(archive.title),
+            print "Deleting archive", index, "({}) in 5".format(archive.title.encode('utf8')),
             for num in [4, 3, 2, 1]:
                 sys.stdout.flush()
                 time.sleep(1)

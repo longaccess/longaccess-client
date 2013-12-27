@@ -36,6 +36,10 @@ class ApiAuthException(BaseAppException):
 class UploadEmptyError(BaseAppException):
     msg = "upload failed"
 
+    def __init__(self, reason=None, *args, **kwargs):
+        if reason is not None:
+            self.msg += ": {}".format(reason)
+        super(BaseAppException, self).__init__(self.msg, *args, **kwargs)
 
 class WorkerFailureError(BaseAppException):
     def __init__(self, *args, **kwargs):
@@ -57,3 +61,7 @@ class DecryptionError(BaseAppException):
 
 class Timeout(BaseAppException):
     msg = "Timeout"
+
+
+class PauseEvent(BaseAppException):
+    msg = "Paused"

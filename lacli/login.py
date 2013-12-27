@@ -1,8 +1,7 @@
-from lacli.decorators import command
+from lacli.decorators import command, block
 from lacli.command import LaBaseCommand
 from lacli.log import getLogger
 from lacli.exceptions import ApiAuthException
-from lacli.defer_block import block
 from twisted.internet import defer
 from re import match, IGNORECASE
 from getpass import getpass
@@ -58,27 +57,28 @@ class LaLoginCommand(LaBaseCommand):
         try:
             self.login_batch(username, password)
             print "authentication succesfull as", self.email
+            if not self.batch:
+                if self.username != save[0] or self.password != save[1]:
+                    if match('y(es)?$',
+                             self.input("Save credentials? "), IGNORECASE):
+                        self.registry.save_session(self.username, self.password)
         except Exception as e:
+            getLogger().debug("auth failure", exc_info=True)
             print "authentication failed"
-            return
 
-        if not self.batch:
-            if self.username != save[0] or self.password != save[1]:
-                if match('y(es)?$',
-                         self.input("Save credentials? "), IGNORECASE):
-                    self.registry.save_session(self.username, self.password)
 
     def login_batch(self, username, password):
-        block(self.login_async(username, password))
+        block(self.login_async)(username, password)
 
     @defer.inlineCallbacks
     def login_async(self, username, password):
         self.username = username
         self.password = password
-        self.session = self.registry.new_session()
+        session = self.registry.new_session()
         try:
-            account = yield self.session.async_account
+            account = yield session.async_account
             self.email = account['email']
+            self.session = session
         except Exception as e:
             self.username = self.password = None
             getLogger().debug("auth failure", exc_info=True)
