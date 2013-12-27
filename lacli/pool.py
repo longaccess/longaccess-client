@@ -17,7 +17,7 @@ from multiprocessing import TimeoutError, active_children
 
 
 class MPConnection(object):
-    def __init__(self, token, grace=300):
+    def __init__(self, token, grace=120):
         self.accesskey = token['token_access_key']
         self.secret = token['token_secret_key']
         self.sectoken = token['token_session']
