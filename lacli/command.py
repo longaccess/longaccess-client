@@ -119,25 +119,9 @@ class LaCertsCommand(LaBaseCommand):
         Usage: list
         """
         certs = self.cache._for_adf('certs')
-
-        if len(certs):
-            ui.print_certificates_header()
-            for cert in sorted(certs.itervalues(), key=creation):
-                aid = cert['signature'].aid
-                title = cert['archive'].title
-                size = archive_size(cert['archive'])
-                ui.print_certificates_line( certificate={
-                        'aid': aid,
-                        'size':size,
-                        'title': title,
-                        'created':cert['archive'].meta.created
-                    })
-                if self.debug > 2:
-                    for doc in cert.itervalues():
-                        pyaml.dump(doc, sys.stdout)
-                    print
-        else:
+        if not ui.print_certificates_list(certs, debug=self.debug):
             print "No available certificates."
+        print
 
     @command(cert_id=str, srm=str)
     def do_delete(self, cert_id=None, srm=None):
@@ -523,6 +507,7 @@ class LaArchiveCommand(LaBaseCommand):
                     for doc in archive.itervalues():
                         pyaml.dump(doc, sys.stdout)
                     print
+            print
         else:
             print "No available archives."
 
@@ -595,13 +580,8 @@ class LaArchiveCommand(LaBaseCommand):
                     if len(certs) and not self.batch:
                         print "Select a certificate:"
                         while cert_id not in certs:
-                            for n, cert in enumerate(certs.iteritems()):
-                                cert = cert[1]
-                                aid = cert['signature'].aid
-                                title = cert['archive'].title
-                                size = archive_size(cert['archive'])
-                                print "{:>10} {:>6} {:<}".format(
-                                    aid, size, title)
+                            ui.print_certificates_list(certs, debug=self.debug)
+                            print
                             cert_id = raw_input("Enter a certificate ID: ")
                             assert cert_id, "No matching certificate found"
                     else:
@@ -616,6 +596,7 @@ class LaArchiveCommand(LaBaseCommand):
                                         'tmp', write=True), _print)
                     print "archive restored."
                 if cert_id in certs:
+                    print "Decrypting archive. This may take some time depending on the size of your archive."
                     extract(certs[cert_id]['cert'], certs[cert_id]['archive'])
                 else:
                     getLogger().debug("Key input gui unavailable and key not found",
