@@ -660,7 +660,6 @@ class LaArchiveCommand(LaBaseCommand):
         if index <= 0 or len(docs) < index:
             print "No such archive."
         else:
-            import pdb; pdb.set_trace()
             fname = docs[index-1][0]
             if fname in UploadState.states:
                 UploadState.reset(fname)
