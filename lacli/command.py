@@ -446,8 +446,10 @@ class LaArchiveCommand(LaBaseCommand):
             auth = docs['auth']
             path = self.cache.data_file(docs['links'])
             op = yield self.session.upload(state.capsule, archive, state)
-            if op.uri is None:
-                yield op.status  # init uri and status
+            status = yield op.status  # init uri and status
+            if status['status'] != 'pending':
+                raise Exception("Invalid status for upload: " + status['status'])
+            if state.uri is None:
                 state.save_op(op)
             uploader = Upload(self.session, self.nprocs, self.debug, state)
             if state.progress < state.size:
