@@ -36,6 +36,9 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
     def __init__(self, *args, **kwargs):
         super(LaServerCommand, self).__init__(*args, **kwargs)
         self.logincmd = self.registry.cmd.login
+        if self.prefs['gui']['rememberme'] is True:
+            self.logincmd.username = self.prefs['gui']['username']
+            self.logincmd.password = self.prefs['gui']['password']
         UploadState.init(self.cache)
         CLI.Processor.__init__(self, self)
 
@@ -60,6 +63,10 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         startLogging(sys.stderr)
         msg('Running reactor')
         self.batch = True
+        if self.prefs['gui']['rememberme'] is True:
+            self.logincmd.username = self.prefs['gui']['username']
+            self.logincmd.password = self.prefs['gui']['password']
+            self.logincmd.email = self.prefs['gui']['email']
         reactor.run()
         self.batch = False
 
@@ -113,9 +120,22 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
 
     @tthrow
     def UserIsLoggedIn(self):
-        if self.session is None or self.registry.cmd.login.email is None:
+        if self.session is None:
             return False
-        return True
+        if self.logincmd.email is None:
+            if self.logincmd.username is not None:
+                try:
+                    d = self.logincmd.login_async(
+                        self.logincmd.username, self.logincmd.password)
+                    d.addCallback(lambda x: True)
+                    d.addErrback(lambda x: False)
+                    return d
+                except Exception as e:
+                    getLogger().debug("Couldn't login", exc_info=True)
+            return False
+        else:
+            return True
+             
         
 
     @tthrow
@@ -126,11 +146,17 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             if remember:
                 self.registry.save_session(
                     self.logincmd.username, self.logincmd.password)
+            if remember != self.prefs['gui']['rememberme']:
+                self.prefs['gui']['rememberme'] = remember
+                self.cache.save_prefs(self.prefs)
         defer.returnValue(True)
 
     @tthrow
     def Logout(self):
         self.logincmd.logout_batch()
+        if self.prefs['gui']['rememberme'] is True:
+            self.prefs['gui']['rememberme'] = False
+            self.cache.save_prefs(self.prefs)
         return True
 
     @defer.inlineCallbacks
@@ -370,16 +396,23 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
     @tthrow
     def GetSettings(self):
         return ttypes.Settings(
-            self.registry.cmd.login.username or "",
-            self.registry.cmd.login.password or "",
-            False,
+            self.prefs['gui']['username'] or "",
+            self.prefs['gui']['password'] or "",
+            self.prefs['gui']['rememberme'],
             self.cache._cache_dir('archives'),
             self.cache._cache_dir('certs'))
 
     @tthrow
     def SetSettings(self, settings):
-        self.registry.cmd.login.username = settings.StoredUserName
-        self.registry.cmd.login.password = settings.StoredPassword
-        # TODO handle rememberme and folder settings
+        if self.logincmd.email == self.logincmd.username:
+            if settings.StoredUserName != self.logincmd.username:
+                self.logincmd.email = settings.StoredUserName
+        self.logincmd.username = settings.StoredUserName
+        self.logincmd.password = settings.StoredPassword
+        self.prefs['gui']['rememberme'] = settings.RememberMe
+        self.prefs['gui']['username'] = settings.StoredUserName
+        self.prefs['gui']['password'] = settings.StoredPassword
+        self.cache.save_prefs(self.prefs)
+        # TODO handle folder settings
 
 # vim: et:sw=4:ts=4
