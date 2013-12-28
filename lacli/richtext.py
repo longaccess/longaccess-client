@@ -30,6 +30,8 @@ class RichTextUI:
             self.width = t.width
         else:
             self.width = 78
+        if not self.width:
+            self.width = 78
 
         h_titles = '#   ID         STATUS    SIZE   DATE         TITLE'
         h_pattern= '--- ---------- --------- ------ ------------ ---------------------------------'
