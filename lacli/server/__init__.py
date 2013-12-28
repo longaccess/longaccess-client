@@ -215,6 +215,8 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         with s:
             try:
                 with ServerProgressHandler(size=size, state=s) as progq:
+                    with self.cache._archive_open(f, 'w') as _archive:
+                        make_adf(list(d.itervalues()), out=_archive)
                     saved = yield acmd.upload_async(d, f, progq, s)
                 status = yield acmd._poll_status_async(saved['link'])
             except PauseEvent as e:
