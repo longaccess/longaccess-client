@@ -4,6 +4,8 @@ try:
 except ImportError:
     WITH_BLESSINGS = False
 
+from lacli.adf import creation
+
 def format_size(bytes):
     size = ""
     if bytes:
@@ -28,9 +30,11 @@ class RichTextUI:
             self.width = t.width
         else:
             self.width = 78
+        if not self.width:
+            self.width = 78
 
-        h_titles = '#   ID         STATUS   SIZE   DATE         TITLE'
-        h_pattern= '--- ---------- -------- ------ ------------ ---------------------------------'
+        h_titles = '#   ID         STATUS    SIZE   DATE         TITLE'
+        h_pattern= '--- ---------- --------- ------ ------------ ---------------------------------'
         h_pattern= h_pattern.ljust(self.width, '-')
         self.archive_design = {
             'titles': h_titles,
@@ -110,4 +114,25 @@ class RichTextUI:
             certificate['size'],
             certificate['created'].strftime('%Y-%m-%d'),
             certificate_title.encode('utf-8')) 
+    
+    def print_certificates_list(self, certs, debug):
+        if len(certs):
+            self.print_certificates_header()
+            for cert in sorted(certs.itervalues(), key=creation):
+                aid = cert['signature'].aid
+                title = cert['archive'].title
+                size = format_size(cert['archive'].meta.size)
+                self.print_certificates_line( certificate={
+                        'aid': aid,
+                        'size':size,
+                        'title': title,
+                        'created':cert['archive'].meta.created
+                    })
+                if debug > 2:
+                    for doc in cert.itervalues():
+                        pyaml.dump(doc, sys.stdout)
+                    print
+            return True
+        else:
+            return False
     
