@@ -18,14 +18,18 @@ def tthrow(f):
     def w(*args, **kwargs):
         r = None
         try:
+            getLogger().debug("calling {}".format(f))
             r = yield f(*args, **kwargs)
+            getLogger().debug("return value for {} is {}".format(f, r))
             defer.returnValue(r)
         except ApiAuthException as e:
             twisted_log.err(e)
             raise InvalidOperation(ErrorType.Authentication, e.msg)
         except NotImplementedError as e:
+            getLogger().debug("{} is not implemented".format(f, r))
             raise InvalidOperation(ErrorType.NotImplemented, str(e))
         except OSError as e:
+            getLogger().debug("{} threw exception".format(f), exc_info=True)
             if e.errno == errno.ENOENT:
                 raise InvalidOperation(ErrorType.FileNotFound,
                                        "File not found",
@@ -35,6 +39,7 @@ def tthrow(f):
             getLogger().debug("unknown exception", exc_info=True)
             raise InvalidOperation(ErrorType.Other, "Unknown error")
         except IOError as e:
+            getLogger().debug("{} threw exception".format(f), exc_info=True)
             if e.errno == errno.ENOENT:
                 raise InvalidOperation(ErrorType.FileNotFound,
                                        "File not found",
@@ -42,6 +47,7 @@ def tthrow(f):
             getLogger().debug("unknown exception", exc_info=True)
             raise InvalidOperation(ErrorType.Other, "Unknown error")
         except ValueError as e:
+            getLogger().debug("{} threw exception".format(f), exc_info=True)
             raise InvalidOperation(ErrorType.Validation, str(e))
         except Exception as e:
             getLogger().debug("unknown exception", exc_info=True)
