@@ -113,9 +113,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
 
     def PingCLI(self):
         msg('pingCLI()')
-        d = defer.Deferred()
-        reactor.callLater(1, d.callback, True)
-        return d
+        return True
 
 
     @tthrow
