@@ -59,7 +59,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         """
         Usage: run [<port>]
         """
-        reactor.listenTCP(port, self.get_server())
+        reactor.listenTCP(port, self.get_server(), interface='127.0.0.1')
         startLogging(sys.stderr)
         msg('Running reactor')
         self.batch = True
