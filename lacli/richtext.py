@@ -31,8 +31,8 @@ class RichTextUI:
         else:
             self.width = 78
 
-        h_titles = '#   ID         STATUS   SIZE   DATE         TITLE'
-        h_pattern= '--- ---------- -------- ------ ------------ ---------------------------------'
+        h_titles = '#   ID         STATUS    SIZE   DATE         TITLE'
+        h_pattern= '--- ---------- --------- ------ ------------ ---------------------------------'
         h_pattern= h_pattern.ljust(self.width, '-')
         self.archive_design = {
             'titles': h_titles,
