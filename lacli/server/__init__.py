@@ -302,11 +302,16 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
                 'eta',
                 0, 
                 docs['archive'].meta.size)
-        if status == ttypes.ArchiveStatus.InProgress:
+        elif status == ttypes.ArchiveStatus.InProgress:
             if archive not in UploadState.states:
                 raise ValueError("archive not found")
             return self.toTransferStatus(UploadState.states[archive])
-        raise ValueError("Archive state invalid")
+        else:
+            return ttypes.TransferStatus(
+                'description',
+                'eta',
+                docs['archive'].meta.size,
+                0)
 
     @tthrow
     def PauseUpload(self, archive):
