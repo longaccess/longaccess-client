@@ -87,6 +87,12 @@ enum CertExportFormat
   YAML = 1,
   PDF = 2
 }
+struct VersionInfo
+{
+  1: string version,
+  2: string description,
+  3: string uri
+}
 //===========Methods===================
 service CLI {
 
@@ -125,5 +131,9 @@ service CLI {
   
   Settings GetSettings(),
 
-  void SetSettings(1: Settings settings)
+  void SetSettings(1: Settings settings),
+
+  VersionInfo GetLatestVersion(),
+
+  VersionInfo GetVersion(),
 }

@@ -1,3 +1,4 @@
+from lacli import __version__
 from lacli.decorators import command
 from lacli.log import getLogger
 from lacli.compose import compose
@@ -20,6 +21,8 @@ from StringIO import StringIO
 import sys
 import os
 import errno
+import treq
+import json
 
 
 class LaServerCommand(LaBaseCommand, CLI.Processor):
@@ -419,5 +422,24 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         self.prefs['gui']['password'] = settings.StoredPassword
         self.cache.save_prefs(self.prefs)
         # TODO handle folder settings
+
+    @tthrow
+    @defer.inlineCallbacks
+    def GetLatestVersion(self):
+        try:
+            r = yield treq.get("http://download.longaccess.com/latest.json")
+            if r.code != 200:
+                raise Exception("error getting latest version: {} {}".format(r.code, r.phrase))
+            r = yield treq.content(r)
+            vinfo = {k: v for k, v in json.loads(r).iteritems()
+                     if k in ("version", "description", "uri")} 
+        except Exception as e:
+            getLogger().debug("couldn't get latest version", exc_info=True)
+            vinfo = {"version": __version__}
+        defer.returnValue(ttypes.VersionInfo(**vinfo))
+
+    @tthrow
+    def GetVersion(self):
+        return ttypes.VersionInfo(version=__version__)
 
 # vim: et:sw=4:ts=4
