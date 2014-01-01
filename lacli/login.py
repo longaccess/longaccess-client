@@ -79,6 +79,7 @@ class LaLoginCommand(LaBaseCommand):
             account = yield session.async_account
             self.email = account['email']
             self.session = session
+            getLogger().debug("logged in {}".format(self.email))
         except Exception as e:
             self.username = self.password = None
             getLogger().debug("auth failure", exc_info=True)
