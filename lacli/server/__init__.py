@@ -7,7 +7,7 @@ from lacli.archive import restore_archive
 from lacli.command import LaBaseCommand
 from lacli.decorators import contains, login_async, expand_args
 from lacli.exceptions import PauseEvent
-from twisted.python.log import startLogging, msg, err
+from twisted.python.log import msg, err, PythonLoggingObserver
 from twisted.internet import reactor, defer, threads, task
 from thrift.transport import TTwisted
 from thrift.protocol import TBinaryProtocol
@@ -63,7 +63,8 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         Usage: run [<port>]
         """
         reactor.listenTCP(port, self.get_server(), interface='127.0.0.1')
-        startLogging(sys.stderr)
+        tlog = PythonLoggingObserver()
+        tlog.start()
         msg('Running reactor')
         self.batch = True
         if self.prefs['gui']['rememberme'] is True:
@@ -72,6 +73,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             self.logincmd.email = self.prefs['gui']['email']
         reactor.run()
         self.batch = False
+        tlog.stop()
 
     def process(self, iprot, oprot):
         d = CLI.Processor.process(self, iprot, oprot)
