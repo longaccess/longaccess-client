@@ -142,14 +142,12 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
     @tthrow
     @defer.inlineCallbacks
     def LoginUser(self, username, password, remember):
-        if self.session is None or self.registry.cmd.login.email is None:
-            yield self.logincmd.login_async(username, password)
-            if remember:
-                self.registry.save_session(
-                    self.logincmd.username, self.logincmd.password)
-            if remember != self.prefs['gui']['rememberme']:
-                self.prefs['gui']['rememberme'] = remember
-                self.cache.save_prefs(self.prefs)
+        yield self.logincmd.login_async(username, password)
+        if remember:
+            self.prefs['gui']['username'] = self.logincmd.username
+            self.prefs['gui']['password'] = self.logincmd.password
+            self.prefs['gui']['rememberme'] = remember
+            self.cache.save_prefs(self.prefs)
         defer.returnValue(True)
 
     @tthrow
