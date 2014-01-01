@@ -181,6 +181,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
     def CreateArchive(self, paths):
         """
         """
+        paths = map(lambda p: p.decode('utf-8'), paths)
         def progress(path, rel):
             if not path:
                 msg("Encrypting..")
