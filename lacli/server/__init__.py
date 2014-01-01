@@ -267,6 +267,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         self._upload(archive, docs, state)
 
     @tthrow
+    @login_async
     def ResumeUpload(self, archive):
         """
           void ResumeUpload(1: string ArchiveLocalID)
