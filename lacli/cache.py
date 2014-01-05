@@ -66,7 +66,7 @@ class Cache(object):
         for line in lines:
             key = json.loads(line)
             if 'uri' in key:
-                ret = key
+                ret.update(key)
                 continue
             size = key['size']
             if chunk is False:  # initialize chunk size
@@ -84,14 +84,17 @@ class Cache(object):
             aid = os.path.basename(fn)
             uploads[aid] = {}
             with open(fn) as f:
-                uploads[aid] = self._validate_upload(f)
+                try:
+                    uploads[aid] = self._validate_upload(f)
+                except Exception as e:
+                    getLogger().debug("Error validating upload {}".format(fn), exc_info=True)
         return uploads
                      
     def _del_upload(self, archive):
         os.unlink(os.path.join(self._cache_dir('uploads'), archive))
 
-    def _write_upload(self, uri, capsule, logfile):
-        new = { 'uri': uri }
+    def _write_upload(self, uri, capsule, logfile, exc=None):
+        new = { 'uri': uri, 'exc': exc }
         if capsule is not None:
             ks = ('resource_uri', 'size', 'title', 'remaining', 'id')
             new['capsule'] = {k: capsule.get(k, None) for k in ks}
@@ -146,10 +149,13 @@ class Cache(object):
             return ArchiveStatus.Completed
         elif 'links' in docs and docs['links'].upload:
             return ArchiveStatus.InProgress
-        elif fname in self._get_uploads():
+        uploads = self._get_uploads()
+        if fname in uploads:
+            if uploads[fname]["exc"] is not None:
+                return ArchiveStatus.Failed
             return ArchiveStatus.InProgress
         else:
-            return ArchiveStatus.Local  # TODO: check for errors
+            return ArchiveStatus.Local
 
     def save_upload(self, fname, docs, uri=None, account=None):
         if uri is not None:

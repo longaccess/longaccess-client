@@ -44,7 +44,7 @@ class UploadState(object):
         cls.cache._del_upload(fname)
         return cls.states.pop(fname)
     
-    def __init__(self, archive, size, uri=None, keys=[], capsule=None):
+    def __init__(self, archive, size, uri=None, keys=[], capsule=None, exc=None):
         self.cache = type(self).cache
         self.archive = archive
         self.logfile = self.control = None
@@ -53,7 +53,7 @@ class UploadState(object):
         self.size = size
         self.pausing = False
         self.uri = uri
-        self.exc = None
+        self.exc = exc
         self.capsule = capsule
 
     def append(self, key):
@@ -120,6 +120,7 @@ class UploadState(object):
         self.uri = op.uri
 
     def error(self, exc):
+        self.cache._write_upload(self.uri, self.capsule, self.logfile, exc)
         self.exc = exc
 
 class Upload(object):
