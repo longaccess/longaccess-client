@@ -151,7 +151,8 @@ class Cache(object):
             return ArchiveStatus.InProgress
         uploads = self._get_uploads()
         if fname in uploads:
-            if uploads[fname]["exc"] is not None:
+            upload = uploads[fname]
+            if "exc" in upload and upload["exc"] is not None:
                 return ArchiveStatus.Failed
             return ArchiveStatus.InProgress
         else:
