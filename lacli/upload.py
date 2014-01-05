@@ -49,20 +49,12 @@ class UploadState(object):
         self.archive = archive
         self.logfile = self.control = None
         self.keys = keys
-        self._progress = 0
+        self.progress = reduce(lambda x, y: x + y['size'], self.keys, 0)
         self.size = size
         self.pausing = False
         self.uri = uri
         self.exc = exc
         self.capsule = capsule
-
-    def append(self, key):
-        self.keys.append(key)
-
-    @property
-    def progress(self):
-        f = lambda x, y: x + y['size']
-        return self._progress + reduce(f, self.keys, 0)
 
     def __enter__(self):
         try:
@@ -86,15 +78,14 @@ class UploadState(object):
         if self.logfile is not None:
             self.logfile.close()
         self.logfile = self.control = None
-        self._progress = 0
+        self.progress = 0
 
     def keydone(self, key, size):
         assert self.logfile is not None, "Log not open"
-        self.append(self.cache._checkpoint_upload(key, size, self.logfile))
-        self._progress = 0
+        self.keys.append(self.cache._checkpoint_upload(key, size, self.logfile))
 
     def update(self, progress):
-        self._progress += progress
+        self.progress = progress
 
     @property
     def seq(self):
@@ -173,7 +164,6 @@ class Upload(object):
                     getLogger().debug("timeout after uploading %d temporary keys", seq)
                 if source is None:
                     getLogger().debug("uploaded entire archive")
-                    progq.put({'complete': True})
                     break
 
             getLogger().debug("uploaded %d temp keys", len(etags))

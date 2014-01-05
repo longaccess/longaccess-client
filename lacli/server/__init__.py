@@ -216,7 +216,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         acmd = self.registry.cmd.archive
         with s:
             try:
-                with ServerProgressHandler(size=size, state=s) as progq:
+                with ServerProgressHandler(maxval=size, state=s) as progq:
                     with self.cache._archive_open(f, 'w') as _archive:
                         make_adf(list(d.itervalues()), out=_archive)
                     saved = yield acmd.upload_async(d, f, progq, s)
@@ -285,13 +285,6 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
 
         self._upload(archive, docs, state)
 
-    def toTransferStatus(self, state):
-        return ttypes.TransferStatus(
-            'description',
-            'eta',
-            state.size - state.progress,
-            state.progress)
-
     @tthrow
     def QueryArchiveStatus(self, archive):
         """
@@ -299,22 +292,24 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         """
         docs = self.cache.get_adf(archive)
         status = self.cache.archive_status(archive, docs)
+        eta = description = ''
+        remaining = progress = 0
+
         if status == ttypes.ArchiveStatus.Completed:
-            return ttypes.TransferStatus(
-                'description',
-                'eta',
-                0, 
-                docs['archive'].meta.size)
-        elif status == ttypes.ArchiveStatus.InProgress:
+            progress = docs['archive'].meta.size
+        elif status == ttypes.ArchiveStatus.Local:
+            remaining = docs['archive'].meta.size
+        else:
             if archive not in UploadState.states:
                 raise ValueError("archive not found")
-            return self.toTransferStatus(UploadState.states[archive])
-        else:
-            return ttypes.TransferStatus(
-                'description',
-                'eta',
-                docs['archive'].meta.size,
-                0)
+            state = UploadState.states[archive]
+            progress = state.progress
+            remaining = state.size - progress
+            if state in ServerProgressHandler.uploads:
+                elapsed = ServerProgressHandler.uploads[state].seconds_elapsed
+                if progress > 0:
+                    eta = str(int(elapsed * state.size / progress - elapsed))
+        return ttypes.TransferStatus(description, eta, remaining, progress, status)
 
     @tthrow
     def PauseUpload(self, archive):

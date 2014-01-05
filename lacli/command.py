@@ -378,7 +378,7 @@ class LaArchiveCommand(LaBaseCommand):
                         signal.signal(signal.SIGINT, state.signal)
 
                         handler = ConsoleProgressHandler(
-                            size=size, fname=fname, state=state)
+                            maxval=size, fname=fname, state=state)
                         with handler as progq:
                             saved = self.upload(docs, fname, progq, state)
                         if not self.batch:
