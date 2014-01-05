@@ -306,6 +306,7 @@ class TransferStatus(object):
    - ETA
    - RemainingBytes
    - Progress
+   - Status
   """
 
   thrift_spec = (
@@ -314,13 +315,15 @@ class TransferStatus(object):
     (2, TType.STRING, 'ETA', None, None, ), # 2
     (3, TType.I64, 'RemainingBytes', None, None, ), # 3
     (4, TType.DOUBLE, 'Progress', None, None, ), # 4
+    (5, TType.I32, 'Status', None, None, ), # 5
   )
 
-  def __init__(self, StatusDescription=None, ETA=None, RemainingBytes=None, Progress=None,):
+  def __init__(self, StatusDescription=None, ETA=None, RemainingBytes=None, Progress=None, Status=None,):
     self.StatusDescription = StatusDescription
     self.ETA = ETA
     self.RemainingBytes = RemainingBytes
     self.Progress = Progress
+    self.Status = Status
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -351,6 +354,11 @@ class TransferStatus(object):
           self.Progress = iprot.readDouble();
         else:
           iprot.skip(ftype)
+      elif fid == 5:
+        if ftype == TType.I32:
+          self.Status = iprot.readI32();
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -376,6 +384,10 @@ class TransferStatus(object):
     if self.Progress is not None:
       oprot.writeFieldBegin('Progress', TType.DOUBLE, 4)
       oprot.writeDouble(self.Progress)
+      oprot.writeFieldEnd()
+    if self.Status is not None:
+      oprot.writeFieldBegin('Status', TType.I32, 5)
+      oprot.writeI32(self.Status)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()

@@ -24,11 +24,20 @@ struct DateInfo {
   6: i32 Seconds
 }
 //===========Structures=================
+enum ArchiveStatus {
+  Completed = 0,
+  InProgress = 1,
+  Paused=2,
+  Stopped= 3,
+  Failed = 4,
+  Local = 5
+}
 struct TransferStatus {
   1: string StatusDescription, 
   2: string ETA,
   3: i64 RemainingBytes,
-  4: double Progress  
+  4: double Progress,
+  5: ArchiveStatus Status
 }
 struct ArchiveInfo {
   1: string Title,
@@ -47,14 +56,6 @@ struct Capsule {
   7: i64 TotalSizeInBytes,
   8: i64 AvailableSizeInBytes,
   9: list<ArchiveInfo> CapsuleContents
-}
-enum ArchiveStatus {
-  Completed = 0,
-  InProgress = 1,
-  Paused=2,
-  Stopped= 3,
-  Failed = 4,
-  Local = 5
 }
 struct Archive {
   1: string LocalID,  
