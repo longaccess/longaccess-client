@@ -121,8 +121,9 @@ class UploadState(object):
         self.uri = op.uri
 
     def error(self, exc):
-        self.cache._write_upload(self.uri, self.capsule, self.logfile, exc)
-        self.exc = exc
+        if self.exc is None:
+            self.cache._write_upload(self.uri, self.capsule, self.logfile, str(exc))
+            self.exc = exc
 
 class Upload(object):
     def __init__(self, session, nprocs, debug, state):
