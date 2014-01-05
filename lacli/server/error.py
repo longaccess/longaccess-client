@@ -45,8 +45,11 @@ def tthrow(f):
                 raise InvalidOperation(ErrorType.FileNotFound,
                                        "File not found",
                                        filename=e.filename)
+            if e.errno == errno.ENOSPC:
+                raise InvalidOperation(ErrorType.Other,
+                                       "No space left on device")
             getLogger().debug("unknown exception", exc_info=True)
-            raise InvalidOperation(ErrorType.Other, "Unknown error")
+            raise InvalidOperation(ErrorType.Other, "")
         except ValueError as e:
             getLogger().debug("{} threw exception".format(f), exc_info=True)
             raise InvalidOperation(ErrorType.Validation, str(e))
