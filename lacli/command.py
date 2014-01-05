@@ -661,6 +661,7 @@ class LaArchiveCommand(LaBaseCommand):
         fname = path = None
         if index <= 0 or len(docs) < index:
             print "No such archive."
+            return
         else:
             fname = docs[index-1][0]
             docs = docs[index-1][1]
