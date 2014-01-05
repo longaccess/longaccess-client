@@ -18,7 +18,8 @@ def tthrow(f):
     def w(*args, **kwargs):
         r = None
         try:
-            getLogger().debug("calling {}".format(f))
+            a = args[1:] + tuple(kwargs.iteritems())
+            getLogger().debug("calling {} with {}".format(f, a))
             r = yield f(*args, **kwargs)
             getLogger().debug("return value for {} is {}".format(f, r))
             defer.returnValue(r)
