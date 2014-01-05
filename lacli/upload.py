@@ -83,7 +83,8 @@ class UploadState(object):
         return self
 
     def __exit__(self, type, value, traceback):
-        self.logfile.close()
+        if self.logfile is not None:
+            self.logfile.close()
         self.logfile = self.control = None
         self._progress = 0
 
