@@ -4,7 +4,7 @@ from lacli.log import getLogger
 from lacli.compose import compose
 from lacli.adf import make_adf, Archive, Certificate, Meta, Cipher
 from lacli.archive import restore_archive
-from lacli.command import LaBaseCommand
+from lacli.basecmd import LaBaseCommand
 from lacli.decorators import contains, login_async, expand_args
 from lacli.exceptions import PauseEvent
 from twisted.python.log import msg, err, PythonLoggingObserver
@@ -300,9 +300,12 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         elif status == ttypes.ArchiveStatus.Local:
             remaining = docs['archive'].meta.size
         else:
+            getLogger().debug("status: {}".format(status))
             if archive not in UploadState.states:
                 raise ValueError("archive not found")
             state = UploadState.states[archive]
+            if state.exc is not None:
+                status = ttypes.ArchiveStatus.Failed
             progress = state.progress
             remaining = state.size - progress
             if state in ServerProgressHandler.uploads:

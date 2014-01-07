@@ -147,16 +147,16 @@ class Cache(object):
     def archive_status(self, fname, docs):
         if 'signature' in docs:
             return ArchiveStatus.Completed
-        elif 'links' in docs and docs['links'].upload:
-            return ArchiveStatus.InProgress
-        uploads = self._get_uploads()
-        if fname in uploads:
-            upload = uploads[fname]
-            if "exc" in upload and upload["exc"] is not None:
-                return ArchiveStatus.Failed
-            return ArchiveStatus.InProgress
         else:
-            return ArchiveStatus.Local
+            uploads = self._get_uploads()
+            if fname in uploads:
+                upload = uploads[fname]
+                if "exc" in upload and upload["exc"] is not None:
+                    return ArchiveStatus.Failed
+                return ArchiveStatus.InProgress
+            elif 'links' in docs and docs['links'].upload:
+                return ArchiveStatus.InProgress
+        return ArchiveStatus.Local
 
     def save_upload(self, fname, docs, uri=None, account=None):
         if uri is not None:
