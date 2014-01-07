@@ -13,14 +13,17 @@ import signal
 
 
 class UploadState(object):
-    states = {}
+    states = None
     
     
     @classmethod
     def init(cls, cache):
         cls.cache = cache
-        uploads = cache._get_uploads()
-        a = cache._for_adf('archives')
+
+    @classmethod
+    def setup(cls):
+        uploads = cls.cache._get_uploads()
+        a = cls.cache._for_adf('archives')
         sz = lambda f: a[f]['archive'].meta.size
         cls.states = {k: cls(k, sz(k), **v)
             for k, v in uploads.iteritems()
@@ -28,6 +31,8 @@ class UploadState(object):
 
     @classmethod
     def get(cls, fname, size=None, capsule=None):
+        if cls.states is None:
+            cls.setup()
         if fname in cls.states:
             if size is not None:
                 cls.states[fname].size = size
