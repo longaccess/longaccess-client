@@ -146,6 +146,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
     def LoginUser(self, username, password, remember):
         yield self.logincmd.login_async(username, password)
         if remember:
+            getLogger().debug("Saving credentials for {}".format(self.logincmd.username))
             self.prefs['gui']['username'] = self.logincmd.username
             self.prefs['gui']['password'] = self.logincmd.password
             self.prefs['gui']['rememberme'] = remember
@@ -156,6 +157,9 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
     def Logout(self):
         self.logincmd.logout_batch()
         if self.prefs['gui']['rememberme'] is True:
+            # clear credentials
+            self.prefs['gui']['username'] = None
+            self.prefs['gui']['password'] = None
             self.prefs['gui']['rememberme'] = False
             self.cache.save_prefs(self.prefs)
         return True
