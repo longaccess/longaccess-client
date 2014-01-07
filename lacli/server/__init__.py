@@ -12,7 +12,7 @@ from twisted.internet import reactor, defer, threads, task
 from thrift.transport import TTwisted
 from thrift.protocol import TBinaryProtocol
 from lacli.server.interface.ClientInterface import CLI, ttypes
-from lacli.server.error import tthrow
+from lacli.server.error import tthrow, log_hide
 from itertools import starmap
 from lacli.progress import ServerProgressHandler
 from lacli.upload import UploadState
@@ -142,6 +142,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         
 
     @tthrow
+    @log_hide(_args=True)
     @defer.inlineCallbacks
     def LoginUser(self, username, password, remember):
         yield self.logincmd.login_async(username, password)
@@ -367,6 +368,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         return list(starmap(self.toCertificate, certs.iteritems()))
 
     @tthrow
+    @log_hide(_ret=True)
     def ExportCertificate(self, archive, fmt):
         """
           binary ExportCertificate(1: string ArchiveID,
@@ -387,6 +389,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             
 
     @tthrow
+    @log_hide(_args=True)
     def Decrypt(self, path, key, dest):
         """
           void Decrypt(1: string archivePath,2: string key,
@@ -406,6 +409,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         reactor.callLater(1, reactor.stop)
 
     @tthrow
+    @log_hide(_ret=True)
     def GetSettings(self):
         return ttypes.Settings(
             self.prefs['gui']['username'] or "",
@@ -415,6 +419,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             self.cache._cache_dir('certs'))
 
     @tthrow
+    @log_hide(_ret=True)
     def SetSettings(self, settings):
         if self.logincmd.email == self.logincmd.username:
             if settings.StoredUserName != self.logincmd.username:
