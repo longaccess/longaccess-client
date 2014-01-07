@@ -11,6 +11,9 @@ class BaseAppException(Exception):
     def __str__(self):
         return self.msg
 
+class CacheInitException(BaseAppException):
+    msg = "Application cache not initialized correctly"
+
 
 class ApiNoSessionError(BaseAppException):
     msg = "no session credentials provided."

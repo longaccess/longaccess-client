@@ -27,7 +27,7 @@ import sys
 import os
 import cmd
 
-from lacli.log import setupLogging
+from lacli.log import setupLogging, getLogger
 from docopt import docopt, DocoptExit
 from lacli.command import LaCapsuleCommand, LaCertsCommand, LaArchiveCommand
 from lacli.login import LaLoginCommand
@@ -90,9 +90,7 @@ def settings(options):
 
     home = options.get('--home', default_home)
     if not home or not os.path.isdir(os.path.expanduser(home)):
-        if batch:
-            sys.exit("{} does not exist!".format(home))
-        else:
+        if not batch:
             while not home or not os.path.isdir(os.path.expanduser(home)):
                 if not home:
                     print "Enter directory for Longaccess data? [{}]: ".format(
@@ -107,12 +105,19 @@ def settings(options):
                     print "Should I create it? (yes/no): "
                     if sys.stdin.readline().strip().lower() != 'yes':
                         sys.exit('Unable to proceed without home directory')
-                    os.makedirs(os.path.expanduser(home))
 
-    cache = Cache(os.path.expanduser(home))
-    prefs = cache.merge_prefs(prefs)
+    cache = Cache(None)
+    try:
+        home = os.path.expanduser(home)
+        if not os.path.isdir(home):
+            os.makedirs(home)
+        cache = Cache(home)
+        prefs = cache.merge_prefs(prefs)
+    except Exception:
+        if debug > 0:
+            getLogger().exception("initialization exception")
 
-    return (prefs, Cache(os.path.expanduser(home)))
+    return (prefs, cache)
 
 
 class LaCommand(cmd.Cmd):
@@ -124,7 +129,6 @@ class LaCommand(cmd.Cmd):
 
     def __init__(self, cache, prefs):
         cmd.Cmd.__init__(self)
-        setupLogging(prefs['command']['debug'], logfile=cache.log_open())
         registry = LaRegistry(cache, prefs, self)
         self.archive = LaArchiveCommand(registry)
         self.capsule = LaCapsuleCommand(registry)
@@ -180,11 +184,12 @@ def main(args=sys.argv[1:]):
                      version='lacli {}'.format(__version__),
                      options_first=True)
     prefs, cache = settings(options)
-    cli = LaCommand(cache, prefs)
-    if options['<command>']:
-        cli.dispatch(options['<command>'], options['<args>'])
-    elif options['--interactive']:
-        cli.cmdloop()
+    with setupLogging(prefs['command']['debug'], logfile=cache.log):
+        cli = LaCommand(cache, prefs)
+        if options['<command>']:
+            cli.dispatch(options['<command>'], options['<args>'])
+        elif options['--interactive']:
+            cli.cmdloop()
 
 if __name__ == "__main__":
     main()

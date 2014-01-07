@@ -19,7 +19,6 @@ from lacli.progress import ConsoleProgressHandler
 from lacli.server.interface.ClientInterface.ttypes import ArchiveStatus
 from lacli.basecmd import LaBaseCommand
 from twisted.internet import defer, reactor, task
-from contextlib import contextmanager
 
 from richtext import RichTextUI as UIClass
 ui = UIClass()

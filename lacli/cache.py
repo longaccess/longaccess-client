@@ -11,7 +11,7 @@ from lacli.adf import (load_archive, make_adf, Certificate, Archive,
                        Meta, Links, Cipher, Signature, as_json)
 from lacli.log import getLogger
 from lacli.archive import dump_archive, archive_handle
-from lacli.exceptions import InvalidArchiveError
+from lacli.exceptions import InvalidArchiveError, CacheInitException
 from lacli.decorators import contains
 from lacli.server.interface.ClientInterface.ttypes import ArchiveStatus
 from urllib import pathname2url
@@ -19,6 +19,7 @@ from tempfile import NamedTemporaryFile
 from binascii import b2a_hex
 from itertools import izip, imap
 from subprocess import check_call
+from contextlib import contextmanager
 
 
 def group(it, n, dl):
@@ -38,6 +39,8 @@ class Cache(object):
         self.home = home
 
     def _cache_dir(self, path, write=False):
+        if self.home is None:
+            raise CacheInitException()
         dname = os.path.join(self.home, path)
         if not os.path.exists(dname) and write:
             os.makedirs(dname, mode=0744)
@@ -338,8 +341,12 @@ class Cache(object):
         except:
             return None
 
-    def log_open(self):
-        return open(os.path.join(self._cache_dir('logs', True), "log.txt"), 'w+')
+    @property
+    def log(self):
+        try:
+            return os.path.join(self._cache_dir('logs', True), "log.txt")
+        except:
+            return None
 
     def merge_prefs(self, prefs):
         try:

@@ -1,4 +1,4 @@
-from lacli.exceptions import ApiAuthException
+from lacli.exceptions import ApiAuthException, BaseAppException
 from lacli.server.interface.ClientInterface.ttypes import InvalidOperation
 from lacli.server.interface.ClientInterface.ttypes import ErrorType
 from lacli.log import getLogger
@@ -53,6 +53,10 @@ def tthrow(f):
         except ValueError as e:
             getLogger().debug("{} threw exception".format(f), exc_info=True)
             raise InvalidOperation(ErrorType.Validation, str(e))
+        except BaseAppException as e:
+            getLogger().debug("application exception", exc_info=True)
+            twisted_log.err(e)
+            raise InvalidOperation(ErrorType.Other, str(e))
         except Exception as e:
             getLogger().debug("unknown exception", exc_info=True)
             twisted_log.err(e)
