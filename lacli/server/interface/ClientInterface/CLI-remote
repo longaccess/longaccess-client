@@ -41,6 +41,8 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print '  void Decrypt(string archivePath, string key, string destinationPath)'
   print '  Settings GetSettings()'
   print '  void SetSettings(Settings settings)'
+  print '  VersionInfo GetLatestVersion()'
+  print '  VersionInfo GetVersion()'
   print ''
   sys.exit(0)
 
@@ -199,6 +201,18 @@ elif cmd == 'SetSettings':
     print 'SetSettings requires 1 args'
     sys.exit(1)
   pp.pprint(client.SetSettings(eval(args[0]),))
+
+elif cmd == 'GetLatestVersion':
+  if len(args) != 0:
+    print 'GetLatestVersion requires 0 args'
+    sys.exit(1)
+  pp.pprint(client.GetLatestVersion())
+
+elif cmd == 'GetVersion':
+  if len(args) != 0:
+    print 'GetVersion requires 0 args'
+    sys.exit(1)
+  pp.pprint(client.GetVersion())
 
 else:
   print 'Unrecognized method %s' % cmd

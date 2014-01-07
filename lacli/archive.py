@@ -121,7 +121,7 @@ def _writer(name, items, cipher, tmpdir, hashobj=None):
             with ZipFile(zf, 'w', ZIP_DEFLATED, True) as zpf:
                 for path, rel in walk_folders(map(os.path.abspath, items)):
                     try:
-                        zpf.write(path, rel.encode('utf8'))
+                        zpf.write(path, rel.encode('utf-8'))
                     except Exception as e:
                         if not hasattr(e, 'filename'):
                             setattr(e, 'filename', path)

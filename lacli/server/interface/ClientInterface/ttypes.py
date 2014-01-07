@@ -306,6 +306,7 @@ class TransferStatus(object):
    - ETA
    - RemainingBytes
    - Progress
+   - Status
   """
 
   thrift_spec = (
@@ -314,13 +315,15 @@ class TransferStatus(object):
     (2, TType.STRING, 'ETA', None, None, ), # 2
     (3, TType.I64, 'RemainingBytes', None, None, ), # 3
     (4, TType.DOUBLE, 'Progress', None, None, ), # 4
+    (5, TType.I32, 'Status', None, None, ), # 5
   )
 
-  def __init__(self, StatusDescription=None, ETA=None, RemainingBytes=None, Progress=None,):
+  def __init__(self, StatusDescription=None, ETA=None, RemainingBytes=None, Progress=None, Status=None,):
     self.StatusDescription = StatusDescription
     self.ETA = ETA
     self.RemainingBytes = RemainingBytes
     self.Progress = Progress
+    self.Status = Status
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -351,6 +354,11 @@ class TransferStatus(object):
           self.Progress = iprot.readDouble();
         else:
           iprot.skip(ftype)
+      elif fid == 5:
+        if ftype == TType.I32:
+          self.Status = iprot.readI32();
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -376,6 +384,10 @@ class TransferStatus(object):
     if self.Progress is not None:
       oprot.writeFieldBegin('Progress', TType.DOUBLE, 4)
       oprot.writeDouble(self.Progress)
+      oprot.writeFieldEnd()
+    if self.Status is not None:
+      oprot.writeFieldBegin('Status', TType.I32, 5)
+      oprot.writeI32(self.Status)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -1039,6 +1051,90 @@ class Settings(object):
     if self.CertificatesFolder is not None:
       oprot.writeFieldBegin('CertificatesFolder', TType.STRING, 5)
       oprot.writeString(self.CertificatesFolder)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class VersionInfo(object):
+  """
+  Attributes:
+   - version
+   - description
+   - uri
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'version', None, None, ), # 1
+    (2, TType.STRING, 'description', None, None, ), # 2
+    (3, TType.STRING, 'uri', None, None, ), # 3
+  )
+
+  def __init__(self, version=None, description=None, uri=None,):
+    self.version = version
+    self.description = description
+    self.uri = uri
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.version = iprot.readString();
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRING:
+          self.description = iprot.readString();
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRING:
+          self.uri = iprot.readString();
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('VersionInfo')
+    if self.version is not None:
+      oprot.writeFieldBegin('version', TType.STRING, 1)
+      oprot.writeString(self.version)
+      oprot.writeFieldEnd()
+    if self.description is not None:
+      oprot.writeFieldBegin('description', TType.STRING, 2)
+      oprot.writeString(self.description)
+      oprot.writeFieldEnd()
+    if self.uri is not None:
+      oprot.writeFieldBegin('uri', TType.STRING, 3)
+      oprot.writeString(self.uri)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()

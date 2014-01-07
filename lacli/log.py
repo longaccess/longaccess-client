@@ -4,11 +4,11 @@ from logutils.queue import QueueListener
 from boto import config as boto_config
 from twisted.internet.defer import setDebugging as debugTwisted
 from twisted.python import log as twisted_log
-
-
+from contextlib import contextmanager
 
 
 simplefmt = '%(name)-15s %(levelname)-8s %(processName)-10s %(message)s'
+logging.basicConfig(format=simplefmt)
 
 
 def setupLogging(level, logfile=None, queue=False):
@@ -75,14 +75,30 @@ def setupLogging(level, logfile=None, queue=False):
 
     logging.config.dictConfig(logconf)
 
-    if logfile is not None:
-        handler = logging.StreamHandler(logfile)
-        handler.setFormatter(logging.Formatter(simplefmt))
-        logging.getLogger('').addHandler(handler)
+    return log_open(logfile)
+
+
+@contextmanager
+def log_open(log):
+    logfile = None
+    if log is not None:
+        try:
+            logfile = open(log, 'w+')
+            handler = logging.StreamHandler(logfile)
+            handler.setFormatter(logging.Formatter(simplefmt))
+            logging.getLogger('').addHandler(handler)
+        except Exception as e:
+            getLogger().debug("couldn't open log", exc_info=True)
 
     observer = twisted_log.PythonLoggingObserver()
     observer.start()
 
+    yield None
+
+    observer.stop()
+
+    if logfile is not None:
+        logfile.close()
 
 class queueHandler(object):
     def __enter__(self):

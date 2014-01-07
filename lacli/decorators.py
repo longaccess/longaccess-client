@@ -1,13 +1,14 @@
 import shlex
 import sys
 
+from lacli.log import getLogger
 from twisted.internet import defer
 from twisted.python.failure import Failure
 from twisted.internet import reactor
 from docopt import docopt, DocoptExit
 from functools import update_wrapper, wraps, partial
 from requests.exceptions import ConnectionError, HTTPError
-from lacli.exceptions import (ApiErrorException, ApiAuthException,
+from lacli.exceptions import (ApiErrorException, ApiAuthException, CacheInitException,
                               ApiUnavailableException, ApiNoSessionError, BaseAppException)
 from crochet import setup, run_in_reactor, TimeoutError
 
@@ -123,7 +124,12 @@ def command(**types):
             except DocoptExit as e:
                 print e
                 return
-            func(self, **kwargs)
+            try:
+                func(self, **kwargs)
+            except CacheInitException as e:
+                getLogger().debug("Cache not initialized", exc_info=True)
+                print "Could not initialize cache"
+                return
         return wrap
     return decorate
 

@@ -1,7 +1,6 @@
 from __future__ import division
 import signal
 import os
-import cmd
 import glob
 import pyaml
 import sys
@@ -17,68 +16,12 @@ from lacli.decorators import command, login, block
 from lacli.exceptions import DecryptionError
 from lacli.compose import compose
 from lacli.progress import ConsoleProgressHandler
+from lacli.server.interface.ClientInterface.ttypes import ArchiveStatus
+from lacli.basecmd import LaBaseCommand
 from twisted.internet import defer, reactor, task
-from contextlib import contextmanager
-from abc import ABCMeta, abstractmethod
 
 from richtext import RichTextUI as UIClass
 ui = UIClass()
-
-class LaBaseCommand(cmd.Cmd, object):
-    __metaclass__ = ABCMeta
-
-    prompt = 'lacli> '
-
-    def __init__(self, registry, *args, **kwargs):
-        cmd.Cmd.__init__(self, *args, **kwargs)
-        self.registry = registry
-
-    @property
-    def verbose(self):
-        return self.registry.prefs['command']['verbose']
-
-    @property
-    def batch(self):
-        return self.registry.prefs['command']['batch']
-
-    @batch.setter
-    def batch(self, newvalue):
-        self.registry.prefs['command']['batch'] = newvalue
-
-    @property
-    def cache(self):
-        return self.registry.cache
-
-    @property
-    def debug(self):
-        return self.registry.prefs['command']['debug']
-
-    @property
-    def prefs(self):
-        return self.registry.prefs
-
-    @property
-    def session(self):
-        return self.registry.session
-
-    @session.setter
-    def session(self, newsession):
-        self.registry.session = newsession
-
-    @abstractmethod
-    def makecmd(self, options):
-        """ Parse docopt style options and return a cmd-style line """
-
-    def do_EOF(self, line):
-        print
-        return True
-
-    def input(self, prompt=""):
-        sys.stdout.write(prompt)
-        line = sys.stdin.readline()
-        if line:
-            return line.strip()
-
 
 class LaCertsCommand(LaBaseCommand):
     """Manage Long Access Certificates
@@ -378,7 +321,7 @@ class LaArchiveCommand(LaBaseCommand):
                         signal.signal(signal.SIGINT, state.signal)
 
                         handler = ConsoleProgressHandler(
-                            size=size, fname=fname, state=state)
+                            maxval=size, fname=fname, state=state)
                         with handler as progq:
                             saved = self.upload(docs, fname, progq, state)
                         if not self.batch:
@@ -493,7 +436,6 @@ class LaArchiveCommand(LaBaseCommand):
         Usage: list
         """
         archives = list(self.cache._for_adf('archives').iteritems())
-        uploads = self.cache._get_uploads()
 
         if len(archives):
             ui.print_archives_header()
@@ -501,17 +443,23 @@ class LaArchiveCommand(LaBaseCommand):
             for n, docs in enumerate(bydate):
                 fname = docs[0]
                 archive = docs[1]
-                status = "LOCAL"
+                status = self.cache.archive_status(fname, archive)
                 cert = ""
-                if 'signature' in archive:
+                if status == ArchiveStatus.Completed:
                     status = "COMPLETE"
                     cert = archive['signature'].aid
-                elif 'links' in archive and archive['links'].upload:
-                    status = "UPLOADED"
+                elif status == ArchiveStatus.InProgress:
+                    status = "IN PROGRESS"
                     if self.verbose:
                         cert = archive['links'].upload
-                elif fname in uploads:
-                    status = "UPLOADING"
+                elif status == ArchiveStatus.Failed:
+                    status = "FAILED"
+                    if self.verbose:
+                        cert = archive['links'].upload
+                elif status == ArchiveStatus.Local:
+                    status = "LOCAL"
+                else:
+                    status = "UNKNOWN"
                 title = archive['archive'].title
                 size = archive_size(archive['archive'])
                 ui.print_archives_line(archive = {
@@ -661,6 +609,7 @@ class LaArchiveCommand(LaBaseCommand):
         fname = path = None
         if index <= 0 or len(docs) < index:
             print "No such archive."
+            return
         else:
             fname = docs[index-1][0]
             docs = docs[index-1][1]

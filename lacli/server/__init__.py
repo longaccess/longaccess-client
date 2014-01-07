@@ -1,17 +1,18 @@
+from lacli import __version__
 from lacli.decorators import command
 from lacli.log import getLogger
 from lacli.compose import compose
 from lacli.adf import make_adf, Archive, Certificate, Meta, Cipher
 from lacli.archive import restore_archive
-from lacli.command import LaBaseCommand
+from lacli.basecmd import LaBaseCommand
 from lacli.decorators import contains, login_async, expand_args
 from lacli.exceptions import PauseEvent
-from twisted.python.log import startLogging, msg, err
+from twisted.python.log import msg, err, PythonLoggingObserver
 from twisted.internet import reactor, defer, threads, task
 from thrift.transport import TTwisted
 from thrift.protocol import TBinaryProtocol
 from lacli.server.interface.ClientInterface import CLI, ttypes
-from lacli.server.error import tthrow
+from lacli.server.error import tthrow, log_hide
 from itertools import starmap
 from lacli.progress import ServerProgressHandler
 from lacli.upload import UploadState
@@ -20,6 +21,8 @@ from StringIO import StringIO
 import sys
 import os
 import errno
+import treq
+import json
 
 
 class LaServerCommand(LaBaseCommand, CLI.Processor):
@@ -60,7 +63,8 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         Usage: run [<port>]
         """
         reactor.listenTCP(port, self.get_server(), interface='127.0.0.1')
-        startLogging(sys.stderr)
+        tlog = PythonLoggingObserver()
+        tlog.start()
         msg('Running reactor')
         self.batch = True
         if self.prefs['gui']['rememberme'] is True:
@@ -69,6 +73,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             self.logincmd.email = self.prefs['gui']['email']
         reactor.run()
         self.batch = False
+        tlog.stop()
 
     def process(self, iprot, oprot):
         d = CLI.Processor.process(self, iprot, oprot)
@@ -137,22 +142,25 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         
 
     @tthrow
+    @log_hide(_args=True)
     @defer.inlineCallbacks
     def LoginUser(self, username, password, remember):
-        if self.session is None or self.registry.cmd.login.email is None:
-            yield self.logincmd.login_async(username, password)
-            if remember:
-                self.registry.save_session(
-                    self.logincmd.username, self.logincmd.password)
-            if remember != self.prefs['gui']['rememberme']:
-                self.prefs['gui']['rememberme'] = remember
-                self.cache.save_prefs(self.prefs)
+        yield self.logincmd.login_async(username, password)
+        if remember:
+            getLogger().debug("Saving credentials for {}".format(self.logincmd.username))
+            self.prefs['gui']['username'] = self.logincmd.username
+            self.prefs['gui']['password'] = self.logincmd.password
+            self.prefs['gui']['rememberme'] = remember
+            self.cache.save_prefs(self.prefs)
         defer.returnValue(True)
 
     @tthrow
     def Logout(self):
         self.logincmd.logout_batch()
         if self.prefs['gui']['rememberme'] is True:
+            # clear credentials
+            self.prefs['gui']['username'] = None
+            self.prefs['gui']['password'] = None
             self.prefs['gui']['rememberme'] = False
             self.cache.save_prefs(self.prefs)
         return True
@@ -178,6 +186,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
     def CreateArchive(self, paths):
         """
         """
+        paths = map(lambda p: p.decode('utf-8'), paths)
         def progress(path, rel):
             if not path:
                 msg("Encrypting..")
@@ -212,7 +221,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         acmd = self.registry.cmd.archive
         with s:
             try:
-                with ServerProgressHandler(size=size, state=s) as progq:
+                with ServerProgressHandler(maxval=size, state=s) as progq:
                     with self.cache._archive_open(f, 'w') as _archive:
                         make_adf(list(d.itervalues()), out=_archive)
                     saved = yield acmd.upload_async(d, f, progq, s)
@@ -266,6 +275,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         self._upload(archive, docs, state)
 
     @tthrow
+    @login_async
     def ResumeUpload(self, archive):
         """
           void ResumeUpload(1: string ArchiveLocalID)
@@ -280,13 +290,6 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
 
         self._upload(archive, docs, state)
 
-    def toTransferStatus(self, state):
-        return ttypes.TransferStatus(
-            'description',
-            'eta',
-            state.size - state.progress,
-            state.progress)
-
     @tthrow
     def QueryArchiveStatus(self, archive):
         """
@@ -294,22 +297,27 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         """
         docs = self.cache.get_adf(archive)
         status = self.cache.archive_status(archive, docs)
+        eta = description = ''
+        remaining = progress = 0
+
         if status == ttypes.ArchiveStatus.Completed:
-            return ttypes.TransferStatus(
-                'description',
-                'eta',
-                0, 
-                docs['archive'].meta.size)
-        elif status == ttypes.ArchiveStatus.InProgress:
+            progress = docs['archive'].meta.size
+        elif status == ttypes.ArchiveStatus.Local:
+            remaining = docs['archive'].meta.size
+        else:
+            getLogger().debug("status: {}".format(status))
             if archive not in UploadState.states:
                 raise ValueError("archive not found")
-            return self.toTransferStatus(UploadState.states[archive])
-        else:
-            return ttypes.TransferStatus(
-                'description',
-                'eta',
-                docs['archive'].meta.size,
-                0)
+            state = UploadState.states[archive]
+            if state.exc is not None:
+                status = ttypes.ArchiveStatus.Failed
+            progress = state.progress
+            remaining = state.size - progress
+            if state in ServerProgressHandler.uploads:
+                elapsed = ServerProgressHandler.uploads[state].seconds_elapsed
+                if progress > 0:
+                    eta = str(int(elapsed * state.size / progress - elapsed))
+        return ttypes.TransferStatus(description, eta, remaining, progress, status)
 
     @tthrow
     def PauseUpload(self, archive):
@@ -360,6 +368,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         return list(starmap(self.toCertificate, certs.iteritems()))
 
     @tthrow
+    @log_hide(_ret=True)
     def ExportCertificate(self, archive, fmt):
         """
           binary ExportCertificate(1: string ArchiveID,
@@ -380,6 +389,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             
 
     @tthrow
+    @log_hide(_args=True)
     def Decrypt(self, path, key, dest):
         """
           void Decrypt(1: string archivePath,2: string key,
@@ -399,6 +409,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         reactor.callLater(1, reactor.stop)
 
     @tthrow
+    @log_hide(_ret=True)
     def GetSettings(self):
         return ttypes.Settings(
             self.prefs['gui']['username'] or "",
@@ -408,6 +419,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             self.cache._cache_dir('certs'))
 
     @tthrow
+    @log_hide(_ret=True)
     def SetSettings(self, settings):
         if self.logincmd.email == self.logincmd.username:
             if settings.StoredUserName != self.logincmd.username:
@@ -419,5 +431,24 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         self.prefs['gui']['password'] = settings.StoredPassword
         self.cache.save_prefs(self.prefs)
         # TODO handle folder settings
+
+    @tthrow
+    @defer.inlineCallbacks
+    def GetLatestVersion(self):
+        try:
+            r = yield treq.get("http://download.longaccess.com/latest.json")
+            if r.code != 200:
+                raise Exception("error getting latest version: {} {}".format(r.code, r.phrase))
+            r = yield treq.content(r)
+            vinfo = {k: v for k, v in json.loads(r).iteritems()
+                     if k in ("version", "description", "uri")} 
+        except Exception as e:
+            getLogger().debug("couldn't get latest version", exc_info=True)
+            vinfo = {"version": __version__}
+        defer.returnValue(ttypes.VersionInfo(**vinfo))
+
+    @tthrow
+    def GetVersion(self):
+        return ttypes.VersionInfo(version=__version__)
 
 # vim: et:sw=4:ts=4
