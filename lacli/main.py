@@ -105,6 +105,7 @@ def settings(options):
                     print "Should I create it? (yes/no): "
                     if sys.stdin.readline().strip().lower() != 'yes':
                         sys.exit('Unable to proceed without home directory')
+                os.makedirs(home)
 
     cache = Cache(None)
     try:
