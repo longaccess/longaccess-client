@@ -15,6 +15,11 @@ import signal
 class UploadState(object):
     states = None
     
+    @classmethod
+    def has_state(cls, fname):
+        if cls.states is not None and fname in cls.states:
+            return True
+        return False
     
     @classmethod
     def init(cls, cache):

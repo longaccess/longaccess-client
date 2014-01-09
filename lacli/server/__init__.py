@@ -306,7 +306,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             remaining = docs['archive'].meta.size
         else:
             getLogger().debug("status: {}".format(status))
-            if archive not in UploadState.states:
+            if not UploadState.has_state(archive):
                 raise ValueError("archive not found")
             state = UploadState.states[archive]
             if state.exc is not None:
@@ -324,7 +324,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         """
           void PauseUpload(1: string ArchiveLocalID)
         """
-        if archive not in UploadState.states:
+        if not UploadState.has_state(archive):
             raise ValueError("archive not found")
         UploadState.states[archive].pause()
 
@@ -334,7 +334,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         """
           void CancelUpload(1: string ArchiveLocalID)
         """
-        if archive in UploadState.states:
+        if UploadState.has_state(archive):
             UploadState.states[archive].pause()
         self.reset_upload(archive)
 
