@@ -47,7 +47,17 @@ class build_py(_build_py):
         _build_py.run_command(self, 'gen_thrift')
         _build_py.run(self)
 
-setup(version=__version__,
+
+def pep386adapt(version):
+    if version is not None and '-' in version:
+        # adapt git-describe version to be in line with PEP 386
+        parts = version.split('-')
+        parts[-2] = 'post'+parts[-2]
+        version = '.'.join(parts[:-1])
+    return version
+
+
+setup(version=pep386adapt(__version__),
       name="lacli",
       author="Konstantinos Koukopoulos",
       author_email='kk@longaccess.com',
