@@ -50,3 +50,13 @@ pyinstall/upload.sh
 pyinstall/qrc_decrypt.py
 
 gen-csharp
+gen-py
+
+Thumbs.db
+
+# release version
+lacli/version.py
+
+# certificate files
+longaccess-*-*.html
+longaccess-*-*.yaml
