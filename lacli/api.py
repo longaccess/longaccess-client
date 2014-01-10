@@ -131,7 +131,8 @@ class UploadOperation(object):
         data = json.dumps( {
             'title': self.archive.title,
             'description': self.archive.description or '',
-            'capsule': self.capsule['resource_uri']
+            'capsule': self.capsule['resource_uri'],
+            'size': self.archive.meta.size
         })
         r = yield self.api._post(endpoints['upload'], data=data)
         self.uri = urljoin(self.api.url, r['resource_uri'])
