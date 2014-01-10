@@ -2,6 +2,7 @@ from urlparse import urljoin
 from lacli.decorators import cached_property, deferred_property, with_api_response, contains, block
 from lacli.exceptions import ApiAuthException, UploadEmptyError, ApiUnavailableException, ApiErrorException
 from lacli.date import parse_timestamp
+from lacli.log import getLogger
 from contextlib import contextmanager
 from twisted.internet import defer
 from twisted.python import failure
