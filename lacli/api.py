@@ -2,6 +2,7 @@ from urlparse import urljoin
 from lacli.decorators import cached_property, deferred_property, with_api_response, contains, block
 from lacli.exceptions import ApiAuthException, UploadEmptyError, ApiUnavailableException, ApiErrorException
 from lacli.date import parse_timestamp
+from lacli.log import getLogger
 from contextlib import contextmanager
 from twisted.internet import defer
 from twisted.python import failure
@@ -130,7 +131,8 @@ class UploadOperation(object):
         data = json.dumps( {
             'title': self.archive.title,
             'description': self.archive.description or '',
-            'capsule': self.capsule['resource_uri']
+            'capsule': self.capsule['resource_uri'],
+            'size': self.archive.meta.size
         })
         r = yield self.api._post(endpoints['upload'], data=data)
         self.uri = urljoin(self.api.url, r['resource_uri'])
