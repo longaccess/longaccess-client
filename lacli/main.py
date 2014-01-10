@@ -38,7 +38,7 @@ from lacli.cache import Cache
 from lacli.registry import LaRegistry
 
 
-default_home = os.path.join('~', 'Longaccess')
+default_home = os.path.expanduser(os.path.join('~', 'Longaccess'))
 
 
 def settings(options):
@@ -89,9 +89,9 @@ def settings(options):
         prefs[options['<command>']] = options.get('<args>')
 
     home = options.get('--home', default_home)
-    if not home or not os.path.isdir(os.path.expanduser(home)):
+    if not home or not os.path.isdir(home):
         if not batch:
-            while not home or not os.path.isdir(os.path.expanduser(home)):
+            while not home or not os.path.isdir(home):
                 if not home:
                     print "Enter directory for Longaccess data? [{}]: ".format(
                         default_home)
@@ -109,7 +109,6 @@ def settings(options):
 
     cache = Cache(None)
     try:
-        home = os.path.expanduser(home)
         if not os.path.isdir(home):
             os.makedirs(home)
         cache = Cache(home)
