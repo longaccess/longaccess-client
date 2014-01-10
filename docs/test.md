@@ -8,6 +8,16 @@ Basic operation (after installing the requirements below): `./scripts/nose.sh`
 
 For more detail keep reading.
 
+Environment variables
+---------------------
+
+The following environment variables modify the client's behavior and could be usefull for testing:
+
+* `LA_API_VERIFY`. If this environment variable is equal to the number zero the client will not attempt to verify the API server SSL certificate.
+* `LA_BATCH_OPERATION`. If this environment variable is defined then the client will not attempt user interaction in any case.
+* `LA_API_URL`. Overrides the default API server url.
+* `LA_SAFE`. If equal to the number zero then the client will disable certain sanity checks.
+
 Requirements
 ------------
 
