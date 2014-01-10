@@ -299,7 +299,8 @@ class LaArchiveCommand(LaBaseCommand):
                     _error += "no such capsule"
                 elif capsule.get('remaining', 0) < size:
                     _error += "archive too big for capsule"
-                    capsule = None
+                    if self.safe is True:
+                        capsule = None
             elif len(capsules) > 0:
                 for i, c in capsules.iteritems():
                     if c.get('remaining', 0) > size:

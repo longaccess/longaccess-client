@@ -65,6 +65,10 @@ def settings(options):
     if not batch and os.getenv('LA_BATCH_OPERATION'):
         batch = True
 
+    unsafe = False
+    if '0' == os.getenv('LA_SAFE'):
+        unsafe = True
+
     prefs = {
         'api': {
             'user': options.get('--user'),
@@ -76,7 +80,8 @@ def settings(options):
         'command': {
             'debug': debug,
             'verbose': options.get('--verbose'),
-            'batch': batch
+            'batch': batch,
+            'unsafe': unsafe
         },
         'gui': {
             'rememberme': False,

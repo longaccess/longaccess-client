@@ -17,6 +17,10 @@ class LaBaseCommand(cmd.Cmd, object):
         return self.registry.prefs['command']['verbose']
 
     @property
+    def safe(self):
+        return not self.registry.prefs['command']['unsafe']
+
+    @property
     def batch(self):
         return self.registry.prefs['command']['batch']
 
