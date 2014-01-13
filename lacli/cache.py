@@ -267,8 +267,8 @@ class Cache(object):
             commands.append(srm)
         else:
             commands.append('srm')
-            commands.append('shred')
-            commands.append('gshred')
+            commands.append('shred -u')
+            commands.append('gshred -u')
             commands.append('sdelete')
             commands.append(
                 'Eraser.exe addtask --schedule=now -q --file={file}')
