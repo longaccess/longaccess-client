@@ -81,7 +81,8 @@ def settings(options):
             'debug': debug,
             'verbose': options.get('--verbose'),
             'batch': batch,
-            'unsafe': unsafe
+            'unsafe': unsafe,
+            'srm': None
         },
         'gui': {
             'rememberme': False,

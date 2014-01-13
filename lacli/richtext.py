@@ -4,6 +4,8 @@ try:
 except ImportError:
     WITH_BLESSINGS = False
 
+import sys
+import time
 from lacli.adf import creation
 
 def format_size(bytes):
@@ -135,4 +137,11 @@ class RichTextUI:
             return True
         else:
             return False
-    
+
+    def countdown(self, num):
+        print num,
+        for n in reversed(range(num-1)):
+            sys.stdout.flush()
+            time.sleep(1)
+            sys.stdout.write(", {}".format(n+1))
+            yield ""
