@@ -28,17 +28,19 @@ import json
 class LaServerCommand(LaBaseCommand, CLI.Processor):
     """Run a RPC server
 
-    Usage: lacli server [--no-detach] [--port <port>]
+    Usage: lacli server [--no-detach] [--port <port>] [--mhole]
 
     Options:
         --no-detach              don't detach from terminal
         --port <port>            port to listen on [default: 9090]
+        --mhole                  start a manhole on the next port number
     """
     prompt = 'lacli:server> '
 
     def __init__(self, *args, **kwargs):
         super(LaServerCommand, self).__init__(*args, **kwargs)
         self.logincmd = self.registry.cmd.login
+        self.manhole = False
         if self.prefs['gui']['rememberme'] is True:
             self.logincmd.username = self.prefs['gui']['username']
             self.logincmd.password = self.prefs['gui']['password']
@@ -49,6 +51,8 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         cmd = ["run"]
         if options['--port']:
             cmd.append(options['--port'])
+        if options['--mhole']:
+            self.manhole = True
         return " ".join(cmd)
 
     def get_server(self):
@@ -63,6 +67,11 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         Usage: run [<port>]
         """
         reactor.listenTCP(port, self.get_server(), interface='127.0.0.1')
+        if self.manhole is True:
+            from twisted.manhole.telnet import ShellFactory
+            f = ShellFactory()
+            f.username = f.password = 'admin'
+            reactor.listenTCP(port+1, f)
         tlog = PythonLoggingObserver()
         tlog.start()
         msg('Running reactor')
