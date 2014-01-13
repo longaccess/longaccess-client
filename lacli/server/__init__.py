@@ -18,7 +18,6 @@ from lacli.progress import ServerProgressHandler
 from lacli.upload import UploadState
 from binascii import b2a_hex
 from StringIO import StringIO
-import sys
 import os
 import errno
 import treq
@@ -41,6 +40,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         super(LaServerCommand, self).__init__(*args, **kwargs)
         self.logincmd = self.registry.cmd.login
         self.manhole = False
+        self.srm = self.prefs['command']['srm']
         if self.prefs['gui']['rememberme'] is True:
             self.logincmd.username = self.prefs['gui']['username']
             self.logincmd.password = self.prefs['gui']['password']
@@ -337,15 +337,29 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             raise ValueError("archive not found")
         UploadState.states[archive].pause()
 
-    @tthrow
     @login_async
+    def _delete_upload(self, archive):
+        if UploadState.has_state(archive):
+            UploadState.states[archive].pause()
+            self.reset_upload(archive)
+
+    def _delete_archive(self, archive):
+        self._delete_upload(archive)
+        docs = self.cache.get_adf(archive)
+        fname = self.cache.shred_archive(archive, self.srm, True)
+        assert not os.path.exists(fname), fname + " still exists!"
+        path = self.cache.data_file(docs['links'])
+        self.cache.shred_file(path, self.srm)
+        if not self.cache.is_shredded(path):
+            getLogger().debug("insecurely unlinking {}".format(path))
+            os.unlink(fname)
+
+    @tthrow
     def CancelUpload(self, archive):
         """
           void CancelUpload(1: string ArchiveLocalID)
         """
-        if UploadState.has_state(archive):
-            UploadState.states[archive].pause()
-        self.reset_upload(archive)
+        return threads.deferToThread(self._delete_archive, archive)
 
     def toSignature(self, docs):
         sig = docs['signature']
