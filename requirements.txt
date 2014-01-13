@@ -11,5 +11,5 @@ pyaml==13.07.1
 thrift==0.9.1
 Twisted==13.2.0
 pyOpenSSL==0.13.1
-treq==0.2.0
+-e git+http://github.com/kouk/treq@potentialdataloss#egg=treq
 crochet==1.0.0
