@@ -4,7 +4,6 @@ import os
 import glob
 import pyaml
 import sys
-import time
 import errno
 import operator
 from pipes import quote
@@ -84,18 +83,15 @@ class LaCertsCommand(LaBaseCommand):
         def _countdown():
             if self.batch:
                 return
-            print "Deleting certificate", cert_id, "in 5",
-            for num in [4, 3, 2, 1]:
-                sys.stdout.flush()
-                time.sleep(1)
-                sys.stdout.write(", {}".format(num))
-                yield ""
+            print "Deleting certificate", cert_id, "in",
+            for c in ui.countdown(5):
+                yield 
             print "... deleting"
 
         fname = self.cache.shred_cert(cert_id, _countdown(), srm)
         if not fname:
             print "Certificate not found"
-        elif os.path.exists(fname):
+        elif self.cache.is_shredded(fname):
             if not srm:
                 print srmprompt
             else:
@@ -627,15 +623,14 @@ class LaArchiveCommand(LaBaseCommand):
             "file(s) manually:"))
 
         if not self.batch:
-            print "Deleting archive", index, "({}) in 5".format(archive.title.encode('utf8')),
-            for num in [4, 3, 2, 1]:
-                sys.stdout.flush()
-                time.sleep(1)
-                sys.stdout.write(", {}".format(num))
+            print "Deleting archive", index, "({}) in".format(
+                archive.title.encode('utf8')),
+            for c in ui.countdown(5):
+                pass
             print "... deleting"
 
-        self.cache.shred_archive(fname, srm)
-        if os.path.exists(fname):
+        fname = self.cache.shred_archive(fname, srm)
+        if not self.cache.is_shredded(fname):
             if not srm:
                 print srmprompt
             else:
@@ -649,7 +644,7 @@ class LaArchiveCommand(LaBaseCommand):
             print " but local copy not found:", path
         else:
             self.cache.shred_file(path, srm)
-            if os.path.exists(path):
+            if not self.cache.is_shredded(path):
                 print "ERROR: Failed to delete archive data:", path
                 print "Please remove manually"
             else:

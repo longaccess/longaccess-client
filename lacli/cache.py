@@ -2,6 +2,7 @@ import json
 import collections
 import os
 import shlex
+import time
 from urlparse import urlparse
 from pkg_resources import resource_string
 from lacli.date import parse_timestamp, later
@@ -280,18 +281,19 @@ class Cache(object):
                     args.append(fname)
                 if 0 == check_call(args):
                     getLogger().debug("success running {}".format(command))
-                    if os.path.exists(fname):
-                        os.unlink(fname)
             except Exception:
                 getLogger().debug("error running {}".format(command),
                                   exc_info=True)
 
-    def shred_archive(self, fname, srm=None):
+    def shred_archive(self, fname, srm=None, insecure=False):
         fname = os.path.join(self._cache_dir('archives'), fname)
         self.shred_file(fname, srm)
+        if not self.is_shredded(fname) and insecure is True:
+            getLogger().debug("insecurely unlinking {}".format(fname))
+            os.unlink(fname)
         return fname
 
-    def shred_cert(self, aid, countdown=[], srm=None):
+    def shred_cert(self, aid, countdown=[], srm=None, insecure=False):
         path = None
         for fname, docs in self._for_adf('certs').iteritems():
             if 'links' in docs and aid == docs['links'].download:
@@ -302,7 +304,17 @@ class Cache(object):
             for a in countdown:
                 pass
             self.shred_file(os.path.join(self._cache_dir('certs'), path), srm)
+            if not self.is_shredded(fname) and insecure is True:
+                getLogger().debug("insecurely unlinking {}".format(fname))
+                os.unlink(fname)
             return path
+
+    def is_shredded(self, fname):
+        for num in range(3):
+            if not os.path.exists(fname):
+                return True
+            time.sleep(1)
+        return not os.path.exists(fname)
 
     def export_cert(self, aid):
         for fname, docs in self._for_adf('certs').iteritems():
