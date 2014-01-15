@@ -315,17 +315,16 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             remaining = docs['archive'].meta.size
         else:
             getLogger().debug("status: {}".format(status))
-            if not UploadState.has_state(archive):
-                raise ValueError("archive not found")
-            state = UploadState.states[archive]
-            if state.exc is not None:
-                status = ttypes.ArchiveStatus.Failed
-            progress = state.progress
-            remaining = state.size - progress
-            if state in ServerProgressHandler.uploads:
-                elapsed = ServerProgressHandler.uploads[state].seconds_elapsed
-                if progress > 0:
-                    eta = str(int(elapsed * state.size / progress - elapsed))
+            if UploadState.has_state(archive):
+                state = UploadState.states[archive]
+                if state.exc is not None:
+                    status = ttypes.ArchiveStatus.Failed
+                progress = state.progress
+                remaining = state.size - progress
+                if state in ServerProgressHandler.uploads:
+                    elapsed = ServerProgressHandler.uploads[state].seconds_elapsed
+                    if progress > 0:
+                        eta = str(int(elapsed * state.size / progress - elapsed))
         return ttypes.TransferStatus(description, eta, remaining, progress, status)
 
     @tthrow
