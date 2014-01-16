@@ -274,3 +274,4 @@ class Api(object):
             if 'archive' in rsp:
                 rsp['archive'] = urljoin(self.url, rsp['archive'])
         return rsp
+# vim: et:sw=4:ts=4
