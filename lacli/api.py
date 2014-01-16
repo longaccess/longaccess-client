@@ -47,7 +47,7 @@ class TwistedRequestsFactory(object):
                 'persistent': False,
             }
             kwds.setdefault('headers', {}).update({
-                'X-Longaccess-Agent': str(get_client_info()) })
+                'User-Agent': str(get_client_info()) })
             defaults.update(kwds)
             return defaults
 
@@ -59,13 +59,13 @@ class TwistedRequestsFactory(object):
 
         @defer.inlineCallbacks
         def post(self, *args, **kwargs):
-            r = yield treq.post(*args, **self._default(kwargs))
+            r = yield treq.post(*args, **self._defaults(kwargs))
             r = yield self.get_content(r)
             defer.returnValue(r)
 
         @defer.inlineCallbacks
         def patch(self, *args, **kwargs):
-            r = yield treq.patch(*args, **self._default(kwargs))
+            r = yield treq.patch(*args, **self._defaults(kwargs))
             r = yield self.get_content(r)
             defer.returnValue(r)
 
