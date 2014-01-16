@@ -11,7 +11,7 @@ class BaseProgressHandler(queueHandler, ProgressBar):
     
     def __init__(self, *args, **kwargs):
         self.tx = {}
-        self.progress = 0
+        self.progress = kwargs.pop('progress', 0)
         super(BaseProgressHandler, self).__init__(*args, **kwargs)
 
     def update_current(self, msg):
@@ -32,7 +32,7 @@ class BaseProgressHandler(queueHandler, ProgressBar):
     def __enter__(self):
         q = super(BaseProgressHandler, self).__enter__()
         progressToQueue(q)
-        self.start()
+        self.start(initval=self.progress)
         return q
 
     @abstractmethod
@@ -47,9 +47,11 @@ class StateProgressHandler(BaseProgressHandler):
     def __init__(self, state=None, **kwargs):
         assert state is not None, "StateProgressHandler requires a state object"
         self.state = state
-        super(StateProgressHandler, self).__init__(**kwargs)
+        progress = kwargs.pop('progress', 0)
         for seq, key in enumerate(self.state.keys):
-            self.currval += key['size']
+            progress += key['size']
+        kwargs['progress'] = progress
+        super(StateProgressHandler, self).__init__(**kwargs)
         
     def update(self, value=None):
         if value is not None:

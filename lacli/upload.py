@@ -17,7 +17,9 @@ class UploadState(object):
     
     @classmethod
     def has_state(cls, fname):
-        if cls.states is not None and fname in cls.states:
+        if cls.states is None:
+            cls.setup()
+        if fname in cls.states:
             return True
         return False
     
@@ -54,7 +56,7 @@ class UploadState(object):
         cls.cache._del_upload(fname)
         return cls.states.pop(fname)
     
-    def __init__(self, archive, size, uri=None, keys=[], capsule=None, exc=None):
+    def __init__(self, archive, size, uri=None, keys=[], capsule=None, exc=None, paused=True):
         self.cache = type(self).cache
         self.archive = archive
         self.logfile = self.control = None
@@ -62,6 +64,7 @@ class UploadState(object):
         self.progress = reduce(lambda x, y: x + y['size'], self.keys, 0)
         self.size = size
         self.pausing = False
+        self._paused = paused
         self.uri = uri
         self.exc = exc
         self.capsule = capsule
@@ -82,13 +85,26 @@ class UploadState(object):
         upload = self.cache._validate_upload(self.logfile)
         self.uri = upload.get('uri', self.uri)
         self.keys = upload.get('keys', self.keys)
+        if self._paused is True:
+            self._paused = False
+            self.cache._write_upload(
+                self.uri, self.capsule, self.logfile,
+                self.exc, self._paused)
         return self
 
     def __exit__(self, type, value, traceback):
+        if type is not None:
+            if type == PauseEvent:
+                getLogger().debug("upload paused.")
+                self.paused()
+                type = None
+            else:
+                getLogger().debug("error in upload", exc_info=True)
+                self.error(value)
         if self.logfile is not None:
             self.logfile.close()
         self.logfile = self.control = None
-        self.progress = 0
+        return type is None
 
     def keydone(self, key, size):
         assert self.logfile is not None, "Log not open"
@@ -102,8 +118,23 @@ class UploadState(object):
         return len(self.keys)
 
     def pause(self):
-        if self.control is not None:
+        if not self.pausing and self.control is not None:
             self.control.pause()
+        self.pausing = True
+
+    def paused(self):
+        if self.exc is not None:
+            getLogger().debug("can't pause a failed upload")
+            return
+        self._paused = True
+        if self.pausing is True:
+            self.pausing = False
+        self.cache._write_upload(
+            self.uri, self.capsule, self.logfile,
+            self.exc, self._paused)
+
+    def active(self):
+        return self._paused is False and self.exc is None
 
     def signal(self, sig, frame):
         getLogger().debug("Got interrupt")
@@ -118,13 +149,14 @@ class UploadState(object):
         assert self.uri is None, "Can't change URI for upload state"
         if op.uri is None:
             return
-        self.cache._write_upload(op.uri, self.capsule, self.logfile)
+        self.cache._write_upload(op.uri, self.capsule, self.logfile, self.exc, self._paused)
         self.uri = op.uri
 
     def error(self, exc):
         if self.exc is None:
-            self.cache._write_upload(self.uri, self.capsule, self.logfile, str(exc))
+            self.cache._write_upload(self.uri, self.capsule, self.logfile, str(exc), self._paused)
             self.exc = exc
+
 
 class Upload(object):
     def __init__(self, session, nprocs, debug, state):

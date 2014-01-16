@@ -6,7 +6,7 @@ from lacli.adf import make_adf, Archive, Certificate, Meta, Cipher
 from lacli.archive import restore_archive
 from lacli.basecmd import LaBaseCommand
 from lacli.decorators import contains, login_async, expand_args
-from lacli.exceptions import PauseEvent
+from lacli.exceptions import PauseEvent, UploadError
 from twisted.python.log import msg, err, PythonLoggingObserver
 from twisted.internet import reactor, defer, threads, task
 from thrift.transport import TTwisted
@@ -229,22 +229,14 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         size = d['archive'].meta.size
         acmd = self.registry.cmd.archive
         with s:
-            try:
-                with ServerProgressHandler(maxval=size, state=s) as progq:
-                    with self.cache._archive_open(f, 'w') as _archive:
-                        make_adf(list(d.itervalues()), out=_archive)
-                    saved = yield acmd.upload_async(d, f, progq, s)
-                status = yield acmd._poll_status_async(saved['link'])
-            except PauseEvent as e:
-                getLogger().debug("upload paused.")
-                return
-            except Exception as e:
-                getLogger().debug("error in upload", exc_info=True)
-                s.error(e)
-                return
+            with ServerProgressHandler(maxval=size, state=s) as progq:
+                with self.cache._archive_open(f, 'w') as _archive:
+                    make_adf(list(d.itervalues()), out=_archive)
+                saved = yield acmd.upload_async(d, f, progq, s)
+            status = yield acmd._poll_status_async(saved['link'])
+            getLogger().debug("API returned status: {}".format(status))
             if status['status'] == "error":
-                getLogger().debug("upload error")
-                s.error(True)
+                raise UploadError()
             elif status['status'] == "completed":
                 fname = saved['fname']
                 getLogger().debug("upload completed")
@@ -291,7 +283,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         """
         docs = self.cache.get_adf(archive)
         status = self.cache.archive_status(archive, docs)
-        if status != ttypes.ArchiveStatus.InProgress:
+        if status != ttypes.ArchiveStatus.Paused:
             raise ValueError("Archive state invalid")
         state = UploadState.get(archive)
         if state.exc is not None:
@@ -309,22 +301,24 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         eta = description = ''
         remaining = progress = 0
 
+        getLogger().debug("cached status: {}".format(status))
         if status == ttypes.ArchiveStatus.Completed:
             progress = docs['archive'].meta.size
-        elif status == ttypes.ArchiveStatus.Local:
-            remaining = docs['archive'].meta.size
+        elif UploadState.has_state(archive):
+            state = UploadState.get(archive)
+            if state.exc is not None:
+                status = ttypes.ArchiveStatus.Failed
+            if state.active():
+                status = ttypes.ArchiveStatus.InProgress
+            getLogger().debug("state status: {}".format(status))
+            progress = state.progress
+            remaining = state.size - progress
+            if state in ServerProgressHandler.uploads:
+                elapsed = ServerProgressHandler.uploads[state].seconds_elapsed
+                if progress > 0:
+                    eta = str(int(elapsed * state.size / progress - elapsed))
         else:
-            getLogger().debug("status: {}".format(status))
-            if UploadState.has_state(archive):
-                state = UploadState.states[archive]
-                if state.exc is not None:
-                    status = ttypes.ArchiveStatus.Failed
-                progress = state.progress
-                remaining = state.size - progress
-                if state in ServerProgressHandler.uploads:
-                    elapsed = ServerProgressHandler.uploads[state].seconds_elapsed
-                    if progress > 0:
-                        eta = str(int(elapsed * state.size / progress - elapsed))
+            remaining = docs['archive'].meta.size
         return ttypes.TransferStatus(description, eta, remaining, progress, status)
 
     @tthrow

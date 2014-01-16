@@ -455,6 +455,8 @@ class LaArchiveCommand(LaBaseCommand):
                         cert = archive['links'].upload
                 elif status == ArchiveStatus.Local:
                     status = "LOCAL"
+                elif status == ArchiveStatus.Paused:
+                    status = "PAUSED"
                 else:
                     status = "UNKNOWN"
                 title = archive['archive'].title

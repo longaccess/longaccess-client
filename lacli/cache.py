@@ -97,8 +97,8 @@ class Cache(object):
     def _del_upload(self, archive):
         os.unlink(os.path.join(self._cache_dir('uploads'), archive))
 
-    def _write_upload(self, uri, capsule, logfile, exc=None):
-        new = { 'uri': uri, 'exc': exc }
+    def _write_upload(self, uri, capsule, logfile, exc=None, paused=False):
+        new = { 'uri': uri, 'exc': exc, 'paused': paused }
         if capsule is not None:
             ks = ('resource_uri', 'size', 'title', 'remaining', 'id')
             new['capsule'] = {k: capsule.get(k, None) for k in ks}
@@ -157,9 +157,11 @@ class Cache(object):
                 upload = uploads[fname]
                 if "exc" in upload and upload["exc"] is not None:
                     return ArchiveStatus.Failed
-                return ArchiveStatus.InProgress
+                if "paused" in upload and upload["paused"] is True:
+                    return ArchiveStatus.Paused
+                return ArchiveStatus.Local
             elif 'links' in docs and docs['links'].upload:
-                return ArchiveStatus.InProgress
+                return ArchiveStatus.Paused
         return ArchiveStatus.Local
 
     def save_upload(self, fname, docs, uri=None, account=None):
