@@ -1,5 +1,6 @@
 import json
 import collections
+import errno
 import os
 import shlex
 import time
@@ -264,7 +265,7 @@ class Cache(object):
 	    fmt=archive.meta.format,
             cipher=cipher).encode('utf8')
 
-    def shred_file(self, fname, srm=None):
+    def shred_file(self, fname, srm=None, insecure=False):
         commands = []
         if srm:
             commands.append(srm)
@@ -286,13 +287,17 @@ class Cache(object):
             except Exception:
                 getLogger().debug("error running {}".format(command),
                                   exc_info=True)
+        if self.still_exists(fname) and insecure is True:
+            getLogger().debug("insecurely unlinking {}".format(fname))
+            try:
+                os.unlink(fname)
+            except IOError as e:
+                if e.errno != errno.ENOENT:
+                    raise
 
     def shred_archive(self, fname, srm=None, insecure=False):
         fname = os.path.join(self._cache_dir('archives'), fname)
-        self.shred_file(fname, srm)
-        if not self.is_shredded(fname) and insecure is True:
-            getLogger().debug("insecurely unlinking {}".format(fname))
-            os.unlink(fname)
+        self.shred_file(fname, srm, insecure)
         return fname
 
     def shred_cert(self, aid, countdown=[], srm=None, insecure=False):
@@ -305,18 +310,15 @@ class Cache(object):
         if path:
             for a in countdown:
                 pass
-            self.shred_file(os.path.join(self._cache_dir('certs'), path), srm)
-            if not self.is_shredded(fname) and insecure is True:
-                getLogger().debug("insecurely unlinking {}".format(fname))
-                os.unlink(fname)
+            self.shred_file(os.path.join(self._cache_dir('certs'), path), srm, insecure)
             return path
 
-    def is_shredded(self, fname):
+    def still_exists(self, fname):
         for num in range(3):
             if not os.path.exists(fname):
-                return True
+                return False
             time.sleep(1)
-        return not os.path.exists(fname)
+        return os.path.exists(fname)
 
     def export_cert(self, aid):
         for fname, docs in self._for_adf('certs').iteritems():

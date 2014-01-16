@@ -91,7 +91,7 @@ class LaCertsCommand(LaBaseCommand):
         fname = self.cache.shred_cert(cert_id, _countdown(), srm)
         if not fname:
             print "Certificate not found"
-        elif self.cache.is_shredded(fname):
+        elif self.cache.still_exists(fname):
             if not srm:
                 print srmprompt
             else:
@@ -632,7 +632,7 @@ class LaArchiveCommand(LaBaseCommand):
             print "... deleting"
 
         fname = self.cache.shred_archive(fname, srm)
-        if not self.cache.is_shredded(fname):
+        if self.cache.still_exists(fname):
             if not srm:
                 print srmprompt
             else:
@@ -646,7 +646,7 @@ class LaArchiveCommand(LaBaseCommand):
             print " but local copy not found:", path
         else:
             self.cache.shred_file(path, srm)
-            if not self.cache.is_shredded(path):
+            if self.cache.still_exists(path):
                 print "ERROR: Failed to delete archive data:", path
                 print "Please remove manually"
             else:

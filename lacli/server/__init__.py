@@ -342,10 +342,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         fname = self.cache.shred_archive(archive, self.srm, True)
         assert not os.path.exists(fname), fname + " still exists!"
         path = self.cache.data_file(docs['links'])
-        self.cache.shred_file(path, self.srm)
-        if not self.cache.is_shredded(path):
-            getLogger().debug("insecurely unlinking {}".format(path))
-            os.unlink(fname)
+        self.cache.shred_file(path, self.srm, True)
 
     @tthrow
     def CancelUpload(self, archive):
