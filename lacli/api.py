@@ -1,4 +1,5 @@
 from urlparse import urljoin
+from lacli import get_client_info
 from lacli.decorators import cached_property, deferred_property, with_api_response, contains, block
 from lacli.exceptions import ApiAuthException, UploadEmptyError, ApiUnavailableException, ApiErrorException
 from lacli.date import parse_timestamp
@@ -40,36 +41,31 @@ class TwistedRequestsFactory(object):
             r = yield treq.content(r)
             defer.returnValue(json.loads(r))
 
+        def _defaults(self, kwds):
+            defaults = { 
+                'auth': self.session.auth,
+                'persistent': False,
+            }
+            kwds.setdefault('headers', {}).update({
+                'X-Longaccess-Agent': str(get_client_info()) })
+            defaults.update(kwds)
+            return defaults
+
         @defer.inlineCallbacks
         def get(self, *args, **kwargs):
-            r = yield treq.get(
-                  *args, 
-                  auth=self.session.auth,
-                  persistent=False,
-                  **kwargs 
-              )
+            r = yield treq.get(*args, **self._defaults(kwargs))
             r = yield self.get_content(r)
             defer.returnValue(r)
 
         @defer.inlineCallbacks
         def post(self, *args, **kwargs):
-            r = yield treq.post(
-                  *args, 
-                  auth=self.session.auth,
-                  persistent=False,
-                  **kwargs 
-              )
+            r = yield treq.post(*args, **self._default(kwargs))
             r = yield self.get_content(r)
             defer.returnValue(r)
 
         @defer.inlineCallbacks
         def patch(self, *args, **kwargs):
-            r = yield treq.patch(
-                  *args, 
-                  auth=self.session.auth,
-                  persistent=False,
-                  **kwargs 
-              )
+            r = yield treq.patch(*args, **self._default(kwargs))
             r = yield self.get_content(r)
             defer.returnValue(r)
 
