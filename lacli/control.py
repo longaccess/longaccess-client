@@ -51,3 +51,4 @@ def readControl():
             raise PauseEvent()
     except Empty:
         pass
+# vim: et:sw=4:ts=4

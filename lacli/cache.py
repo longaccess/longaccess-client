@@ -383,7 +383,7 @@ class Cache(object):
     def save_prefs(self, prefs):
         with open(os.path.join(self.home, "preferences.json"), 'w') as pf:
             json.dump({"gui": prefs['gui']}, pf)
-        
+
 
 if __name__ == "__main__":
     import hashlib
@@ -400,3 +400,4 @@ if __name__ == "__main__":
                     break
                 md5.update(buf)
             assert md5.digest() == docs['auth'].md5, path
+# vim: et:sw=4:ts=4

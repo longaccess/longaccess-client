@@ -211,3 +211,4 @@ class Upload(object):
             getLogger().debug("uploaded %d temp keys", len(etags))
             for key, tag in etags.iteritems():
                 getLogger().debug("key: %s (etag: %s)", key, tag)
+# vim: et:sw=4:ts=4
