@@ -9,7 +9,6 @@ from twisted.python import failure
 from functools import partial
 
 import json
-import requests
 import treq
 
 from twisted.web.client import HTTPClientFactory
