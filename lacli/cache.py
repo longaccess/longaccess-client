@@ -1,5 +1,6 @@
 import json
 import collections
+import errno
 import os
 import shlex
 import time
@@ -97,8 +98,8 @@ class Cache(object):
     def _del_upload(self, archive):
         os.unlink(os.path.join(self._cache_dir('uploads'), archive))
 
-    def _write_upload(self, uri, capsule, logfile, exc=None):
-        new = { 'uri': uri, 'exc': exc }
+    def _write_upload(self, uri, capsule, logfile, exc=None, paused=False):
+        new = { 'uri': uri, 'exc': exc, 'paused': paused }
         if capsule is not None:
             ks = ('resource_uri', 'size', 'title', 'remaining', 'id')
             new['capsule'] = {k: capsule.get(k, None) for k in ks}
@@ -157,9 +158,11 @@ class Cache(object):
                 upload = uploads[fname]
                 if "exc" in upload and upload["exc"] is not None:
                     return ArchiveStatus.Failed
-                return ArchiveStatus.InProgress
+                if "paused" in upload and upload["paused"] is True:
+                    return ArchiveStatus.Paused
+                return ArchiveStatus.Local
             elif 'links' in docs and docs['links'].upload:
-                return ArchiveStatus.InProgress
+                return ArchiveStatus.Paused
         return ArchiveStatus.Local
 
     def save_upload(self, fname, docs, uri=None, account=None):
@@ -262,7 +265,7 @@ class Cache(object):
 	    fmt=archive.meta.format,
             cipher=cipher).encode('utf8')
 
-    def shred_file(self, fname, srm=None):
+    def shred_file(self, fname, srm=None, insecure=False):
         commands = []
         if srm:
             commands.append(srm)
@@ -284,13 +287,17 @@ class Cache(object):
             except Exception:
                 getLogger().debug("error running {}".format(command),
                                   exc_info=True)
+        if self.still_exists(fname) and insecure is True:
+            getLogger().debug("insecurely unlinking {}".format(fname))
+            try:
+                os.unlink(fname)
+            except IOError as e:
+                if e.errno != errno.ENOENT:
+                    raise
 
     def shred_archive(self, fname, srm=None, insecure=False):
         fname = os.path.join(self._cache_dir('archives'), fname)
-        self.shred_file(fname, srm)
-        if not self.is_shredded(fname) and insecure is True:
-            getLogger().debug("insecurely unlinking {}".format(fname))
-            os.unlink(fname)
+        self.shred_file(fname, srm, insecure)
         return fname
 
     def shred_cert(self, aid, countdown=[], srm=None, insecure=False):
@@ -303,18 +310,15 @@ class Cache(object):
         if path:
             for a in countdown:
                 pass
-            self.shred_file(os.path.join(self._cache_dir('certs'), path), srm)
-            if not self.is_shredded(fname) and insecure is True:
-                getLogger().debug("insecurely unlinking {}".format(fname))
-                os.unlink(fname)
+            self.shred_file(os.path.join(self._cache_dir('certs'), path), srm, insecure)
             return path
 
-    def is_shredded(self, fname):
+    def still_exists(self, fname):
         for num in range(3):
             if not os.path.exists(fname):
-                return True
+                return False
             time.sleep(1)
-        return not os.path.exists(fname)
+        return os.path.exists(fname)
 
     def export_cert(self, aid):
         for fname, docs in self._for_adf('certs').iteritems():
@@ -379,7 +383,7 @@ class Cache(object):
     def save_prefs(self, prefs):
         with open(os.path.join(self.home, "preferences.json"), 'w') as pf:
             json.dump({"gui": prefs['gui']}, pf)
-        
+
 
 if __name__ == "__main__":
     import hashlib
@@ -396,3 +400,4 @@ if __name__ == "__main__":
                     break
                 md5.update(buf)
             assert md5.digest() == docs['auth'].md5, path
+# vim: et:sw=4:ts=4

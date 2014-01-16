@@ -235,15 +235,10 @@ class MPUpload(object):
                     key = rs.next(self.connection.timeout())
                     getLogger().debug("got key {} with etag: {}".format(key.name, key.etag))
                     etags.append(key.etag)
-            except PauseEvent:
-                raise
             except StopIteration:
                 pass
             except WorkerFailureError:
                 getLogger().debug("error getting result.", exc_info=True)
-            except TimeoutError:
-                getLogger().debug("stopping before credentials expire.")
-                raise
 
         if not etags:
             raise UploadEmptyError()

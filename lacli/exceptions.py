@@ -36,13 +36,15 @@ class ApiAuthException(BaseAppException):
             self.msg = "authentication as '{}' failed".format(username)
 
 
-class UploadEmptyError(BaseAppException):
+class UploadError(BaseAppException):
     msg = "upload failed"
 
     def __init__(self, reason=None, *args, **kwargs):
         if reason is not None:
             self.msg += ": {}".format(reason)
         super(BaseAppException, self).__init__(self.msg, *args, **kwargs)
+
+class UploadEmptyError(UploadError): pass
 
 class WorkerFailureError(BaseAppException):
     def __init__(self, *args, **kwargs):
