@@ -426,6 +426,8 @@ class LaArchiveCommand(LaBaseCommand):
             fsenc = sys.getfilesystemencoding()
             if fsenc != "UTF-8":
                 fsenc += " or UTF-8"
+            getLogger().debug("exception while preparing",
+                              exc_info=True)
             print "error: failed to decode filename {} as {}".format(
                 e.object.encode('string_escape'), fsenc)
         except Exception as e:
