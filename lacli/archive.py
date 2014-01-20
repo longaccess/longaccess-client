@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 import hashlib
 
@@ -94,6 +95,18 @@ def dump_archive(archive, items, cert, cb=None, tmpdir='/tmp',
 
 
 def walk_folders(folders):
+    fsenc = sys.getfilesystemencoding() or "UTF-8"
+
+    def get_unicode_filename(fname):
+        if isinstance(fname, unicode):
+            return fname
+        try:
+            return fname.decode(fsenc)
+        except UnicodeDecodeError:
+            if fsenc == 'UTF-8':
+                raise
+            return fname.decode('UTF-8')
+
     for folder in folders:
         if not os.path.isdir(folder):
             yield (folder, os.path.basename(folder))
@@ -103,7 +116,7 @@ def walk_folders(folders):
                     path = os.path.join(root, f)
                     strip = os.path.dirname(folder)
                     rel = os.path.relpath(path, strip)
-                    yield (path, rel)
+                    yield (path, get_unicode_filename(rel))
 
 
 def _writer(name, items, cipher, tmpdir, hashobj=None):
@@ -121,7 +134,7 @@ def _writer(name, items, cipher, tmpdir, hashobj=None):
             with ZipFile(zf, 'w', ZIP_DEFLATED, True) as zpf:
                 for path, rel in walk_folders(map(os.path.abspath, items)):
                     try:
-                        zpf.write(path, rel.encode('utf-8'))
+                        zpf.write(path, unicode(rel).encode('utf-8'))
                     except Exception as e:
                         if not hasattr(e, 'filename'):
                             setattr(e, 'filename', path)

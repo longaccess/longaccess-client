@@ -403,7 +403,7 @@ class LaArchiveCommand(LaBaseCommand):
     def upload(self, *args, **kwargs):
             return self.upload_async(*args, **kwargs)
 
-    @command(directory=unicode, title=unicode, description=unicode)
+    @command(directory=str, title=unicode, description=unicode)
     def do_create(self, directory=None, title="my archive", description=None):
         """
         Usage: create <directory> <title> [<description>]
@@ -417,11 +417,17 @@ class LaArchiveCommand(LaBaseCommand):
                 if not path:
                     print "Encrypting.."
                 else:
-                    print path.encode('utf8'), "=>", rel.encode('utf8')
+                    print path, "=>", rel.encode(sys.getfilesystemencoding())
             self.cache.prepare(title, directory,
                                description=description, cb=mycb)
             print "archive prepared"
 
+        except UnicodeDecodeError as e:
+            fsenc = sys.getfilesystemencoding()
+            if fsenc != "UTF-8":
+                fsenc += " or UTF-8"
+            print "error: failed to decode filename {} as {}".format(
+                e.object.encode('string_escape'), fsenc)
         except Exception as e:
             getLogger().debug("exception while preparing",
                               exc_info=True)
