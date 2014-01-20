@@ -87,7 +87,7 @@ def dump_archive(archive, items, cert, cb=None, tmpdir='/tmp',
                            cipher, tmpdir, hashobj)
     try:
         list(starmap(cb, writer))
-    except Exception as e:
+    except Exception:
         if os.path.exists(path):
             os.unlink(path)  # don't leave trash
         raise
