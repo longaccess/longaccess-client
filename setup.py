@@ -69,7 +69,7 @@ setup(version=pep386adapt(__version__),
       install_requires=['boto>=2.13.2', 'python-dateutil', 'filechunkio',
                         'docopt', 'progressbar', 'logutils', 'requests',
                         'unidecode', 'pycrypto', 'pyaml', 'Twisted', 'crochet',
-                        'treq==0.2.0fixed', 'pyOpenSSL', 'thrift', 'blessings'],
+                        'treq>=0.2.0', 'pyOpenSSL', 'thrift', 'blessings'],
       dependency_links = [
         'http://github.com/kouk/treq/tarball/fixauth#egg=treq-0.2.0fixed',
       ],
