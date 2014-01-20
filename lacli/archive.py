@@ -115,6 +115,10 @@ def _writer(name, items, cipher, tmpdir, hashobj=None):
                'prefix': name}
     dst = NamedTemporaryFile(**tmpargs)
 
+    if sys.platform.startswith('win'):
+        # windows has unicode file system api
+        items = map(unicode, items)
+
     def _enc():
         # do it in two passes now as zip can't easily handle streaming
         tmpargs = {'prefix': name,
