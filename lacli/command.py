@@ -417,7 +417,9 @@ class LaArchiveCommand(LaBaseCommand):
                 if not path:
                     print "Encrypting.."
                 else:
-                    print path, "=>", rel.encode(sys.getfilesystemencoding())
+                    if isinstance(path, unicode):
+                        path = path.encode('UTF-8')
+                    print path, "=>", rel.encode('UTF-8')
             self.cache.prepare(title, directory,
                                description=description, cb=mycb)
             print "archive prepared"
