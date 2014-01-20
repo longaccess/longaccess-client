@@ -1,6 +1,7 @@
 import shlex
 import sys
 
+from lacli.enc import get_unicode
 from lacli.log import getLogger
 from twisted.internet import defer
 from twisted.python.failure import Failure
@@ -113,8 +114,7 @@ def command(**types):
                     kw = opt.strip('<>')
                     if val and kw in types:
                         if types[kw] == unicode:
-                            kwargs[kw] = unicode(
-                                val, sys.getfilesystemencoding())
+                            kwargs[kw] = get_unicode(val)
                         else:
                             kwargs[kw] = types[kw](val)
             except ValueError as e:
