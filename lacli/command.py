@@ -569,7 +569,7 @@ class LaArchiveCommand(LaBaseCommand):
                     def _print(f):
                         print "Extracting", f
                     restore_archive(archive, path, cert,
-                                    dest,
+                                    dest.encode('UTF-8'),
                                     self.cache._cache_dir(
                                         'tmp', write=True), _print)
                     print "archive restored."
