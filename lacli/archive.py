@@ -84,15 +84,17 @@ def dump_archive(archive, items, cert, cb=None, tmpdir='/tmp',
     cipher = get_cipher(archive, cert)
     hashobj = MyHashObj(hashf)
 
-    path, writer = _writer(name, items,
+    dst, writer = _writer(name, items,
                            cipher, tmpdir, hashobj)
     try:
         list(starmap(cb, writer))
-    except Exception:
+    except Exception as e:
+        path = dst.name
+        dst.close()
         if os.path.exists(path):
             os.unlink(path)  # don't leave trash
         raise
-    return (name, path, hashobj.auth())
+    return (name, dst.name, hashobj.auth())
 
 
 def walk_folders(folders):
@@ -140,4 +142,4 @@ def _writer(name, items, cipher, tmpdir, hashobj=None):
             with CryptIO(dst, cipher, hashobj=hashobj) as fdst:
                 copyfileobj(zf, fdst, 1024)
         dst.close()
-    return (dst.name, _enc())
+    return (dst, _enc())
