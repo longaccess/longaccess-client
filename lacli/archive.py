@@ -90,7 +90,7 @@ def dump_archive(archive, items, cert, cb=None, tmpdir='/tmp',
     except Exception as e:
         if os.path.exists(path):
             os.unlink(path)  # don't leave trash
-        raise e
+        raise
     return (name, path, hashobj.auth())
 
 
@@ -139,7 +139,7 @@ def _writer(name, items, cipher, tmpdir, hashobj=None):
                         if not hasattr(e, 'filename'):
                             setattr(e, 'filename', path)
                         dst.close()
-                        raise e
+                        raise
                     yield (path, rel)
             zf.flush()
             zf.seek(0)
