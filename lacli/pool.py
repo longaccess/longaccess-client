@@ -202,6 +202,7 @@ class MPUpload(object):
                 self.upload.cancel_upload()
         if self.tempdir is not None:
             os.rmdir(self.tempdir)
+        return type is None
 
     def submit_job(self, pool):
         getLogger().debug("total of %d upload jobs for workers..",
