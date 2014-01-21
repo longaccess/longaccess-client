@@ -16,8 +16,13 @@ class ControlHandler(object):
         return self.q
 
     def __exit__(self, type, value, traceback):
+        getLogger().debug("control handler exiting.")
+        if type == KeyboardInterrupt:
+            getLogger().debug("upload pausing.")
+            self.pause()
+            type = None
         stopControlByQueue()
-        pass
+        return type is None
 
     def pause(self):
         if self.q is not None:
