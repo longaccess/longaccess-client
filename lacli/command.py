@@ -1,5 +1,4 @@
 from __future__ import division
-import signal
 import os
 import glob
 import pyaml
@@ -315,8 +314,6 @@ class LaArchiveCommand(LaBaseCommand):
                 try:
                     size = docs['archive'].meta.size
                     with UploadState.get(fname, size, capsule) as state:
-                        signal.signal(signal.SIGINT, state.signal)
-
                         handler = ConsoleProgressHandler(
                             maxval=size, fname=fname, state=state)
                         with handler as progq:
