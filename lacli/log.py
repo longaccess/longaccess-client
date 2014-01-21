@@ -1,5 +1,5 @@
 import logging
-from multiprocessing import Queue
+import multiprocessing
 from logutils.queue import QueueListener
 from boto import config as boto_config
 from twisted.internet.defer import setDebugging as debugTwisted
@@ -75,6 +75,8 @@ def setupLogging(level, logfile=None, queue=False):
 
     logging.config.dictConfig(logconf)
 
+    multiprocessing.get_logger()  # initialize mp logging
+
     return log_open(logfile)
 
 
@@ -102,7 +104,7 @@ def log_open(log):
 
 class queueHandler(object):
     def __enter__(self):
-        q = Queue()
+        q = multiprocessing.Queue()
         self.listener = QueueListener(q, self)
         self.listener.start()
         return q

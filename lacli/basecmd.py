@@ -1,4 +1,5 @@
 import sys
+import signal
 import cmd
 from abc import ABCMeta, abstractmethod
 
@@ -9,6 +10,8 @@ class LaBaseCommand(cmd.Cmd, object):
     prompt = 'lacli> '
 
     def __init__(self, registry, *args, **kwargs):
+        if sys.platform.startswith('win'):
+            signal.signal(signal.SIGBREAK, signal.default_int_handler)
         cmd.Cmd.__init__(self, *args, **kwargs)
         self.registry = registry
 

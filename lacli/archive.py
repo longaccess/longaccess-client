@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 import hashlib
 
@@ -9,6 +10,7 @@ from lacli.adf import Auth, make_adf
 from lacli.crypt import CryptIO
 from lacli.cipher import get_cipher
 from lacli.hash import HashIO
+from lacli.enc import get_unicode
 from shutil import copyfileobj
 from zipfile import ZipFile, ZIP_DEFLATED
 from itertools import starmap
@@ -82,15 +84,17 @@ def dump_archive(archive, items, cert, cb=None, tmpdir='/tmp',
     cipher = get_cipher(archive, cert)
     hashobj = MyHashObj(hashf)
 
-    path, writer = _writer(name, items,
+    dst, writer = _writer(name, items,
                            cipher, tmpdir, hashobj)
     try:
         list(starmap(cb, writer))
     except Exception as e:
+        path = dst.name
+        dst.close()
         if os.path.exists(path):
             os.unlink(path)  # don't leave trash
-        raise e
-    return (name, path, hashobj.auth())
+        raise
+    return (name, dst.name, hashobj.auth())
 
 
 def walk_folders(folders):
@@ -103,7 +107,7 @@ def walk_folders(folders):
                     path = os.path.join(root, f)
                     strip = os.path.dirname(folder)
                     rel = os.path.relpath(path, strip)
-                    yield (path, rel)
+                    yield (path, get_unicode(rel))
 
 
 def _writer(name, items, cipher, tmpdir, hashobj=None):
@@ -112,6 +116,10 @@ def _writer(name, items, cipher, tmpdir, hashobj=None):
                'dir': tmpdir,
                'prefix': name}
     dst = NamedTemporaryFile(**tmpargs)
+
+    if sys.platform.startswith('win'):
+        # windows has unicode file system api
+        items = map(unicode, items)
 
     def _enc():
         # do it in two passes now as zip can't easily handle streaming
@@ -126,7 +134,7 @@ def _writer(name, items, cipher, tmpdir, hashobj=None):
                         if not hasattr(e, 'filename'):
                             setattr(e, 'filename', path)
                         dst.close()
-                        raise e
+                        raise
                     yield (path, rel)
             zf.flush()
             zf.seek(0)
@@ -134,4 +142,4 @@ def _writer(name, items, cipher, tmpdir, hashobj=None):
             with CryptIO(dst, cipher, hashobj=hashobj) as fdst:
                 copyfileobj(zf, fdst, 1024)
         dst.close()
-    return (dst.name, _enc())
+    return (dst, _enc())

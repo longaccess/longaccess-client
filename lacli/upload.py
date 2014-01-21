@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from lacli.log import LogHandler, getLogger
 from lacli.control import ControlHandler
 from lacli.worker import WorkerPool
+from lacli.decorators import block
 from twisted.internet import defer, threads
 from itertools import count
 from multiprocessing import TimeoutError
@@ -68,6 +69,7 @@ class UploadState(object):
         self.uri = uri
         self.exc = exc
         self.capsule = capsule
+        self.deferred_upload = None
 
     def __enter__(self):
         try:
@@ -91,13 +93,23 @@ class UploadState(object):
                 self.uri, self.capsule, self.logfile,
                 self.exc, self._paused)
         return self
+    
+    @block
+    @defer.inlineCallbacks
+    def wait_for_upload(self):
+        try:
+            result = yield self.deferred_upload
+            defer.returnValue(result)
+        except PauseEvent:
+            pass
+        if self.pausing is True:
+            self.paused()
 
     def __exit__(self, type, value, traceback):
         if type is not None:
             if type == PauseEvent:
                 getLogger().debug("upload paused.")
                 self.paused()
-                type = None
             else:
                 getLogger().debug("error in upload", exc_info=True)
                 self.error(value)
@@ -123,6 +135,7 @@ class UploadState(object):
         self.pausing = True
 
     def paused(self):
+        getLogger().debug("upload state paused")
         if self.exc is not None:
             getLogger().debug("can't pause a failed upload")
             return
@@ -176,6 +189,7 @@ class Upload(object):
                 try: 
                     yield pool
                 finally:
+                    getLogger().debug("terminating pool")
                     pool.terminate()
                     pool.join()
 

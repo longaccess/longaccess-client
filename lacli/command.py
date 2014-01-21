@@ -1,5 +1,4 @@
 from __future__ import division
-import signal
 import os
 import glob
 import pyaml
@@ -12,7 +11,7 @@ from lacli.upload import Upload, UploadState
 from lacli.archive import restore_archive
 from lacli.adf import archive_size, Certificate, Archive, Meta, creation
 from lacli.decorators import command, login, block
-from lacli.exceptions import DecryptionError
+from lacli.exceptions import DecryptionError, PauseEvent
 from lacli.compose import compose
 from lacli.progress import ConsoleProgressHandler
 from lacli.server.interface.ClientInterface.ttypes import ArchiveStatus
@@ -315,8 +314,6 @@ class LaArchiveCommand(LaBaseCommand):
                 try:
                     size = docs['archive'].meta.size
                     with UploadState.get(fname, size, capsule) as state:
-                        signal.signal(signal.SIGINT, state.signal)
-
                         handler = ConsoleProgressHandler(
                             maxval=size, fname=fname, state=state)
                         with handler as progq:
@@ -356,11 +353,13 @@ class LaArchiveCommand(LaBaseCommand):
                                 print "Unknown status received:", status['status']
 
                     print "\ndone."
+                except PauseEvent:
+                    print "\npaused."
                 except Exception as e:
                     self.cache.upload_error(fname)
                     getLogger().debug("exception while uploading",
                                       exc_info=True)
-                    print "error: " + str(e)
+                    print "\nerror: " + str(e)
         else:
             print _error
 
@@ -378,32 +377,34 @@ class LaArchiveCommand(LaBaseCommand):
 
     @defer.inlineCallbacks
     def upload_async(self, docs, fname, progq, state):
-        try:
-            archive = docs['archive']
-            auth = docs['auth']
-            path = self.cache.data_file(docs['links'])
-            op = yield self.session.upload(state.capsule, archive, state)
-            status = yield op.status  # init uri and status
-            if status['status'] != 'pending':
-                raise Exception("Invalid status for upload: " + status['status'])
+        archive = docs['archive']
+        auth = docs['auth']
+        path = self.cache.data_file(docs['links'])
+        op = yield self.session.upload(state.capsule, archive, state)
+        status = yield op.status  # init uri and status
+        if status['status'] == 'pending':
             if state.uri is None:
                 state.save_op(op)
             uploader = Upload(self.session, self.nprocs, self.debug, state)
             if state.progress < state.size:
                 yield uploader.upload(path, op, progq)
-            yield op.finalize(auth, state.keys)
+            status = yield op.finalize(auth, state.keys)
+        if status['status'] != 'failed':
             account = yield self.session.async_account
             saved = yield self.cache.save_upload(fname, docs, op.uri, account)
             defer.returnValue(saved)
-        except Exception:
-            getLogger().debug("Exception uploading", exc_info=True)
-            raise
 
-    @block
-    def upload(self, *args, **kwargs):
-            return self.upload_async(*args, **kwargs)
+    def upload(self, docs, fname, progq, state):
+        try:
+            state.deferred_upload = self.upload_async(docs, fname, progq, state)
+            return state.wait_for_upload()
+        except KeyboardInterrupt:
+            getLogger().debug("interrupted.", exc_info=True)
+            state.pause()
+            state.wait_for_upload()
+            raise PauseEvent()
 
-    @command(directory=unicode, title=unicode, description=unicode)
+    @command(directory=str, title=unicode, description=unicode)
     def do_create(self, directory=None, title="my archive", description=None):
         """
         Usage: create <directory> <title> [<description>]
@@ -417,11 +418,21 @@ class LaArchiveCommand(LaBaseCommand):
                 if not path:
                     print "Encrypting.."
                 else:
-                    print path.encode('utf8'), "=>", rel.encode('utf8')
+                    if isinstance(path, unicode):
+                        path = path.encode('UTF-8')
+                    print path, "=>", rel.encode('UTF-8')
             self.cache.prepare(title, directory,
                                description=description, cb=mycb)
             print "archive prepared"
 
+        except UnicodeDecodeError as e:
+            fsenc = sys.getfilesystemencoding()
+            if fsenc != "UTF-8":
+                fsenc += " or UTF-8"
+            getLogger().debug("exception while preparing",
+                              exc_info=True)
+            print "error: failed to decode filename {} as {}".format(
+                e.object.encode('string_escape'), fsenc)
         except Exception as e:
             getLogger().debug("exception while preparing",
                               exc_info=True)
@@ -559,7 +570,7 @@ class LaArchiveCommand(LaBaseCommand):
                     def _print(f):
                         print "Extracting", f
                     restore_archive(archive, path, cert,
-                                    dest,
+                                    dest.encode('UTF-8'),
                                     self.cache._cache_dir(
                                         'tmp', write=True), _print)
                     print "archive restored."
