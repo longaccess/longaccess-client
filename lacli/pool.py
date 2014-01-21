@@ -325,3 +325,4 @@ def upload_part(kwargs):
         raise
     except Exception as e:
         raise WorkerFailureError(e)
+# vim: et:sw=4:ts=4

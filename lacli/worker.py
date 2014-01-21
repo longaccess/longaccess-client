@@ -42,3 +42,4 @@ class WorkerPool(pool.Pool):
             args.append(sys.stdin.fileno())
         super(WorkerPool, self).__init__(nprocs, initworker, args)
         getLogger().debug("set up pool of {} procs..".format(nprocs))
+# vim: et:sw=4:ts=4
