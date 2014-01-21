@@ -19,8 +19,11 @@ def initworker(logq, progq, ctrlq, stdin=None):
     controlByQueue(ctrlq)
     setproctitle(current_process().name)
     signal.signal(signal.SIGINT, signal.SIG_IGN)
+    signal.signal(signal.SIGBREAK, signal.SIG_IGN)
+    getLogger().debug("Worker " + current_process().name + " logging started")
     if stdin is not None:
         sys.stdin = os.fdopen(stdin, 'r')
+        print "Worker " + current_process().name + " opened stdin"
 
 
 class WorkerProcess(Process):
