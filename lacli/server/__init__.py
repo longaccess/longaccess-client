@@ -283,12 +283,11 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         """
         docs = self.cache.get_adf(archive)
         status = self.cache.archive_status(archive, docs)
-        if status != ttypes.ArchiveStatus.Paused:
-            raise ValueError("Archive state invalid")
+        if status == ttypes.ArchiveStatus.Completed:
+            raise ValueError("Archive already complete")
+        if status == ttypes.ArchiveStatus.Local:
+            raise ValueError("Archive upload has not started yet.")
         state = UploadState.get(archive)
-        if state.exc is not None:
-            raise ValueError("Archive has error")
-
         self._upload(archive, docs, state)
 
     @tthrow
