@@ -9,6 +9,10 @@ Installation
 We have binary packages for certain platforms, like MacOS X, Windows 8 64-bit, Linux and FreeBSD. For more information see the [Longaccess downloads page][lad]. For other platforms or purposes you can download or clone the source repository, create a [virtualenv][ve] if needed, and install the client via `pip`. E.g.:
 
     pip install https://github.com/longaccess/longaccess-client/tarball/master
+    
+Note that currently, certain third-party libraries are required in modified form. These special dependencies are descripted in `setup.py` and can be automatically installed if the following command is given (good for pip v1.5)
+
+    pip install --pre --allow-all-external --process-dependency-links https://github.com/longaccess/longaccess-client/tarball/master
 
 Dependencies
 ------------
