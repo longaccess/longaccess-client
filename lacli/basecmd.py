@@ -10,7 +10,7 @@ class LaBaseCommand(cmd.Cmd, object):
     prompt = 'lacli> '
 
     def __init__(self, registry, *args, **kwargs):
-        if sys.platform.startswith('win'):
+        if hasattr(signal, 'SIGBREAK'):
             signal.signal(signal.SIGBREAK, signal.default_int_handler)
         cmd.Cmd.__init__(self, *args, **kwargs)
         self.registry = registry
