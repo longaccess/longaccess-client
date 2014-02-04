@@ -278,10 +278,10 @@ class Cache(object):
                 'Eraser.exe addtask --schedule=now -q --file={file}')
         for command in commands:
             try:
-                newcommand = command.format(file=fname)
+                newcommand = command.format(file=quote(fname))
                 args = shlex.split(newcommand)
                 if command == newcommand:
-                    args.append(fname)
+                    args.append(quote(fname))
                 if 0 == check_call(args):
                     getLogger().debug("success running {}".format(command))
             except Exception:
