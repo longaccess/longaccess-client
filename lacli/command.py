@@ -28,7 +28,7 @@ class LaCertsCommand(LaBaseCommand):
            lacli certificate print <cert_id>
            lacli certificate export <cert_id>
            lacli certificate import <filename>
-           lacli certificate delete <cert_id> [<srm>...]
+           lacli certificate delete <cert_id> [<srm>]
            lacli certificate --help
 
     """
@@ -42,8 +42,7 @@ class LaCertsCommand(LaBaseCommand):
             line.append("delete")
             line.append(options["<cert_id>"])
             if options['<srm>']:
-                line.append(quote(
-                    " ".join(options["<srm>"])))
+                line.append(quote(options["<srm>"]))
         elif options['print']:
             line.append("print")
             line.append(options["<cert_id>"])
@@ -193,7 +192,7 @@ class LaArchiveCommand(LaBaseCommand):
            lacli archive status <index>
            lacli archive create <dirname> -t <title> [--desc <description>]
            lacli archive extract [-o <dirname>] <path> [<cert_id>|-f <cert>]
-           lacli archive delete <index> [<srm>...]
+           lacli archive delete <index> [<srm>]
            lacli archive reset <index>
            lacli archive --help
 
@@ -264,8 +263,7 @@ class LaArchiveCommand(LaBaseCommand):
             line.append("delete")
             line.append(options["<index>"])
             if options['<srm>']:
-                line.append(quote(
-                    " ".join(options["<srm>"])))
+                line.append(quote(options["<srm>"]))
         return " ".join(line)
 
     @login
