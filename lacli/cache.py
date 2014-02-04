@@ -284,6 +284,7 @@ class Cache(object):
                     args.append(quote(fname))
                 if 0 == check_call(args):
                     getLogger().debug("success running {}".format(command))
+                    break
             except Exception:
                 getLogger().debug("error running {}".format(command),
                                   exc_info=True)
