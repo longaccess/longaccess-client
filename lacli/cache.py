@@ -274,6 +274,7 @@ class Cache(object):
             commands.append('shred -u')
             commands.append('gshred -u')
             commands.append('sdelete')
+            commands.append('eraserl.exe -silent -file {file}')
             commands.append(
                 'Eraser.exe addtask --schedule=now -q --file={file}')
         for command in commands:
