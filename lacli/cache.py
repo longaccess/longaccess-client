@@ -270,6 +270,7 @@ class Cache(object):
         if srm:
             commands.append(srm)
         else:
+            commands.append('srm.bat')
             commands.append('srm')
             commands.append('shred -u')
             commands.append('gshred -u')
