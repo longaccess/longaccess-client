@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>lacli</id>
+    <version>1.0.0</version>
+    <authors>Konstantinos Koukopoulos</authors>
+    <owners>The Longaccess Company</owners>
+    <licenseUrl>https://raw.github.com/longaccess/longaccess-client/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/longaccess/longaccess-client</projectUrl>
+    <iconUrl>https://longaccess.com/favicon.ico</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>The Longaccess client</description>
+    <releaseNotes>First version</releaseNotes>
+    <copyright>Copyright 2014</copyright>
+    <tags>storage, cloud, longaccess</tags>
+    <dependencies></dependencies>
+  </metadata>
+</package>
