@@ -270,20 +270,23 @@ class Cache(object):
         if srm:
             commands.append(srm)
         else:
+            commands.append('srm.bat')
             commands.append('srm')
             commands.append('shred -u')
             commands.append('gshred -u')
             commands.append('sdelete')
+            commands.append('eraserl.exe -silent -file {file}')
             commands.append(
                 'Eraser.exe addtask --schedule=now -q --file={file}')
         for command in commands:
             try:
-                newcommand = command.format(file=fname)
+                newcommand = command.format(file=quote(fname))
                 args = shlex.split(newcommand)
                 if command == newcommand:
-                    args.append(fname)
+                    args.append(quote(fname))
                 if 0 == check_call(args):
                     getLogger().debug("success running {}".format(command))
+                    break
             except Exception:
                 getLogger().debug("error running {}".format(command),
                                   exc_info=True)

@@ -206,3 +206,4 @@ class login(login_async):
 
     def loginfirst(self, *args, **kwargs):
        return super(login, self).loginfirst(*args, **kwargs)
+# vim: et:sw=4:ts=4

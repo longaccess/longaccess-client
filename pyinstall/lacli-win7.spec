@@ -13,6 +13,7 @@ exe = EXE(pyz,
           upx=True,
           console=True )
 a.datas.append(('cacert.pem', 'cacert.pem', 'DATA'))
+a.datas.append(('srm.bat', 'srm.bat', 'DATA'))
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
