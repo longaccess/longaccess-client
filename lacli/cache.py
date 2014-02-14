@@ -256,12 +256,12 @@ class Cache(object):
             keyE=next(hk),
             name=archive.meta.name or "",
             email=archive.meta.email or "",
-            uploaded=created.strftime("%c"),
-            expires=(expires and expires.strftime("%c")) or "unknown",
+            uploaded=created.strftime("%b %d, %Y"),
+            expires=(expires and expires.strftime("%b %d, %Y")) or "unknown",
             title=archive.title or "",
 	    size=archive.meta.size,
             desc=archive.description or "",
-	    md5=" . ".join(fours(pairs(iter(md5)))),
+	    md5=md5,
 	    fmt=archive.meta.format,
             cipher=cipher).encode('utf8')
 
