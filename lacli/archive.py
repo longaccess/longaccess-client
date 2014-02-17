@@ -84,6 +84,10 @@ def dump_archive(archive, items, cert, cb=None, tmpdir='/tmp',
     cipher = get_cipher(archive, cert)
     hashobj = MyHashObj(hashf)
 
+    if sys.platform.startswith('win'):
+        # windows has unicode file system api
+        items = map(unicode, items)
+
     dst, writer = _writer(name, items,
                            cipher, tmpdir, hashobj)
     try:
@@ -116,10 +120,6 @@ def _writer(name, items, cipher, tmpdir, hashobj=None):
                'dir': tmpdir,
                'prefix': name}
     dst = NamedTemporaryFile(**tmpargs)
-
-    if sys.platform.startswith('win'):
-        # windows has unicode file system api
-        items = map(unicode, items)
 
     def _enc():
         # do it in two passes now as zip can't easily handle streaming
