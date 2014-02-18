@@ -13,7 +13,12 @@ from lacli.hash import HashIO
 from lacli.enc import get_unicode
 from shutil import copyfileobj
 from zipfile import ZipFile, ZIP_DEFLATED
-from itertools import starmap
+from itertools import imap
+from contextlib import contextmanager
+try:
+    import zipstream
+except ImportError:
+    zipstream = None
 
 
 _slugify_strip_re = re.compile(r'[^\w\s-]')
@@ -88,17 +93,20 @@ def dump_archive(archive, items, cert, cb=None, tmpdir='/tmp',
         # windows has unicode file system api
         items = map(unicode, items)
 
-    dst, writer = _writer(name, items,
-                           cipher, tmpdir, hashobj)
-    try:
-        list(starmap(cb, writer))
-    except Exception as e:
-        path = dst.name
-        dst.close()
-        if os.path.exists(path):
-            os.unlink(path)  # don't leave trash
-        raise
-    return (name, dst.name, hashobj.auth())
+    path = _writer(name, items, cb,
+                   cipher, tmpdir, hashobj)
+
+    return (name, path, hashobj.auth())
+
+
+@contextmanager
+def _temp_file(fdst, name, tmpdir):
+    with NamedTemporaryFile(prefix=name, dir=tmpdir) as zf:
+        yield zf
+        zf.flush()
+        zf.seek(0)
+        with fdst as dst:
+            copyfileobj(zf, dst, 1024)
 
 
 def walk_folders(folders):
@@ -114,32 +122,50 @@ def walk_folders(folders):
                     yield (path, get_unicode(rel))
 
 
-def _writer(name, items, cipher, tmpdir, hashobj=None):
+def _writer(name, items, cb, cipher, tmpdir, hashobj=None):
+
     tmpargs = {'delete': False,
                'suffix': ".longaccess",
                'dir': tmpdir,
                'prefix': name}
     dst = NamedTemporaryFile(**tmpargs)
 
-    def _enc():
-        # do it in two passes now as zip can't easily handle streaming
-        tmpargs = {'prefix': name,
-                   'dir': tmpdir}
-        with NamedTemporaryFile(**tmpargs) as zf:
-            with ZipFile(zf, 'w', ZIP_DEFLATED, True) as zpf:
-                for path, rel in walk_folders(map(os.path.abspath, items)):
-                    try:
-                        zpf.write(path, rel.encode('utf-8'))
-                    except Exception as e:
-                        if not hasattr(e, 'filename'):
-                            setattr(e, 'filename', path)
-                        dst.close()
-                        raise
-                    yield (path, rel)
-            zf.flush()
-            zf.seek(0)
-            yield (None, None)  # the end
-            with CryptIO(dst, cipher, hashobj=hashobj) as fdst:
-                copyfileobj(zf, fdst, 1024)
+    fdst = CryptIO(dst, cipher, hashobj=hashobj)
+
+    if zipstream is None:
+        # do it in two passes now as vanilla zipfile
+        # can't easily handle streaming
+        fdst = _temp_file(fdst, name, tmpdir)
+
+    files = walk_folders(imap(os.path.abspath, items))
+
+    def _args():
+        for path, rel in files:
+            try:
+                cb(path, rel)
+                yield ((path,), {'arcname': rel.encode('utf-8')})
+            except Exception as e:
+                if not hasattr(e, 'filename'):
+                    setattr(e, 'filename', path)
+                raise
+
+    try:
+        with fdst as zf:
+            zipargs = {'mode': 'w', 'compression': ZIP_DEFLATED,
+                       'allowZip64': True}
+            if zipstream is None:
+                with ZipFile(zf, **zipargs) as zpf:
+                    for args, kwargs in _args():
+                        zpf.write(*args, **kwargs)
+            else:
+                with zipstream.ZipFile(**zipargs) as zpf:
+                    zpf.paths_to_write = _args()
+                    for chunk in zpf:
+                        zf.write(chunk)
+    except Exception:
+        path = dst.name
         dst.close()
-    return (dst, _enc())
+        if os.path.exists(path):
+            os.unlink(path)  # don't leave trash
+        raise
+    return dst.name

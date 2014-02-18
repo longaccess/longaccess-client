@@ -17,7 +17,7 @@ Note that currently, certain third-party libraries are required in modified form
 Dependencies
 ------------
 
-The prebuilt binary packages are self-contained, i.e. they do not have any hard external dependencies. There is however a soft dependency on an external tool to securely delete files from the filesystem, see below for more information. When installing from source most dependencies are automatically installable via `pip`. On some platforms the installation might require manually installing development packages, e.g. on [Fedora Linux][] you might need to install the `python2-devel` package. Additional packages, like `thrift` and `twisted` are necessary for the RPC server (used to communicate with GUI frontends).
+The prebuilt binary packages are self-contained, i.e. they do not have any hard external dependencies. There is however a soft dependency on an external tool to securely delete files from the filesystem, see below for more information. When installing from source most dependencies are automatically installable via `pip`. On some platforms the installation might require manually installing development packages, e.g. on [Fedora Linux][] you might need to install the `python2-devel` package. Additional packages, like `thrift` and `twisted` are necessary for the RPC server (used to communicate with GUI frontends). Last, install the [`python-zipstream`]() package to enable on-the-fly operations, requiring less temporary space on disk.
 
 Usage
 -----
@@ -109,4 +109,4 @@ _* or one has not been provided via the optional argument to the `delete` comman
 [sdelete]: http://technet.microsoft.com/en-us/sysinternals/bb897443.aspx "SDelete - Windows sysinternals"
 [Eraser]: http://eraser.heidi.ie/ "Eraser"
 [Fedora]: http://fedoraproject.org "Fedora"
-[PySide]: http://pyside.org "PySide is a Python binding of the cross-platform GUI toolkit Qt." 
+[python-zipstream]: http://github.com/longaccess/python-zipstream "python-zipstream"
