@@ -70,7 +70,7 @@ def setupLogging(level, logfile=None, queue=False):
                 'propagate': True
             }
         },
-        'root': { 'level': level }
+        'root': {'level': level}
     }
 
     logging.config.dictConfig(logconf)
@@ -89,7 +89,7 @@ def log_open(log):
             handler = logging.StreamHandler(logfile)
             handler.setFormatter(logging.Formatter(simplefmt))
             logging.getLogger('').addHandler(handler)
-        except Exception as e:
+        except Exception:
             getLogger().debug("couldn't open log", exc_info=True)
 
     observer = twisted_log.PythonLoggingObserver()
@@ -101,6 +101,7 @@ def log_open(log):
 
     if logfile is not None:
         logfile.close()
+
 
 class queueHandler(object):
     def __enter__(self):

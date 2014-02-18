@@ -12,17 +12,14 @@ from lacli.cipher.aes import CipherAES
 from shutil import copyfileobj
 
 
-
 def main(args=sys.argv[1:]):
     options = docopt(__doc__)
     with open(options['<file>']) as f:
         with NamedTemporaryFile(delete=False, mode='w') as out:
             key = new_key(256)
-            with CryptIO(out, CipherAES(key), mode='w') as cf :
+            with CryptIO(out, CipherAES(key), mode='w') as cf:
                 copyfileobj(f, cf)
                 print "saved in", out.name, "key is", key.encode('hex')
 
 if __name__ == "__main__":
     main()
-    
-    

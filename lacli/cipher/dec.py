@@ -5,7 +5,6 @@ Usage: ladec <file> <key>
 
 import sys
 from docopt import docopt
-from base64 import b64decode
 from .aes import CipherAES
 from ..crypt import CryptIO
 from tempfile import NamedTemporaryFile

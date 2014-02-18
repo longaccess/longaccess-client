@@ -59,13 +59,13 @@ class LaLoginCommand(LaBaseCommand):
             print "authentication succesfull as", self.email
             if not self.batch:
                 if self.username != save[0] or self.password != save[1]:
-                    if match('y(es)?$',
-                             self.input("Save credentials? "), IGNORECASE):
-                        self.registry.save_session(self.username, self.password)
-        except Exception as e:
+                    if match('y(es)?$', self.input("Save credentials? "),
+                             IGNORECASE):
+                        self.registry.save_session(
+                            self.username, self.password)
+        except Exception:
             getLogger().debug("auth failure", exc_info=True)
             print "authentication failed"
-
 
     def login_batch(self, username, password):
         block(self.login_async)(username, password)

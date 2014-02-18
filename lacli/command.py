@@ -9,9 +9,9 @@ from pipes import quote
 from lacli.log import getLogger
 from lacli.upload import Upload, UploadState
 from lacli.archive import restore_archive
-from lacli.adf import archive_size, Certificate, Archive, Meta, creation
+from lacli.adf import archive_size, creation
 from lacli.decorators import command, login, block
-from lacli.exceptions import DecryptionError, PauseEvent
+from lacli.exceptions import PauseEvent
 from lacli.compose import compose
 from lacli.progress import ConsoleProgressHandler
 from lacli.server.interface.ClientInterface.ttypes import ArchiveStatus
@@ -20,6 +20,7 @@ from twisted.internet import defer, reactor, task
 
 from richtext import RichTextUI as UIClass
 ui = UIClass()
+
 
 class LaCertsCommand(LaBaseCommand):
     """Manage Long Access Certificates
@@ -83,7 +84,7 @@ class LaCertsCommand(LaBaseCommand):
                 return
             print "Deleting certificate", cert_id, "in",
             for c in ui.countdown(5):
-                yield 
+                yield
             print "... deleting"
 
         fname = self.cache.shred_cert(cert_id, _countdown(), srm)
@@ -169,14 +170,14 @@ class LaCapsuleCommand(LaBaseCommand):
                 ui.print_capsules_header()
                 for capsule in capsules:
                     n = n+1
-                    ui.print_capsules_line(capsule = {
+                    ui.print_capsules_line(capsule={
                         'num': n,
                         'size': capsule['size'],
                         'remaining': capsule['remaining'],
                         'title': capsule['title'],
                         'id': capsule['id'],
                         'created': capsule['created'],
-                        'expires':capsule['expires'],
+                        'expires': capsule['expires'],
                     })
             else:
                 print "No available capsules."
@@ -310,7 +311,6 @@ class LaArchiveCommand(LaBaseCommand):
                 print "upload is already completed"
             else:
                 try:
-                    size = docs['archive'].meta.size
                     with UploadState.get(fname, size, capsule) as state:
                         handler = ConsoleProgressHandler(
                             maxval=size, fname=fname, state=state)
@@ -351,7 +351,8 @@ class LaArchiveCommand(LaBaseCommand):
                                         else:
                                             raise e
                             else:
-                                print "Unknown status received:", status['status']
+                                st = status['status']
+                                print "Unknown status received:", st
 
                     print "\ndone."
                 except PauseEvent:
@@ -397,7 +398,8 @@ class LaArchiveCommand(LaBaseCommand):
 
     def upload(self, docs, fname, progq, state):
         try:
-            state.deferred_upload = self.upload_async(docs, fname, progq, state)
+            state.deferred_upload = self.upload_async(
+                docs, fname, progq, state)
             return state.wait_for_upload()
         except KeyboardInterrupt:
             getLogger().debug("interrupted.", exc_info=True)
@@ -448,7 +450,8 @@ class LaArchiveCommand(LaBaseCommand):
 
         if len(archives):
             ui.print_archives_header()
-            bydate = sorted(archives, key=compose(creation, operator.itemgetter(1)))
+            bydate = sorted(archives,
+                            key=compose(creation, operator.itemgetter(1)))
             for n, docs in enumerate(bydate):
                 fname = docs[0]
                 archive = docs[1]
@@ -473,14 +476,14 @@ class LaArchiveCommand(LaBaseCommand):
                     status = "UNKNOWN"
                 title = archive['archive'].title
                 size = archive_size(archive['archive'])
-                ui.print_archives_line(archive = {
-                        'num': n+1,
-                        'size': size,
-                        'title': title,
-                        'status': status,
-                        'cert':cert,
-                        'created':archive['archive'].meta.created
-                    })
+                ui.print_archives_line(archive={
+                    'num': n+1,
+                    'size': size,
+                    'title': title,
+                    'status': status,
+                    'cert': cert,
+                    'created': archive['archive'].meta.created
+                })
                 if self.debug > 2:
                     for doc in archive.itervalues():
                         pyaml.dump(doc, sys.stdout)
@@ -576,11 +579,13 @@ class LaArchiveCommand(LaBaseCommand):
                                         'tmp', write=True), _print)
                     print "archive restored."
                 if cert_id in certs:
-                    print "Decrypting archive. This may take some time depending on the size of your archive."
+                    print "Decrypting archive. This may take some time",
+                    print "depending on the size of your archive."
                     extract(certs[cert_id]['cert'], certs[cert_id]['archive'])
                 else:
-                    getLogger().debug("Key input gui unavailable and key not found",
-                                          exc_info=True)
+                    getLogger().debug(
+                        "Key input gui unavailable and key not found",
+                        exc_info=True)
                     print "error: key not found"
 
             except Exception as e:

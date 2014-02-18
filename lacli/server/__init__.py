@@ -199,9 +199,9 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             else:
                 msg(rel.encode('utf8'))
 
-        d = threads.deferToThread(
-            self.cache.prepare, "_temp", paths,
-            description="_temp", cb=progress)
+        args = ["_temp", paths]
+        kwargs = {'description': "_temp", 'cb': progress}
+        d = threads.deferToThread(self.cache.prepare, *args, **kwargs)
         d.addCallback(expand_args(self.toArchive))
         return d
 
@@ -218,9 +218,8 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             return UploadState.reset(archive)
         except OSError as e:
             if e.errno == errno.EACCES and times > 0:
-                return task.deferLater(
-                    reactor, 2, self.reset_upload, archive,
-                    times-1)
+                args = [self.reset_upload, archive, times-1]
+                return task.deferLater(reactor, 2, *args)
             raise
 
     @defer.inlineCallbacks

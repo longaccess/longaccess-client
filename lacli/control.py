@@ -1,4 +1,3 @@
-import os
 from lacli.log import getLogger
 from lacli.exceptions import PauseEvent
 from multiprocessing import Queue, active_children
@@ -28,13 +27,12 @@ class ControlHandler(object):
         if self.q is not None:
             children = len(active_children())
             getLogger().debug(
-               "ControlHandler pausing {} children".format(children))
+                "ControlHandler pausing {} children".format(children))
             map(self.q.put, [{'pause': True}] * children)
         else:
             getLogger().debug(
-               "ControlHandler.pause() called " +
-               "when no control context in effect")
-                
+                "ControlHandler.pause() called " +
+                "when no control context in effect")
 
 controlq = None
 
@@ -47,6 +45,7 @@ def controlByQueue(queue):
 def stopControlByQueue():
     global controlq
     controlq = None
+
 
 def readControl():
     global controlq

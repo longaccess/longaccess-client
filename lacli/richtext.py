@@ -1,4 +1,4 @@
-try: 
+try:
     from blessings import Terminal
     WITH_BLESSINGS = True
 except ImportError:
@@ -6,7 +6,9 @@ except ImportError:
 
 import sys
 import time
+import pyaml
 from lacli.adf import creation
+
 
 def format_size(bytes):
     size = ""
@@ -24,6 +26,7 @@ def format_size(bytes):
             size = "{} GB".format(gib)
     return size
 
+
 class RichTextUI:
     def __init__(self):
 
@@ -36,30 +39,39 @@ class RichTextUI:
             self.width = 78
 
         h_titles = '#   ID         STATUS    SIZE   DATE         TITLE'
-        h_pattern= '--- ---------- --------- ------ ------------ ---------------------------------'
-        h_pattern= h_pattern.ljust(self.width, '-')
+        h_pattern = ('--- ---------- --------- ------ ------------ '
+                     '---------------------------------')
+        h_pattern = h_pattern.ljust(self.width, '-')
+        h_frmt = "{:0%sd} {:>%s} {:<%s} {:>%s} {:<%s} {:<%s}" % tuple(
+            len(p) for p in h_pattern.split(' '))
         self.archive_design = {
             'titles': h_titles,
             'pattern': h_pattern,
-            'frmt': "{:0%sd} {:>%s} {:<%s} {:>%s} {:<%s} {:<%s}" % tuple( len(p) for p in h_pattern.split(' ')) 
+            'frmt': h_frmt
         }
 
         h_titles = 'ID         SIZE   DATE       TITLE'
-        h_pattern= '---------- ------ ---------- ---------------------------------'
-        h_pattern= h_pattern.ljust(self.width, '-')
+        h_pattern = ('---------- ------ ---------- '
+                     '---------------------------------')
+        h_pattern = h_pattern.ljust(self.width, '-')
+        h_frmt = "{:>%s} {:>%s} {:<%s} {:<%s}" % tuple(
+            len(p) for p in h_pattern.split(' '))
         self.cert_design = {
             'titles': h_titles,
             'pattern': h_pattern,
-            'frmt': "{:>%s} {:>%s} {:<%s} {:<%s}" % tuple( len(p) for p in h_pattern.split(' ')) 
+            'frmt': h_frmt
         }
 
         h_titles = '#  ID      SIZE   FREE CREATED      EXPIRES      TITLE'
-        h_pattern= '-- ----- ------ ------ ------------ ------------ ------------------------------'
-        h_pattern= h_pattern.ljust(self.width, '-')
+        h_pattern = ('-- ----- ------ ------ ------------ '
+                     '------------ ------------------------------')
+        h_pattern = h_pattern.ljust(self.width, '-')
+        h_frmt = "{:0%sd} {:>%s} {:>%s} {:>%s} {:<%s} {:<%s} {:<%s}" % tuple(
+            len(p) for p in h_pattern.split(' '))
         self.capsule_design = {
             'titles': h_titles,
             'pattern': h_pattern,
-            'frmt': "{:0%sd} {:>%s} {:>%s} {:>%s} {:<%s} {:<%s} {:<%s}" % tuple( len(p) for p in h_pattern.split(' ')) 
+            'frmt': h_frmt
         }
 
     def print_archives_header(self):
@@ -68,26 +80,26 @@ class RichTextUI:
 
     def print_archives_line(self, archive):
         h_parts = self.archive_design['pattern'].split()
-        if len(archive['title'])>=len(h_parts[-1]):
+        if len(archive['title']) >= len(h_parts[-1]):
             archive_title = archive['title'][0:len(h_parts[-1])-2]+'..'
         else:
             archive_title = archive['title']
-        archive_title = archive_title.replace('\n',' ')
+        archive_title = archive_title.replace('\n', ' ')
         print self.archive_design['frmt'].format(
             archive['num'],
             archive['cert'],
             archive['status'],
             archive['size'],
             archive['created'].strftime('%Y-%m-%d'),
-            archive_title.encode('utf-8')) 
-    
+            archive_title.encode('utf-8'))
+
     def print_capsules_header(self):
         print self.capsule_design['titles']
         print self.capsule_design['pattern']
-    
+
     def print_capsules_line(self, capsule):
         h_parts = self.capsule_design['pattern'].split()
-        if len(capsule['title'])>=len(h_parts[-1]):
+        if len(capsule['title']) >= len(h_parts[-1]):
             capsule_title = capsule['title'][0:len(h_parts[-1])-2]+'..'
         else:
             capsule_title = capsule['title']
@@ -98,15 +110,15 @@ class RichTextUI:
             format_size(capsule['remaining']),
             capsule['created'].strftime('%Y-%m-%d'),
             capsule['expires'].strftime('%Y-%m-%d'),
-            capsule_title.encode('utf-8')) 
-    
+            capsule_title.encode('utf-8'))
+
     def print_certificates_header(self):
         print self.cert_design['titles']
         print self.cert_design['pattern']
 
     def print_certificates_line(self, certificate):
         h_parts = self.cert_design['pattern'].split()
-        if len(certificate['title'])>=len(h_parts[-1]):
+        if len(certificate['title']) >= len(h_parts[-1]):
             certificate_title = certificate['title'][0:len(h_parts[-1])-2]+'..'
         else:
             certificate_title = certificate['title']
@@ -115,8 +127,8 @@ class RichTextUI:
             certificate['aid'],
             certificate['size'],
             certificate['created'].strftime('%Y-%m-%d'),
-            certificate_title.encode('utf-8')) 
-    
+            certificate_title.encode('utf-8'))
+
     def print_certificates_list(self, certs, debug):
         if len(certs):
             self.print_certificates_header()
@@ -124,12 +136,12 @@ class RichTextUI:
                 aid = cert['signature'].aid
                 title = cert['archive'].title
                 size = format_size(cert['archive'].meta.size)
-                self.print_certificates_line( certificate={
-                        'aid': aid,
-                        'size':size,
-                        'title': title,
-                        'created':cert['archive'].meta.created
-                    })
+                self.print_certificates_line(certificate={
+                    'aid': aid,
+                    'size': size,
+                    'title': title,
+                    'created': cert['archive'].meta.created
+                })
                 if debug > 2:
                     for doc in cert.itervalues():
                         pyaml.dump(doc, sys.stdout)

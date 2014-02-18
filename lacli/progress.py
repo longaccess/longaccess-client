@@ -1,5 +1,4 @@
 import os
-from sys import maxint, stderr
 from progressbar import (ProgressBar, Bar,
                          ETA, FileTransferSpeed)
 from lacli.log import queueHandler, getLogger
@@ -8,7 +7,7 @@ from abc import ABCMeta, abstractmethod
 
 class BaseProgressHandler(queueHandler, ProgressBar):
     __metaclass__ = ABCMeta
-    
+
     def __init__(self, *args, **kwargs):
         self.tx = {}
         self.progress = kwargs.pop('progress', 0)
@@ -37,22 +36,22 @@ class BaseProgressHandler(queueHandler, ProgressBar):
 
     @abstractmethod
     def keydone(self, msg):
-        getLogger().debug("saved key: " + str(msg['key'])
-            + " (" + str(msg['size']) + ")")
+        getLogger().debug("saved key: {key} ({size})".format(msg))
 
 
 class StateProgressHandler(BaseProgressHandler):
     uploads = {}
 
     def __init__(self, state=None, **kwargs):
-        assert state is not None, "StateProgressHandler requires a state object"
+        assert state is not None, \
+            "StateProgressHandler requires a state object"
         self.state = state
         progress = kwargs.pop('progress', 0)
         for seq, key in enumerate(self.state.keys):
             progress += key['size']
         kwargs['progress'] = progress
         super(StateProgressHandler, self).__init__(**kwargs)
-        
+
     def update(self, value=None):
         if value is not None:
             self.state.update(value)
@@ -74,7 +73,8 @@ class StateProgressHandler(BaseProgressHandler):
 class ConsoleProgressHandler(StateProgressHandler):
     def __init__(self, *args, **kwargs):
         fname = kwargs.pop('fname', "-")
-        kwargs.setdefault('widgets', [ fname, ' : ', Bar(), ' ', ETA(), ' ', FileTransferSpeed()])
+        kwargs.setdefault('widgets', [fname, ' : ', Bar(), ' ',
+                                      ETA(), ' ', FileTransferSpeed()])
         super(ConsoleProgressHandler, self).__init__(*args, **kwargs)
 
     def __enter__(self):
