@@ -1,11 +1,12 @@
 #!/bin/sh
+python setup.py clean
 echo "Cleaning .pyc files"
 find . -type f -name "*.pyc" -print0 | xargs -r -0 rm
 echo "Running PEP8 checks"
-pep8 .
+flake8 --max-complexity 23 --exclude=ClientInterface
 if [ $? -ne 0 ]
 then
-    echo "PEP8 violations detected. Stopping run."
+    echo "pyflake8 errors detected. Stopping run."
     exit 1
 fi
 
