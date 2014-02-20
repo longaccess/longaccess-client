@@ -15,8 +15,10 @@ exe = EXE(pyz,
 a.datas.append(('cacert.pem', 'cacert.pem', 'DATA'))
 a.datas.append(('srm.bat', 'srm.bat', 'DATA'))
 coll = COLLECT(exe,
-               a.binaries,
-               a.zipfiles,
+               a.binaries + [('msvcp110.dll', 'C:\\Windows\\System32\\msvcp110.dll', 'BINARY'),
+                             ('msvcr110.dll', 'C:\\Windows\\System32\\msvcr110.dll', 'BINARY')]
+                             if sys.platform == 'win32' else a.binaries,
+			   a.zipfiles,
                a.datas,
                strip=None,
                upx=True,
