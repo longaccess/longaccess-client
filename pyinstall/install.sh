@@ -82,7 +82,7 @@ main () {
     PREFIX="$HOME/local"
     TARGET="$PREFIX/lib"
     BIN="$PREFIX/bin"
-    ARCH=`uname -s`-`uname -p`
+    ARCH=`uname -s`-`uname -m`
 
     _separator
     _mkdir $PREFIX

@@ -10,9 +10,9 @@ We have binary packages for certain platforms, like MacOS X, Windows 8 64-bit, L
 
     pip install https://github.com/longaccess/longaccess-client/tarball/master
     
-Note that currently, certain third-party libraries are required in modified form. These special dependencies are descripted in `setup.py` and can be automatically installed if the following command is given (good for pip v1.5)
+Note that currently, certain third-party libraries are required in modified form. These special dependencies are described in [requirements.txt]() and can be automatically installed if the following command is given:
 
-    pip install --pre --allow-all-external --process-dependency-links https://github.com/longaccess/longaccess-client/tarball/master
+    pip install -r requirements.txt
 
 Dependencies
 ------------

@@ -1,6 +1,7 @@
 include *.conf
 include *.md
 include *.txt
+include lacli/server/ClientInterface.thrift
 include LICENSE
 include NOTICE
 recursive-include docs *.md
