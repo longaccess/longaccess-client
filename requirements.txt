@@ -1,16 +1,22 @@
-Unidecode==0.04.14
-boto==2.14.0
+-i https://pypi.longaccess.io/simple
+boto==2.26.1
+cffi==0.8.1
+crochet==1.0.0
+cryptography==0.2.2
 docopt==0.6.1
 filechunkio==1.5
 logutils==0.3.3
 progressbar==2.3
--e git+http://github.com/longaccess/python-progressbar#egg=progressbar
-pycrypto==2.6
-python-dateutil==2.1
-requests==2.0.0
-pyaml==13.07.1
+pyaml==13.12.0
+pycparser==2.10
+pycrypto==2.6.1
+pyOpenSSL==0.14
+python-dateutil==2.2
+PyYAML==3.10
+requests==2.2.1
+six==1.5.2
 thrift==0.9.1
+treq==0.2.0-longaccess
 Twisted==13.2.0
-pyOpenSSL==0.13.1
--e git+http://github.com/kouk/treq@potentialdataloss#egg=treq
-crochet==1.0.0
+Unidecode==0.04.14
+zope.interface==4.1.0
