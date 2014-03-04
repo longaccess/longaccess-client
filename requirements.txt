@@ -18,5 +18,4 @@ six==1.5.2
 thrift==0.9.1
 treq==0.2.0-longaccess
 Twisted==13.2.0
-Unidecode==0.04.14
 zope.interface==4.1.0

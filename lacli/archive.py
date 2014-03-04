@@ -1,10 +1,7 @@
 import os
 import sys
-import re
 import hashlib
 
-from unidecode import unidecode
-from datetime import date
 from tempfile import NamedTemporaryFile
 from lacli.adf import Auth, make_adf
 from lacli.crypt import CryptIO
@@ -19,28 +16,6 @@ try:
     import zipstream
 except ImportError:
     zipstream = None
-
-
-_slugify_strip_re = re.compile(r'[^\w\s-]')
-_slugify_hyphenate_re = re.compile(r'[-\s]+')
-
-
-def _slugify(value):
-    """
-    Normalizes string, converts to lowercase, removes non-alpha characters,
-    and converts spaces to hyphens.
-    From Django's "django/template/defaultfilters.py".
-    """
-    if not isinstance(value, unicode):
-        value = unicode(value)
-    return unicode(_slugify_hyphenate_re.sub(
-        '-', _slugify_strip_re.sub('', unidecode(value))
-        ).strip().lower())
-
-
-def archive_slug(archive):
-    return "{}-{}".format(date.today().isoformat(),
-                          _slugify(archive.title))
 
 
 def archive_handle(docs):
