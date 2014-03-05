@@ -78,7 +78,8 @@ class Cache(object):
                 chunk = last = size
             if size < last and last == chunk:
                 last = size  # chunk is smaller than all previous
-            assert size == chunk or size == last, "Too many different sizes"
+            if size != chunk and size != last:
+                getLogger().debug("upload has irregular chunk size!")
             parts.append(key)
         ret['keys'] = parts
         return ret
