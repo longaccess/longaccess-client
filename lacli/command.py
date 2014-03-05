@@ -600,7 +600,7 @@ class LaArchiveCommand(LaBaseCommand):
             print "No such archive."
         else:
             fname = docs[index-1][0]
-            if fname in UploadState.states:
+            if UploadState.has_state(fname):
                 UploadState.reset(fname)
                 print "archive upload status reset."
             else:
