@@ -367,7 +367,7 @@ class LaArchiveCommand(LaBaseCommand):
         if u['status'] == "completed" or u['status'] == "error":
             defer.returnValue(u)
         else:
-            yield task.deferLater(reactor, 5.0, _poll_status_async, link)
+            yield task.deferLater(reactor, 5.0, self._poll_status_async, link)
 
     @block
     def _poll_status(self, link):
