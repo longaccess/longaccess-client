@@ -1,12 +1,11 @@
 from lacli import __version__
 from lacli.decorators import command
 from lacli.log import getLogger
-from lacli.compose import compose
 from lacli.adf import make_adf, Archive, Certificate, Meta, Cipher
 from lacli.archive import restore_archive
 from lacli.basecmd import LaBaseCommand
-from lacli.decorators import contains, login_async, expand_args
-from lacli.exceptions import PauseEvent, UploadError
+from lacli.decorators import login_async, expand_args
+from lacli.exceptions import UploadError
 from twisted.python.log import msg, err, PythonLoggingObserver
 from twisted.internet import reactor, defer, threads, task
 from thrift.transport import TTwisted
@@ -59,7 +58,6 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         factory = TBinaryProtocol.TBinaryProtocolFactory()
         return TTwisted.ThriftServerFactory(
             processor=self, iprot_factory=factory)
-
 
     @command(port=int)
     def do_run(self, port=9090):
@@ -129,7 +127,6 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         msg('pingCLI()')
         return True
 
-
     @tthrow
     def UserIsLoggedIn(self):
         if self.session is None:
@@ -142,13 +139,11 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
                     d.addCallback(lambda x: True)
                     d.addErrback(lambda x: False)
                     return d
-                except Exception as e:
+                except Exception:
                     getLogger().debug("Couldn't login", exc_info=True)
             return False
         else:
             return True
-             
-        
 
     @tthrow
     @log_hide(_args=True)
@@ -156,7 +151,8 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
     def LoginUser(self, username, password, remember):
         yield self.logincmd.login_async(username, password)
         if remember:
-            getLogger().debug("Saving credentials for {}".format(self.logincmd.username))
+            getLogger().debug("Saving credentials for {}".format(
+                self.logincmd.username))
             self.prefs['gui']['username'] = self.logincmd.username
             self.prefs['gui']['password'] = self.logincmd.password
             self.prefs['gui']['rememberme'] = remember
@@ -196,14 +192,16 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         """
         """
         paths = map(lambda p: p.decode('utf-8'), paths)
+
         def progress(path, rel):
             if not path:
                 msg("Encrypting..")
             else:
                 msg(rel.encode('utf8'))
 
-        d = threads.deferToThread(self.cache.prepare,
-            "_temp", paths, description="_temp", cb=progress)
+        d = threads.deferToThread(
+            self.cache.prepare, "_temp", paths,
+            description="_temp", cb=progress)
         d.addCallback(expand_args(self.toArchive))
         return d
 
@@ -220,8 +218,9 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             return UploadState.reset(archive)
         except OSError as e:
             if e.errno == errno.EACCES and times > 0:
-                return task.deferLater(reactor, 2,
-                    self.reset_upload, archive, times-1)
+                return task.deferLater(
+                    reactor, 2, self.reset_upload, archive,
+                    times-1)
             raise
 
     @defer.inlineCallbacks
@@ -318,7 +317,8 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
                     eta = str(int(elapsed * state.size / progress - elapsed))
         else:
             remaining = docs['archive'].meta.size
-        return ttypes.TransferStatus(description, eta, remaining, progress, status)
+        return ttypes.TransferStatus(
+            description, eta, remaining, progress, status)
 
     @tthrow
     def PauseUpload(self, archive):
@@ -392,13 +392,12 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             raise NotImplementedError("not implemented")
         elif fmt == ttypes.CertExportFormat.YAML:
             make_adf(list(docs.itervalues()), out=out, pretty=True)
-            return out.getvalue() 
+            return out.getvalue()
         elif fmt == ttypes.CertExportFormat.HTML:
             out.write(self.cache._printable_cert(docs))
-            return out.getvalue() 
+            return out.getvalue()
         else:
             raise NotImplementedError("Unknown format")
-            
 
     @tthrow
     @log_hide(_args=True)
@@ -409,7 +408,8 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         """
         cert = Certificate(key.decode('hex'))
         archive = Archive("_temp", Meta('zip', Cipher('aes-256-ctr', 1)),
-                               description="_temp")
+                          description="_temp")
+
         def _print(f):
             msg("Extracting {}".format(f))
         return threads.deferToThread(
@@ -450,11 +450,12 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         try:
             r = yield treq.get("http://download.longaccess.com/latest.json")
             if r.code != 200:
-                raise Exception("error getting latest version: {} {}".format(r.code, r.phrase))
+                raise Exception("error getting latest version: {} {}".format(
+                    r.code, r.phrase))
             r = yield treq.content(r)
             vinfo = {k: v for k, v in json.loads(r).iteritems()
-                     if k in ("version", "description", "uri")} 
-        except Exception as e:
+                     if k in ("version", "description", "uri")}
+        except Exception:
             getLogger().debug("couldn't get latest version", exc_info=True)
             vinfo = {"version": __version__}
         defer.returnValue(ttypes.VersionInfo(**vinfo))
