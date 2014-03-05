@@ -69,7 +69,7 @@ class MPFile(object):
     minchunk = 5242880
     maxchunk = 104857600
 
-    def __init__(self, path, skip=0):
+    def __init__(self, path, skip=0, chunk=None):
         self.path = path
         self.isfile = os.path.isfile(path)
         size = maxint
@@ -78,7 +78,9 @@ class MPFile(object):
         assert size >= skip
         self.skip = skip
         self.size = size-skip
-        self.chunk = min(max(int(self.size/100), self.minchunk), self.maxchunk)
+        self.chunk = chunk
+        if self.chunk is None:
+            self.chunk = min(max(int(self.size/100), self.minchunk), self.maxchunk)
         self.chunks = int(math.ceil(self.size/self.chunk))
         if self.chunks == 0:
             self.chunks = 1
@@ -258,7 +260,7 @@ class MPUpload(object):
             for seq in xrange(uploaded, total):
                 make_progress({'part': seq, 'tx': 0})
             skip = self.source.chunkstart(uploaded)
-            newsource = MPFile(self.source.path, skip)
+            newsource = MPFile(self.source.path, skip=skip, chunk=self.source.chunk)
             size = size - newsource.size
         getLogger().debug("saving progress for {}".format(key))
         save_progress(name, size)
