@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from testtools import TestCase
-from mock import Mock
+#from mock import Mock
 from binascii import a2b_hex, b2a_hex
 
 #  NIST test vectors (last one is ours, uses padding)

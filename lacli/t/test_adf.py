@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from testtools import TestCase
 from struct import unpack
 from nose.tools import raises
@@ -18,7 +20,8 @@ class AdfTest(TestCase):
     def test_archive(self):
         from lacli.adf import make_adf
         self.assertEqual(ADF_TEST_DATA_1,
-                         make_adf(self._archive('foo'), True))
+                         make_adf(self._archive('foo'), out=None,
+                                  pretty=False))
 
     @raises(ValueError)
     def test_archive_invalid(self):
@@ -28,22 +31,27 @@ class AdfTest(TestCase):
     def test_unicode(self):
         from lacli.adf import make_adf
         self.assertEqual(ADF_TEST_DATA_1,
-                         make_adf(self._archive('foo'), True))
+                         make_adf(self._archive('foo'),
+                                  out=None, pretty=False))
 
     def test_meta(self):
         from lacli.adf import Meta, make_adf
         meta = make_adf(Meta(
-            format='zip', cipher='aes-256-ctr', created='now'), True)
+            format='zip', cipher='aes-256-ctr', created='now'),
+            out=None, pretty=False)
         self.assertEqual(meta, ADF_TEST_DATA_2)
 
     def test_links(self):
         from lacli.adf import Links, make_adf
-        links = make_adf(Links(upload='foo', local='bar'), True)
+        links = make_adf(Links(upload='foo', local='bar'),
+                         out=None, pretty=False)
         self.assertEqual(ADF_TEST_DATA_3, links)
 
     def test_signature(self):
         from lacli.adf import Signature, make_adf
-        sig = make_adf(Signature(aid='bar', uri='foo', created='1'), True)
+        sig = make_adf(Signature(aid='bar', uri='foo',
+                                 created=datetime.utcfromtimestamp(0)),
+                       out=None, pretty=False)
         self.assertEqual(ADF_TEST_DATA_4, sig)
 
     def test_minimal(self):
@@ -114,7 +122,9 @@ ADF_TEST_DATA_4 = """---
   ? !!str "aid"
   : !!str "bar",
   ? !!str "created"
-  : !!str "1",
+  : !!timestamp "1970-01-01 00:00:00",
+  ? !!str "expires"
+  : !!timestamp "2000-01-01 00:00:00",
   ? !!str "uri"
   : !!str "foo",
 }

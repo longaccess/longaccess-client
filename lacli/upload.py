@@ -8,14 +8,13 @@ from lacli.decorators import block
 from twisted.internet import defer, threads
 from itertools import count
 from multiprocessing import TimeoutError
-import json
 import errno
 import signal
 
 
 class UploadState(object):
     states = None
-    
+
     @classmethod
     def has_state(cls, fname):
         if cls.states is None:
@@ -23,7 +22,7 @@ class UploadState(object):
         if fname in cls.states:
             return True
         return False
-    
+
     @classmethod
     def init(cls, cache):
         cls.cache = cache
@@ -34,8 +33,8 @@ class UploadState(object):
         a = cls.cache._for_adf('archives')
         sz = lambda f: a[f]['archive'].meta.size
         cls.states = {k: cls(k, sz(k), **v)
-            for k, v in uploads.iteritems()
-            if k in a}
+                      for k, v in uploads.iteritems()
+                      if k in a}
 
     @classmethod
     def get(cls, fname, size=None, capsule=None):
@@ -56,8 +55,9 @@ class UploadState(object):
             raise ValueError("Upload doesn't exist!")
         cls.cache._del_upload(fname)
         return cls.states.pop(fname)
-    
-    def __init__(self, archive, size, uri=None, keys=[], capsule=None, exc=None, paused=True):
+
+    def __init__(self, archive, size, uri=None, keys=[], capsule=None,
+                 exc=None, paused=True):
         self.cache = type(self).cache
         self.archive = archive
         self.logfile = self.control = None
@@ -93,7 +93,7 @@ class UploadState(object):
                 self.uri, self.capsule, self.logfile,
                 self.exc, self._paused)
         return self
-    
+
     @block
     @defer.inlineCallbacks
     def wait_for_upload(self):
@@ -120,7 +120,8 @@ class UploadState(object):
 
     def keydone(self, key, size):
         assert self.logfile is not None, "Log not open"
-        self.keys.append(self.cache._checkpoint_upload(key, size, self.logfile))
+        self.keys.append(
+            self.cache._checkpoint_upload(key, size, self.logfile))
 
     def update(self, progress):
         self.progress = progress
@@ -157,17 +158,19 @@ class UploadState(object):
                 raise SystemExit("Interrupted")
             self.pausing = True
             self.control.pause()
-            
+
     def save_op(self, op):
         assert self.uri is None, "Can't change URI for upload state"
         if op.uri is None:
             return
-        self.cache._write_upload(op.uri, self.capsule, self.logfile, self.exc, self._paused)
+        self.cache._write_upload(op.uri, self.capsule, self.logfile,
+                                 self.exc, self._paused)
         self.uri = op.uri
 
     def error(self, exc):
         if self.exc is None:
-            self.cache._write_upload(self.uri, self.capsule, self.logfile, str(exc), self._paused)
+            self.cache._write_upload(self.uri, self.capsule,
+                                     self.logfile, str(exc), self._paused)
             self.exc = exc
 
 
@@ -186,7 +189,7 @@ class Upload(object):
             with self.state.control as ctrlq:
                 pool = WorkerPool(
                     self.prefs, logq, progq, ctrlq)
-                try: 
+                try:
                     yield pool
                 finally:
                     getLogger().debug("terminating pool")
@@ -215,7 +218,8 @@ class Upload(object):
                     source = yield threads.deferToThread(
                         self.upload_temp, token, source, etags, pool, seq)
                 except PauseEvent:
-                    getLogger().debug("paused after uploading %d temporary keys", seq)
+                    getLogger().debug(
+                        "paused after uploading %d temporary keys", seq)
                     raise
                 except TimeoutError:
                     getLogger().debug(

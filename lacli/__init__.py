@@ -6,6 +6,7 @@ try:
 except ImportError:
     __version__ = "0.2.4"
 
+
 def get_client_info(terse=False):
     el = ["Longaccess client"]
     el.append(__version__)

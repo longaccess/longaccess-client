@@ -1,13 +1,13 @@
 from urlparse import urljoin
 from lacli import get_client_info
-from lacli.decorators import cached_property, deferred_property, with_api_response, contains, block
-from lacli.exceptions import ApiAuthException, UploadEmptyError, ApiUnavailableException, ApiErrorException
+from lacli.decorators import (cached_property, deferred_property,
+                              contains, block)
+from lacli.exceptions import (ApiAuthException, UploadEmptyError,
+                              ApiUnavailableException, ApiErrorException)
 from lacli.date import parse_timestamp
 from lacli.log import getLogger
-from contextlib import contextmanager
 from twisted.internet import defer
 from twisted.python import failure
-from functools import partial
 
 import json
 import treq
@@ -23,7 +23,6 @@ class TwistedRequestsFactory(object):
     class TreqSession(object):
         auth = None
         verify = None
-        
 
     class TwistedRequestsSession(object):
         def __init__(self, session):
@@ -42,12 +41,12 @@ class TwistedRequestsFactory(object):
             defer.returnValue(json.loads(r))
 
         def _defaults(self, kwds):
-            defaults = { 
+            defaults = {
                 'auth': self.session.auth,
                 'persistent': False,
             }
             kwds.setdefault('headers', {}).update({
-                'User-Agent': str(get_client_info()) })
+                'User-Agent': str(get_client_info())})
             defaults.update(kwds)
             return defaults
 
@@ -123,7 +122,7 @@ class UploadOperation(object):
     @defer.inlineCallbacks
     def start(self):
         endpoints = yield self.api.endpoints
-        data = json.dumps( {
+        data = json.dumps({
             'title': self.archive.title,
             'description': self.archive.description or '',
             'capsule': self.capsule['resource_uri'],
@@ -142,18 +141,18 @@ class UploadOperation(object):
     def status(self):
         try:
             if self.uri is None:
-                 return self.start()
+                return self.start()
             return self.poll()
         except Exception:
             getLogger().debug("Exception while getting status", exc_info=True)
-            rause
-          
+            raise
 
     def finalize(self, auth=None, keys=[]):
         if self.uri is None:
             raise UploadEmptyError(
                 reason="Attempt to finalize upload that hasn't started")
-        patch = {'status': 'uploaded', 'size': self.archive.meta.size, 'parts': len(keys)}
+        patch = {'status': 'uploaded', 'size': self.archive.meta.size,
+                 'parts': len(keys)}
         if auth is not None:
             patch['checksums'] = {}
             if hasattr(auth, 'sha512'):
@@ -179,7 +178,7 @@ class Api(object):
     def endpoints(self):
         root = yield self.root
         r = yield dict(((n, urljoin(self.url, r['list_endpoint']))
-                    for n, r in root.iteritems()))
+                       for n, r in root.iteritems()))
         defer.returnValue(r)
 
     @defer.inlineCallbacks
@@ -192,7 +191,8 @@ class Api(object):
         headers = {}
         if data is not None:
             headers['content-type'] = 'application/json'
-        r = yield self.session.post(url.encode('utf8'), headers=headers, data=data)
+        r = yield self.session.post(
+            url.encode('utf8'), headers=headers, data=data)
         defer.returnValue(r)
 
     @defer.inlineCallbacks
@@ -200,7 +200,8 @@ class Api(object):
         headers = {}
         if data is not None:
             headers['content-type'] = 'application/json'
-        r = yield self.session.patch(url.encode('utf8'), headers=headers, data=data)
+        r = yield self.session.patch(
+            url.encode('utf8'), headers=headers, data=data)
         defer.returnValue(r)
 
     def upload(self, capsule, archive, state):
@@ -225,10 +226,10 @@ class Api(object):
 
     def capsules(self):
         return block(self.async_capsules)()
-        
+
     @contains(list)
     def capsule_list(self, cs):
-        for c in cs.get('objects'): 
+        for c in cs.get('objects'):
             ret = dict([(k, c.get(k, None))
                         for k in ['title', 'remaining', 'size',
                                   'id', 'resource_uri', 'created', 'expires']])

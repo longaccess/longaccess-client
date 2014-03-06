@@ -13,7 +13,7 @@ from boto.s3.key import Key
 from filechunkio import FileChunkIO
 from sys import maxint
 from tempfile import mkdtemp, mkstemp
-from multiprocessing import TimeoutError, active_children
+from multiprocessing import active_children
 
 
 class MPConnection(object):
@@ -214,7 +214,7 @@ class MPUpload(object):
         if step is None:
             step = len(active_children()) or 5
         if chunks > step:
-            chunks = step    
+            chunks = step
         return pool.imap(upload_part, self.iterargs(chunks))
 
     def complete_multipart(self, etags):
@@ -236,7 +236,8 @@ class MPUpload(object):
             try:
                 while True:
                     key = rs.next(self.connection.timeout())
-                    getLogger().debug("got key {} with etag: {}".format(key.name, key.etag))
+                    getLogger().debug("got key {} with etag: {}".format(
+                        key.name, key.etag))
                     etags.append(key.etag)
             except StopIteration:
                 pass
@@ -254,7 +255,8 @@ class MPUpload(object):
 
         uploaded = len(etags)
         total = self.source.chunks
-        getLogger().debug("Uploaded {} out of {} chunks".format(uploaded, total))
+        getLogger().debug("Uploaded {} out of {} chunks".format(
+            uploaded, total))
         size = self.source.size
         if uploaded < total:
             for seq in xrange(uploaded, total):
@@ -305,7 +307,7 @@ class MPUpload(object):
                         key = self.upload
                         getLogger().debug("uploaded single part key %s", key)
                 except PauseEvent:
-                    raise    
+                    raise
                 except Exception as exc:
                     getLogger().debug("exception while uploading part %d",
                                       seq, exc_info=True)

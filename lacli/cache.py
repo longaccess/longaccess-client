@@ -6,7 +6,7 @@ import shlex
 import time
 from urlparse import urlparse
 from pkg_resources import resource_string
-from lacli.date import parse_timestamp, later
+from lacli.date import parse_timestamp
 
 from glob import iglob
 from lacli.adf import (load_archive, make_adf, Certificate, Archive,
@@ -21,7 +21,7 @@ from tempfile import NamedTemporaryFile
 from binascii import b2a_hex
 from itertools import izip, imap
 from subprocess import check_call
-from contextlib import contextmanager
+from pipes import quote
 
 
 def group(it, n, dl):
@@ -92,15 +92,16 @@ class Cache(object):
             with open(fn) as f:
                 try:
                     uploads[aid] = self._validate_upload(f)
-                except Exception as e:
-                    getLogger().debug("Error validating upload {}".format(fn), exc_info=True)
+                except Exception:
+                    getLogger().debug(
+                        "Error validating upload {}".format(fn), exc_info=True)
         return uploads
-                     
+
     def _del_upload(self, archive):
         os.unlink(os.path.join(self._cache_dir('uploads'), archive))
 
     def _write_upload(self, uri, capsule, logfile, exc=None, paused=False):
-        new = { 'uri': uri, 'exc': exc, 'paused': paused }
+        new = {'uri': uri, 'exc': exc, 'paused': paused}
         if capsule is not None:
             ks = ('resource_uri', 'size', 'title', 'remaining', 'id')
             new['capsule'] = {k: capsule.get(k, None) for k in ks}
@@ -108,7 +109,7 @@ class Cache(object):
         logfile.flush()
 
     def _checkpoint_upload(self, key, size, logfile):
-        new = { 'name': key, 'size': size}
+        new = {'name': key, 'size': size}
         logfile.write(json.dumps(new)+"\n")
         logfile.flush()
         return new
@@ -168,7 +169,7 @@ class Cache(object):
 
     def save_upload(self, fname, docs, uri=None, account=None):
         if uri is not None:
-            docs['links'].upload = uri 
+            docs['links'].upload = uri
             if account is not None:
                 docs['archive'].meta.email = account['email']
                 docs['archive'].meta.name = account['displayname']
@@ -247,8 +248,8 @@ class Cache(object):
         md5 = b2a_hex(docs['auth'].md5).upper()
         key = b2a_hex(docs['cert'].key).upper()
         hk = pairs(fours(pairs(iter(key))), " . ")
-
-        return unicode(resource_string(__name__, "data/certificate.html")).format(
+        template = unicode(resource_string(__name__, "data/certificate.html"))
+        return template.format(
             json=as_json(docs),
             aid=aid,
             keyB=next(hk),
@@ -260,10 +261,10 @@ class Cache(object):
             uploaded=created.strftime("%b %d, %Y"),
             expires=(expires and expires.strftime("%b %d, %Y")) or "unknown",
             title=archive.title or "",
-	    size=archive.meta.size,
+            size=archive.meta.size,
             desc=archive.description or "",
-	    md5=md5,
-	    fmt=archive.meta.format,
+            md5=md5,
+            fmt=archive.meta.format,
             cipher=cipher).encode('utf8')
 
     def shred_file(self, fname, srm=None, insecure=False):
@@ -314,7 +315,8 @@ class Cache(object):
         if path:
             for a in countdown:
                 pass
-            self.shred_file(os.path.join(self._cache_dir('certs'), path), srm, insecure)
+            _path = os.path.join(self._cache_dir('certs'), path)
+            self.shred_file(_path, srm, insecure)
             return path
 
     def still_exists(self, fname):

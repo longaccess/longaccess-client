@@ -11,6 +11,7 @@ class BaseAppException(Exception):
     def __str__(self):
         return self.msg
 
+
 class CacheInitException(BaseAppException):
     msg = "Application cache not initialized correctly"
 
@@ -44,7 +45,10 @@ class UploadError(BaseAppException):
             self.msg += ": {}".format(reason)
         super(BaseAppException, self).__init__(self.msg, *args, **kwargs)
 
-class UploadEmptyError(UploadError): pass
+
+class UploadEmptyError(UploadError):
+    pass
+
 
 class WorkerFailureError(BaseAppException):
     def __init__(self, *args, **kwargs):

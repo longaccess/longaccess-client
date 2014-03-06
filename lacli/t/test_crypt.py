@@ -123,4 +123,5 @@ class CryptIOTest(TestCase):
         with c:
             for _ in range(4):
                 c.write(d)
-        self.assertEqual("93e84d29d7eb3ed55bd9adc243b06904", c.hashobj.digest().encode('hex'))
+        self.assertEqual("93e84d29d7eb3ed55bd9adc243b06904",
+                         c.hashobj.digest().encode('hex'))

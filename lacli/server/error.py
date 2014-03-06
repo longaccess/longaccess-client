@@ -3,7 +3,6 @@ from lacli.server.interface.ClientInterface.ttypes import InvalidOperation
 from lacli.server.interface.ClientInterface.ttypes import ErrorType
 from lacli.log import getLogger
 from twisted.python import log as twisted_log
-from twisted.python import failure
 from twisted.internet import defer
 from functools import wraps
 import errno
@@ -33,10 +32,11 @@ def log_call(f):
         _ks = {(k, maybe(k, v)) for k, v in kwargs.iteritems()}
         getLogger().debug("calling {} with {}, {}".format(f, _as, _ks))
         r = yield f(*args, **kwargs)
-        getLogger().debug("return value for {} is {}".format(f, maybe('_ret', r)))
+        getLogger().debug(
+            "return value for {} is {}".format(f, maybe('_ret', r)))
         defer.returnValue(r)
     return w
-            
+
 
 def tthrow(f):
     """ Decorate a method to raise InvalidOperation instead
@@ -62,7 +62,8 @@ def tthrow(f):
                                        "File not found",
                                        filename=e.filename)
             if e.errno == errno.EACCES:
-                raise InvalidOperation(ErrorType.Other, "Access denied or file in use")
+                raise InvalidOperation(
+                    ErrorType.Other, "Access denied or file in use")
             getLogger().debug("unknown exception", exc_info=True)
             raise InvalidOperation(ErrorType.Other, "Unknown error")
         except IOError as e:

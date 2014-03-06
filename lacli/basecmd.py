@@ -64,5 +64,3 @@ class LaBaseCommand(cmd.Cmd, object):
         line = sys.stdin.readline()
         if line:
             return line.strip()
-
-

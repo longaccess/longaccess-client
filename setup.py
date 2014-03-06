@@ -21,10 +21,11 @@ class gen_thrift(Command):
             out = os.path.join(root, 'lacli', 'server', 'interface')
             self.mkpath(out)
             self.announce("thrift found, regenerating files in " + out)
+            thriftfile = os.path.join(
+                root, 'lacli', 'server', 'ClientInterface.thrift')
             if not self.dry_run:
-                self.spawn([thrift, '-out', out,
-                            '-v', '--gen', 'py:twisted,new_style',
-                            os.path.join(root, 'lacli', 'server', 'ClientInterface.thrift')])
+                self.spawn([thrift, '-out', out, '-v',
+                            '--gen', 'py:twisted,new_style', thriftfile])
         else:
             self.warn("thrift executable not found, skipping")
 

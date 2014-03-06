@@ -1,7 +1,9 @@
-# thanks to mathieu larose: http://mathieularose.com/function-composition-in-python
+# thanks to mathieu larose
+# http://mathieularose.com/function-composition-in-python
 
 
 import functools
+
 
 def compose(*functions):
     def compose2(f, g):

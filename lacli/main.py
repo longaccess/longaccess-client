@@ -185,7 +185,7 @@ class LaCommand(cmd.Cmd):
 
 
 def main(args=sys.argv[1:]):
-    """Main function called by `laput` command.
+    """Main function called by `lacli` command.
     """
     options = docopt(__doc__.format(home=default_home),
                      version='lacli {}'.format(__version__),
