@@ -208,8 +208,9 @@ class Upload(object):
             etags = {}
             source = MPFile(fname, self.state.progress)
 
+            token = yield upload.status
+
             for seq in count(start=self.state.seq):
-                token = yield upload.status
                 try:
                     source = yield threads.deferToThread(
                         self.upload_temp, token, source, etags, pool, seq)
@@ -217,7 +218,9 @@ class Upload(object):
                     getLogger().debug("paused after uploading %d temporary keys", seq)
                     raise
                 except TimeoutError:
-                    getLogger().debug("timeout after uploading %d temporary keys", seq)
+                    getLogger().debug(
+                        "timeout after uploading %d temporary keys", seq)
+                    token = yield upload.status
                 if source is None:
                     getLogger().debug("uploaded entire archive")
                     break

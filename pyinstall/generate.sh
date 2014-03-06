@@ -22,7 +22,7 @@ fi
 pip install --egg ..
 
 BINARY=$(which lacli)
-ARCH=`uname -s`-`uname -p`
+ARCH=`uname -s`-`uname -m`
 
 $PYINST lacli.spec
 

@@ -321,6 +321,9 @@ class LaArchiveCommand(LaBaseCommand):
                             print "Upload finished, waiting for verification"
                             print "Press Ctrl-C to check manually later"
                             status = self._poll_status(saved['link'])
+                            while status is None:
+                                getLogger().debug("couldn't get status, retrying..")
+                                status = self._poll_status(saved['link'])
                             if status['status'] == "error":
                                 print "status: error"
                                 self.cache.upload_error(fname)
