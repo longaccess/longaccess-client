@@ -10,10 +10,6 @@ then
     exit 1
 fi
 
-./node_modules/.bin/robohydra mockapi.conf &
-robohydra_pid=$!
-export MOCK_API_URL='http://localhost:3000/'
-
 nosetests
 if [ $? -ne 0 ]
 then
@@ -21,6 +17,11 @@ then
     exit 1
 fi
 echo "nosetests passed"
+
+
+./node_modules/.bin/robohydra mockapi.conf &
+robohydra_pid=$!
+export MOCK_API_URL='http://localhost:3000/'
 
 behave -t ~@dev
 
