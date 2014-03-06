@@ -234,6 +234,10 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
                     make_adf(list(d.itervalues()), out=_archive)
                 saved = yield acmd.upload_async(d, f, progq, s)
             status = yield acmd._poll_status_async(saved['link'])
+            while status is None:
+                getLogger().debug("couldn't get status, "
+                                  "retrying..")
+                status = yield acmd._poll_status_async(saved['link'])
             getLogger().debug("API returned status: {}".format(status))
             if status['status'] == "error":
                 raise UploadError()

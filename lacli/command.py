@@ -322,7 +322,8 @@ class LaArchiveCommand(LaBaseCommand):
                             print "Press Ctrl-C to check manually later"
                             status = self._poll_status(saved['link'])
                             while status is None:
-                                getLogger().debug("couldn't get status, retrying..")
+                                getLogger().debug("couldn't get status, "
+                                                  "retrying..")
                                 status = self._poll_status(saved['link'])
                             if status['status'] == "error":
                                 print "status: error"
