@@ -4,7 +4,7 @@ import platform
 try:
     from lacli.version import __version__
 except ImportError:
-    __version__ = "0.2.4"
+    __version__ = "0.2.5"
 
 
 def get_client_info(terse=False):
