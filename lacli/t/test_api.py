@@ -63,16 +63,15 @@ class ApiTest(TestCase):
 
     def test_capsule_ids(self):
         api = self._makeit(self.prefs, session=self.capsule_session())
-        ids = api.capsule_ids().iterkeys()
-        self.assertEqual(2, ids.next())
-        self.assertEqual(3, ids.next())
-        self.assertRaises(StopIteration, ids.next)
+        ids = api.capsule_ids()
+        self.assertTrue(2 in ids)
+        self.assertTrue(3 in ids)
 
     def test_capsule_ids_size(self):
         api = self._makeit(self.prefs, session=self.capsule_session())
         ids = api.capsule_ids(150).iterkeys()
-        self.assertEqual(3, ids.next())
-        self.assertRaises(StopIteration, ids.next)
+        self.assertTrue(2 in ids)
+        self.assertTrue(3 not in ids)
 
     def test_unauthorized(self):
         r = [defer.succeed(json.loads(LA_ENDPOINTS_RESPONSE)),
@@ -173,7 +172,8 @@ LA_CAPSULES_RESPONSE = """{
          "id": 3,
          "resource_uri": "/api/v1/capsule/3/",
          "title": "Photos",
-         "size": 100,
+         "size": 1000,
+         "remaining": 100,
          "user": "/api/v1/user/3/"
       },
       {
@@ -182,7 +182,8 @@ LA_CAPSULES_RESPONSE = """{
           "resource_uri":
           "/api/v1/capsule/2/",
           "title": "Stuff",
-          "size": 200,
+          "size": 1000,
+          "remaining": 200,
           "user": "/api/v1/user/2/"
        }
     ]
