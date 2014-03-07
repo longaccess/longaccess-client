@@ -286,22 +286,14 @@ class LaArchiveCommand(LaBaseCommand):
             docs = docs[index-1][1]
             size = docs['archive'].meta.size
 
-            capsules = self.session.capsule_ids()
+            capsules = self.session.capsule_ids(
+                size if self.safe else None)
             if capsule is not None:
                 capsule = capsules.get(capsule)
-                if not capsule:
-                    _error += "no such capsule"
-                elif capsule.get('remaining', 0) < size:
-                    _error += "archive too big for capsule"
-                    if self.safe is True:
-                        capsule = None
             elif len(capsules) > 0:
-                for i, c in capsules.iteritems():
-                    if c.get('remaining', 0) > size:
-                        capsule = c
-                if not capsule:
-                    _error += "no capsules with available space found."
-            else:
+                capsule = capsules.itervalues().next()
+
+            if capsule is None:
                 _error += "no capsules found"
 
         if fname and capsule:

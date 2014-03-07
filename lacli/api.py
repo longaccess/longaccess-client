@@ -238,9 +238,10 @@ class Api(object):
             yield ret
 
     @contains(dict)
-    def capsule_ids(self):
+    def capsule_ids(self, size=None):
         for capsule in self.capsules():
-            yield (capsule['id'], capsule)
+            if size is None or capsule['remaining'] >= size:
+                yield (capsule['id'], capsule)
 
     @deferred_property
     def async_account(self):
