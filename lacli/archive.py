@@ -1,13 +1,13 @@
 import os
 import sys
-import hashlib
 
 from tempfile import NamedTemporaryFile
-from lacli.adf import Auth, make_adf
+from lacli.adf import make_adf
 from lacli.crypt import CryptIO
 from lacli.cipher import get_cipher
 from lacli.hash import HashIO
 from lacli.enc import get_unicode
+from lacli.auth import MyHashObj
 from shutil import copyfileobj
 from zipfile import ZipFile, ZIP_DEFLATED
 from itertools import imap
@@ -35,27 +35,6 @@ def restore_archive(archive, path, cert, folder, tmpdir, cb=None):
             with ZipFile(dst) as zf:
                 map(cb,
                     map(lambda zi: zf.extract(zi, folder), zf.infolist()))
-
-
-class MyHashObj(object):
-    hashf = None
-
-    def __init__(self, hashf='sha512'):
-        self.md5 = hashlib.md5()
-        if hasattr(hashlib, hashf):
-            self.hashf = hashf
-            setattr(self, hashf, getattr(hashlib, hashf)())
-
-    def update(self, data):
-        self.md5.update(data)
-        if self.hashf:
-            getattr(self, self.hashf).update(data)
-
-    def auth(self):
-        args = {'md5': self.md5.digest()}
-        if self.hashf:
-            args[self.hashf] = getattr(self, self.hashf).digest()
-        return Auth(**args)
 
 
 def dump_archive(archive, items, cert, cb=None, tmpdir='/tmp',
