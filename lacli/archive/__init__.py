@@ -47,7 +47,7 @@ def dump_archive(archive, items, cert, cb=None, tmpdir='/tmp',
         # windows has unicode file system api
         items = map(unicode, items)
 
-    path = _writer(name, items, cb,
+    path = _writer(name, _zip_paths(items, cb),
                    cipher, tmpdir, hashobj)
 
     return (name, path, hashobj.auth())
@@ -76,7 +76,18 @@ def walk_folders(folders):
                     yield (path, get_unicode(rel))
 
 
-def _writer(name, items, cb, cipher, tmpdir, hashobj=None):
+def _zip_paths(items, cb):
+    for path, rel in walk_folders(imap(os.path.abspath, items)):
+        try:
+            cb(path, rel)
+            yield ((path,), {'arcname': rel.encode('utf-8')})
+        except Exception as e:
+            if not hasattr(e, 'filename'):
+                setattr(e, 'filename', path)
+            raise
+
+
+def _writer(name, args, cipher, tmpdir, hashobj=None):
 
     tmpargs = {'delete': False,
                'suffix': ".longaccess",
@@ -91,29 +102,17 @@ def _writer(name, items, cb, cipher, tmpdir, hashobj=None):
         # can't easily handle streaming
         fdst = _temp_file(fdst, name, tmpdir)
 
-    files = walk_folders(imap(os.path.abspath, items))
-
-    def _args():
-        for path, rel in files:
-            try:
-                cb(path, rel)
-                yield ((path,), {'arcname': rel.encode('utf-8')})
-            except Exception as e:
-                if not hasattr(e, 'filename'):
-                    setattr(e, 'filename', path)
-                raise
-
     try:
         with fdst as zf:
             zipargs = {'mode': 'w', 'compression': ZIP_DEFLATED,
                        'allowZip64': True}
             if zipstream is None:
                 with ZipFile(zf, **zipargs) as zpf:
-                    for args, kwargs in _args():
+                    for args, kwargs in args:
                         zpf.write(*args, **kwargs)
             else:
                 with zipstream.ZipFile(**zipargs) as zpf:
-                    zpf.paths_to_write = _args()
+                    zpf.paths_to_write = args
                     for chunk in zpf:
                         zf.write(chunk)
     except Exception:

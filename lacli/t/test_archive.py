@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import operator
 
 from testtools import TestCase
 from . import makeprefs
@@ -38,3 +39,25 @@ class ArchiveTest(TestCase):
             self.assertEqual(1, cb.call_count)
             self.assertTrue(os.path.exists(
                 os.path.join(tmpdir, 'xtQz6ziJ.sh.part')))
+
+    def test_walk_folders(self):
+        from lacli.archive import walk_folders
+        sample = None
+        for p, r in walk_folders([os.path.abspath(self.home)]):
+            self.assertEqual(unicode, type(r))
+            if r.endswith('sample.adf'):
+                sample = r
+        self.assertEqual("home/archives/sample.adf", sample)
+
+    def test_zip_paths(self):
+        from lacli.archive import _zip_paths
+
+        cb = Mock()
+        for a, k in _zip_paths([self.home], cb):
+            self.assertTrue('arcname' in k)
+            self.assertEqual(str, type(k['arcname']))
+
+        self.assertTrue(u'home/archives/sample.adf' in
+                        map(operator.itemgetter(1),
+                            map(operator.itemgetter(0),
+                                cb.call_args_list)))
