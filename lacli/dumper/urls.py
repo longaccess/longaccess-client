@@ -10,7 +10,7 @@ def prepare(title, urls, description=None, fmt='zip', cb=None):
     meta = Meta(fmt, Cipher('aes-256-ctr', 1))
     archive = Archive(title, meta, description=description),
     cert = Certificate(),
-    name, path, auth = dump_urls(archive, urls, cert)
+    name, path, auth = dump_urls(archive, urls, cert, cb)
     archive.meta.size = os.path.getsize(path)
     return {
         'archive': archive,
