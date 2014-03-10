@@ -12,7 +12,7 @@ from itertools import imap
 def walk_folders(folders):
     for folder in folders:
         if not os.path.isdir(folder):
-            yield (folder, os.path.basename(folder))
+            yield (folder, get_unicode(os.path.basename(folder)))
         else:
             for root, _, fs in os.walk(folder):
                 for f in fs:
