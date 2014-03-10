@@ -12,7 +12,8 @@ from glob import iglob
 from lacli.adf import (load_archive, make_adf, Certificate, Archive,
                        Meta, Links, Cipher, Signature, as_json)
 from lacli.log import getLogger
-from lacli.archive import dump_archive, archive_handle
+from lacli.archive import archive_handle
+from lacli.archive.folders import dump_folders
 from lacli.exceptions import InvalidArchiveError, CacheInitException
 from lacli.decorators import contains
 from lacli.server.interface.ClientInterface.ttypes import ArchiveStatus
@@ -140,7 +141,7 @@ class Cache(object):
                 print "Encrypting.."
             else:
                 print path.encode('utf8')
-        name, path, docs['auth'] = dump_archive(
+        name, path, docs['auth'] = dump_folders(
             docs['archive'], items, docs['cert'], mycb, tmpdir)
         rel = os.path.relpath(path, self.home)
         docs['links'] = Links(local=pathname2url(rel))
