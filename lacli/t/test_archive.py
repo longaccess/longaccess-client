@@ -24,11 +24,6 @@ class ArchiveTest(TestCase):
         yield d
         rmtree(d)
 
-    def test_slugify(self):
-        from lacli.archive import _slugify
-        self.assertEqual(_slugify("This is a test"), "this-is-a-test")
-        self.assertEqual(_slugify(u"γειά σου ρε"), "geia-sou-re")
-
     def test_restore(self):
         from lacli.archive import restore_archive
         from lacli.cache import Cache
