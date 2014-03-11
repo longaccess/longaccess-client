@@ -27,7 +27,6 @@ def before_scenario(context, scenario):
 
 
 def after_scenario(context, scenario):
-    clienv.after_scenario(context, scenario)
     if context.archive is not None:
         context.archive.close()
     if context.cert is not None:
@@ -35,3 +34,4 @@ def after_scenario(context, scenario):
     d = os.path.join(context.environ['HOME'], ".longaccess")
     if os.path.isdir(d):
         shutil.rmtree(d)
+    clienv.after_scenario(context, scenario)
