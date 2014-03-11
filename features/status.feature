@@ -6,11 +6,6 @@ Feature: status command
         And the mock API "longaccessmock"
         And the environment variable "LA_API_URL" is "{api_url}path/to/api"
 
-    Scenario: I status without having any pending uploads
-        Given the command line arguments "archive status"
-        When I run console script "lacli"
-        Then I see "No pending uploads."
-
     Scenario: I poll a non existent status
         Given the command line arguments "archive status 1"
         When I run console script "lacli"
@@ -24,7 +19,7 @@ Feature: status command
 
     Scenario: I status with a pending upload
         Given I have 1 pending uploads
-        And the command line arguments "archive status"
+        And the command line arguments "archive status 1"
         When I run console script "lacli"
         Then I see "Pending uploads:"
         And I see "1) upload"

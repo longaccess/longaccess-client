@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 import os
+import operator
 
+from StringIO import StringIO
 from testtools import TestCase
 from . import makeprefs
 from shutil import rmtree
 from contextlib import contextmanager
 from tempfile import mkdtemp
-from mock import Mock
+from mock import Mock, patch
+from lacli.adf import Archive, Meta, Certificate
+from zipfile import ZipFile
 
 
 class ArchiveTest(TestCase):
@@ -24,11 +28,6 @@ class ArchiveTest(TestCase):
         yield d
         rmtree(d)
 
-    def test_slugify(self):
-        from lacli.archive import _slugify
-        self.assertEqual(_slugify("This is a test"), "this-is-a-test")
-        self.assertEqual(_slugify(u"γειά σου ρε"), "geia-sou-re")
-
     def test_restore(self):
         from lacli.archive import restore_archive
         from lacli.cache import Cache
@@ -43,3 +42,85 @@ class ArchiveTest(TestCase):
             self.assertEqual(1, cb.call_count)
             self.assertTrue(os.path.exists(
                 os.path.join(tmpdir, 'xtQz6ziJ.sh.part')))
+
+    def test_walk_folders(self):
+        from lacli.archive.folders import walk_folders
+        sample = None
+        files = [os.path.abspath(self.home),
+                 os.path.abspath(
+                     os.path.join('t', 'data', 'longaccess-74-5N93.html'))]
+        for p, r in walk_folders(files):
+            self.assertEqual(unicode, type(r))
+            if r.endswith('sample.adf'):
+                sample = r
+        self.assertEqual("home/archives/sample.adf", sample)
+
+    def test_folder_args(self):
+        from lacli.archive.folders import args as folder_args
+
+        cb = Mock()
+        for a, k in folder_args([self.home], cb):
+            self.assertTrue('arcname' in k)
+            self.assertEqual(str, type(k['arcname']))
+
+        self.assertTrue(u'home/archives/sample.adf' in
+                        map(operator.itemgetter(1),
+                            map(operator.itemgetter(0),
+                                cb.call_args_list)))
+
+    def test_folder_args_exception(self):
+        from lacli.archive.folders import args as folder_args
+
+        cb = Mock(side_effect=Exception())
+        args = folder_args([self.home], cb)
+        e = self.assertRaises(Exception, list, args)
+        self.assertTrue(hasattr(e, 'filename'))
+
+    def test_zip_urls(self):
+        murl = Mock(return_value=StringIO("file contents"))
+        from lacli.archive.urls import args
+        with patch('lacli.archive.urls.urlopen', murl):
+            cb = Mock()
+            a, k = next(args(['http://foobar'], cb))
+            self.assertTrue('arcname' in k)
+            self.assertEqual(str, type(k['arcname']))
+            self.assertEqual('foobar', k['arcname'])
+            self.assertEqual('foobar', cb.call_args[0][1])
+
+    def test_dump_urls(self):
+        fno = {'fileno.return_value': 0,
+               'read.side_effect': ["file contents man", None]}
+        mrsp = Mock(**fno)
+        from lacli.archive.urls import dump_urls
+        with patch('lacli.archive.urls.urlopen', Mock(return_value=mrsp)):
+            with self._temp_home() as tmpdir:
+                cb = Mock()
+                archive = Archive('foo', Meta(
+                    format='zip', cipher='xor', created='now'))
+                name, path, auth = dump_urls(
+                    archive, ['http://foobar'], Certificate('\0'*8),
+                    cb, tmpdir=tmpdir)
+                self.assertTrue(os.path.exists(path))
+                with ZipFile(path) as zf:
+                    for zi in zf.infolist():
+                        zf.extract(zi, tmpdir)
+                path = os.path.join(tmpdir, "foobar")
+                self.assertTrue(os.path.exists(path))
+                with open(path) as f:
+                    self.assertEqual("file contents man", f.read())
+
+    def test_dump_folders(self):
+        with self._temp_home() as tmpdir:
+            from lacli.archive.folders import dump_folders
+            cb = Mock()
+            archive = Archive('foo', Meta(
+                format='zip', cipher='xor', created='now'))
+            name, path, auth = dump_folders(
+                archive, [os.path.abspath(self.home)], Certificate('\0'*8),
+                cb, tmpdir=tmpdir)
+            self.assertTrue(os.path.exists(path))
+            with ZipFile(path) as zf:
+                for zi in zf.infolist():
+                    zf.extract(zi, tmpdir)
+            path = os.path.join(tmpdir, "home/archives/sample.adf")
+            self.assertTrue(os.path.exists(path))
