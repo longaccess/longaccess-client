@@ -31,7 +31,7 @@ def after_scenario(context, scenario):
         context.archive.close()
     if context.cert is not None:
         context.cert.close()
-    d = os.path.join(context.environ['HOME'], ".longaccess")
+    d = os.path.join(context.environ['HOME'], "Longaccess")
     if os.path.isdir(d):
         shutil.rmtree(d)
     clienv.after_scenario(context, scenario)

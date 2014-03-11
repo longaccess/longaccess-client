@@ -26,7 +26,7 @@ Feature: upload command
         And the archive titled "foo" has a link to a local copy
         And the command line arguments "archive upload"
         When I run console script "lacli"
-        Then I see "File /tmp/test/.longaccess/data/test not found"
+        Then I see "File /tmp/test/Longaccess/data/test not found"
 
     Scenario: I upload an archive with empty copy
         Given I have 1 prepared archive titled "foo"
