@@ -1,6 +1,9 @@
 from testtools import TestCase
 from moto import mock_s3
 from boto import connect_s3
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from mock import patch
 
 
 class MPConnectionTest(TestCase):
@@ -49,3 +52,25 @@ class MPConnectionTest(TestCase):
         conn = self._makeit(self._token)
         bucket = conn.getbucket()
         self.assertEqual(bucket.name, self._bucket)
+
+    @patch('lacli.pool.getLogger', create=True)
+    def test_timeout(self, log):
+        tok = self._token
+        tok['token_expiration'] = "this is not a timestamp"
+        conn = self._makeit(tok, grace=0)
+        self.assertEqual(None, conn.timeout())
+        log.assert_called_with()
+        log.return_value.debug.assert_called_with(
+            'invalid token expiration: %s', 'this is not a timestamp')
+        tok['token_expiration'] = datetime.utcnow().isoformat()
+        conn = self._makeit(tok, grace=0)
+        self.assertEqual(0, int(conn.timeout()))
+        tok['token_expiration'] = datetime.utcnow()
+        conn = self._makeit(tok, grace=0)
+        self.assertEqual(0, int(conn.timeout()))
+        tok['token_expiration'] = datetime.utcnow()+relativedelta(seconds=100)
+        conn = self._makeit(tok, grace=100)
+        self.assertEqual(0, int(conn.timeout()))
+        tok['token_expiration'] = datetime.utcnow()+relativedelta(seconds=101)
+        conn = self._makeit(tok, grace=0)
+        self.assertEqual(100, int(conn.timeout()))
