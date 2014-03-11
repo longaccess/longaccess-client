@@ -1,5 +1,3 @@
-import os
-
 from tempfile import NamedTemporaryFile
 from lacli.crypt import CryptIO
 from zipfile import ZipFile, ZIP_DEFLATED
@@ -22,13 +20,7 @@ def _temp_file(fdst, name, tmpdir):
             copyfileobj(zf, dst, 1024)
 
 
-def writer(name, args, cipher, tmpdir, hashobj=None):
-
-    tmpargs = {'delete': False,
-               'suffix': ".longaccess",
-               'dir': tmpdir,
-               'prefix': name}
-    dst = NamedTemporaryFile(**tmpargs)
+def writer(name, args, cipher, dst, tmpdir, hashobj=None):
 
     fdst = CryptIO(dst, cipher, hashobj=hashobj)
 
@@ -37,23 +29,15 @@ def writer(name, args, cipher, tmpdir, hashobj=None):
         # can't easily handle streaming
         fdst = _temp_file(fdst, name, tmpdir)
 
-    try:
-        with fdst as zf:
-            zipargs = {'mode': 'w', 'compression': ZIP_DEFLATED,
-                       'allowZip64': True}
-            if zipstream is None:
-                with ZipFile(zf, **zipargs) as zpf:
-                    for args, kwargs in args:
-                        zpf.write(*args, **kwargs)
-            else:
-                with zipstream.ZipFile(**zipargs) as zpf:
-                    zpf.paths_to_write = args
-                    for chunk in zpf:
-                        zf.write(chunk)
-    except Exception:
-        path = dst.name
-        dst.close()
-        if os.path.exists(path):
-            os.unlink(path)  # don't leave trash
-        raise
-    return dst.name
+    with fdst as zf:
+        zipargs = {'mode': 'w', 'compression': ZIP_DEFLATED,
+                   'allowZip64': True}
+        if zipstream is None:
+            with ZipFile(zf, **zipargs) as zpf:
+                for args, kwargs in args:
+                    zpf.write(*args, **kwargs)
+        else:
+            with zipstream.ZipFile(**zipargs) as zpf:
+                zpf.paths_to_write = args
+                for chunk in zpf:
+                    zf.write(chunk)

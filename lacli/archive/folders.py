@@ -33,7 +33,7 @@ def args(items, cb):
             raise
 
 
-def dump_folders(archive, items, cert, cb=None, tmpdir='/tmp',
+def dump_folders(archive, items, cert, dst, cb=None, tmpdir='/tmp',
                  hashf='sha512'):
     name = archive_handle([archive, cert])
     cipher = get_cipher(archive, cert)
@@ -43,7 +43,7 @@ def dump_folders(archive, items, cert, cb=None, tmpdir='/tmp',
         # windows has unicode file system api
         items = map(unicode, items)
 
-    path = zip_writer(name, args(items, cb),
-                      cipher, tmpdir, hashobj)
+    zip_writer(name, args(items, cb),
+               cipher, dst, tmpdir, hashobj)
 
-    return (name, path, hashobj.auth())
+    return (name, hashobj.auth())

@@ -7,7 +7,7 @@ from testtools import TestCase
 from . import makeprefs
 from shutil import rmtree
 from contextlib import contextmanager
-from tempfile import mkdtemp
+from tempfile import mkdtemp, NamedTemporaryFile
 from mock import Mock, patch
 from lacli.adf import Archive, Meta, Certificate
 from zipfile import ZipFile
@@ -97,17 +97,17 @@ class ArchiveTest(TestCase):
                 cb = Mock()
                 archive = Archive('foo', Meta(
                     format='zip', cipher='xor', created='now'))
-                name, path, auth = dump_urls(
-                    archive, ['http://foobar'], Certificate('\0'*8),
-                    cb, tmpdir=tmpdir)
-                self.assertTrue(os.path.exists(path))
-                with ZipFile(path) as zf:
-                    for zi in zf.infolist():
-                        zf.extract(zi, tmpdir)
-                path = os.path.join(tmpdir, "foobar")
-                self.assertTrue(os.path.exists(path))
-                with open(path) as f:
-                    self.assertEqual("file contents man", f.read())
+                with NamedTemporaryFile(dir=tmpdir) as dst:
+                    name, path, auth = dump_urls(
+                        archive, ['http://foobar'], Certificate('\0'*8),
+                        dst, cb=cb, tmpdir=tmpdir)
+                    with ZipFile(dst.name) as zf:
+                        for zi in zf.infolist():
+                            zf.extract(zi, tmpdir)
+                    path = os.path.join(tmpdir, "foobar")
+                    self.assertTrue(os.path.exists(path))
+                    with open(path) as f:
+                        self.assertEqual("file contents man", f.read())
 
     def test_dump_folders(self):
         with self._temp_home() as tmpdir:
@@ -115,12 +115,12 @@ class ArchiveTest(TestCase):
             cb = Mock()
             archive = Archive('foo', Meta(
                 format='zip', cipher='xor', created='now'))
-            name, path, auth = dump_folders(
-                archive, [os.path.abspath(self.home)], Certificate('\0'*8),
-                cb, tmpdir=tmpdir)
-            self.assertTrue(os.path.exists(path))
-            with ZipFile(path) as zf:
-                for zi in zf.infolist():
-                    zf.extract(zi, tmpdir)
-            path = os.path.join(tmpdir, "home/archives/sample.adf")
-            self.assertTrue(os.path.exists(path))
+            with NamedTemporaryFile(dir=tmpdir) as dst:
+                name, auth = dump_folders(
+                    archive, [os.path.abspath(self.home)], Certificate('\0'*8),
+                    dst, cb=cb, tmpdir=tmpdir)
+                with ZipFile(dst.name) as zf:
+                    for zi in zf.infolist():
+                        zf.extract(zi, tmpdir)
+                path = os.path.join(tmpdir, "home/archives/sample.adf")
+                self.assertTrue(os.path.exists(path))

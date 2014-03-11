@@ -26,13 +26,13 @@ def args(urls, cb):
         yield ((r,), {'arcname': rel.encode('utf-8')})
 
 
-def dump_urls(archive, urls, cert, cb=None, tmpdir='/tmp',
+def dump_urls(archive, urls, cert, dst, cb=None, tmpdir='/tmp',
               hashf='sha512'):
     name = archive_handle([archive, cert])
     cipher = get_cipher(archive, cert)
     hashobj = MyHashObj(hashf)
 
     path = zip_writer(name, args(urls, cb),
-                      cipher, tmpdir, hashobj)
+                      cipher, dst, tmpdir, hashobj)
 
     return (name, path, hashobj.auth())

@@ -134,6 +134,11 @@ class Cache(object):
         if isinstance(items, basestring):
             items = [items]
 
+        tmpargs = {'delete': False,
+                   'suffix': ".longaccess",
+                   'dir': tmpdir}
+        dst = NamedTemporaryFile(**tmpargs)
+
         def mycb(path, rel):
             if cb is not None:
                 cb(path, rel)
@@ -141,8 +146,17 @@ class Cache(object):
                 print "Encrypting.."
             else:
                 print path.encode('utf8')
-        name, path, docs['auth'] = dump_folders(
-            docs['archive'], items, docs['cert'], mycb, tmpdir)
+
+        try:
+            name, docs['auth'] = dump_folders(
+                docs['archive'], items, docs['cert'], dst, mycb, tmpdir)
+        except Exception:
+            path = dst.name
+            dst.close()
+            if os.path.exists(path):
+                os.unlink(path)  # don't leave trash
+            raise
+        path = dst.name
         rel = os.path.relpath(path, self.home)
         docs['links'] = Links(local=pathname2url(rel))
         docs['archive'].meta.size = os.path.getsize(path)
