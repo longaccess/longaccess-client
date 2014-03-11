@@ -11,17 +11,17 @@ Feature: upload command
     Scenario: I try an upload without files
         Given the command line arguments "archive upload"
         When I run console script "lacli"
-        Then I see "No such archive"
+        Then I see "no such archive"
 
     Scenario: I upload an archive with no local copy
-        Given I have 1 prepared archive titled "foo"
+        Given I have 1 available archive titled "foo"
         And I have a certificate for the archive with title "foo"
         And the command line arguments "archive upload"
         When I run console script "lacli"
         Then I see "no local copy exists"
 
     Scenario: I upload an archive with missing file
-        Given I have 1 prepared archive titled "foo"
+        Given I have 1 available archive titled "foo"
         And I have a certificate for the archive with title "foo"
         And the archive titled "foo" has a link to a local copy
         And the command line arguments "archive upload"
@@ -29,7 +29,7 @@ Feature: upload command
         Then I see "File /tmp/test/Longaccess/data/test not found"
 
     Scenario: I upload an archive with empty copy
-        Given I have 1 prepared archive titled "foo"
+        Given I have 1 available archive titled "foo"
         And I have a certificate for the archive with title "foo"
         And the archive titled "foo" has a link to a local copy
         And the local copy for "foo" is an empty file
@@ -51,10 +51,10 @@ Feature: upload command
         When I run console script "lacli"
         Then I see "error: the server couldn't fulfill your request"
 
-    Scenario: I upload an non-existent file
-        Given the command line arguments "archive upload /tmp/thisdoesnotexist"
+    Scenario: I upload an non-existent archive
+        Given the command line arguments "archive upload 1234234234"
         When I run console script "lacli"
-        Then I see "No such archive"
+        Then I see "no such archive"
 
     Scenario: I upload an archive
         Given I prepare an archive with a file "test"

@@ -103,9 +103,9 @@ def upload_status(context, status):
 @step(u'there is an archive titled "{title}"')
 def exists_archive_titled(context, title):
     context.execute_steps(u"""
-        Given the command line arguments "archive create"
+        Given the command line arguments "archive list"
         When I run console script "lacli"
-        Then I see ") {}"
+        Then I see "[ ]*{}"
         """.format(title))
 
 
@@ -144,6 +144,6 @@ def prepare_archive(context, title):
 @step(u'I prepare an archive with a directory "{title}"')
 def prepare_archive_folder(context, title):
     context.execute_steps(u'''
-        Given the command line arguments "archive create {title}"
+        Given the command line arguments "archive create -t "{t}" {{{t}}}"
         When I run console script "lacli"
-        Then I see "archive prepared"'''.format(title=title))
+        Then I see "archive prepared"'''.format(t=title))
