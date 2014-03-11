@@ -1,6 +1,6 @@
 from lacli.exceptions import PauseEvent
 from lacli.pool import MPUpload
-from lacli.source.file import MPFile
+from lacli.source.chunked import ChunkedFile
 from lacli.storage.s3 import MPConnection
 from contextlib import contextmanager
 from lacli.log import LogHandler, getLogger
@@ -211,7 +211,7 @@ class Upload(object):
     def upload(self, fname, upload, progq):
         with self._workers(progq) as pool:
             etags = {}
-            source = MPFile(fname, self.state.progress)
+            source = ChunkedFile(fname, self.state.progress)
 
             token = yield upload.status
 

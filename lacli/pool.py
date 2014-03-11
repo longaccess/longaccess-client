@@ -2,7 +2,7 @@ import os
 from lacli.progress import make_progress, save_progress
 from itertools import repeat, izip
 from lacli.log import getLogger
-from lacli.source.file import MPFile
+from lacli.source.chunked import ChunkedFile
 from lacli.exceptions import UploadEmptyError, WorkerFailureError, PauseEvent
 from lacli.control import readControl
 from tempfile import mkdtemp
@@ -121,7 +121,7 @@ class MPUpload(object):
             for seq in xrange(uploaded, total):
                 make_progress({'part': seq, 'tx': 0})
             skip = self.source.chunkstart(uploaded)
-            newsource = MPFile(
+            newsource = ChunkedFile(
                 self.source.path, skip=skip, chunk=self.source.chunk)
             size = size - newsource.size
         getLogger().debug("saving progress for {}".format(key))

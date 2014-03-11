@@ -41,7 +41,7 @@ class FilePart(FileChunkIO):
     hash = FileHash()
 
 
-class MPFile(object):
+class ChunkedFile(object):
     minchunk = 5242880
     maxchunk = 104857600
 
