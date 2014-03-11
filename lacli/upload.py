@@ -1,5 +1,6 @@
 from lacli.exceptions import PauseEvent
-from lacli.pool import MPUpload, MPFile
+from lacli.pool import MPUpload
+from lacli.source.file import MPFile
 from lacli.storage.s3 import MPConnection
 from contextlib import contextmanager
 from lacli.log import LogHandler, getLogger
