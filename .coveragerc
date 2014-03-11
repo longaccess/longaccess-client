@@ -1,3 +1,5 @@
 [report]
+omit =
+    lacli/server/interface/ClientInterface/*
 exclude_lines = 
     pragma: no cover
