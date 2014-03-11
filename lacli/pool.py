@@ -1,68 +1,16 @@
 from __future__ import division
 import os
 import math
-from lacli.date import parse_timestamp, remaining_time
 from lacli.progress import make_progress, save_progress
 from itertools import imap, repeat, izip
 from lacli.log import getLogger
 from lacli.exceptions import UploadEmptyError, WorkerFailureError, PauseEvent
 from lacli.control import readControl
-from boto import connect_s3
 from boto.utils import compute_md5
-from boto.s3.key import Key
 from filechunkio import FileChunkIO
 from sys import maxint
 from tempfile import mkdtemp, mkstemp
 from multiprocessing import active_children
-
-
-class MPConnection(object):
-    def __init__(self, token, grace=120):
-        self.accesskey = token['token_access_key']
-        self.secret = token['token_secret_key']
-        self.sectoken = token['token_session']
-        self.expiration = token['token_expiration']
-        self.uid = token['token_uid']
-        self.bucket = token['bucket']
-        self.grace = grace
-        self.conn = None
-        self.expiration = None
-        if token.get('token_expiration', None):
-            try:
-                self.expiration = parse_timestamp(
-                    token['token_expiration'])
-            except ValueError:
-                getLogger().debug("invalid token expiration: %s",
-                                  token['token_expiration'])
-        if self.uid is None:
-            self.uid = self.getconnection().get_canonical_user_id()
-
-    def getconnection(self):
-        if self.conn is None:
-            self.conn = connect_s3(
-                aws_access_key_id=self.accesskey,
-                aws_secret_access_key=self.secret,
-                security_token=self.sectoken)
-        return self.conn
-
-    def getbucket(self):
-        return self.getconnection().get_bucket(self.bucket)
-
-    def newkey(self, key):
-        return Key(self.getconnection().get_bucket(self.bucket), key)
-
-    def timeout(self):
-        """ return total number of seconds till
-            this connection must be renewed. """
-        if not self.expiration:
-            return None
-        remaining = remaining_time(self.expiration)
-        return remaining.total_seconds() - self.grace
-
-    def __getstate__(self):
-        state = self.__dict__
-        state['conn'] = None
-        return state
 
 
 class MPFile(object):

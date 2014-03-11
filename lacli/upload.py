@@ -1,5 +1,6 @@
 from lacli.exceptions import PauseEvent
-from lacli.pool import MPConnection, MPUpload, MPFile
+from lacli.pool import MPUpload, MPFile
+from lacli.storage.s3 import MPConnection
 from contextlib import contextmanager
 from lacli.log import LogHandler, getLogger
 from lacli.control import ControlHandler
@@ -199,7 +200,7 @@ class Upload(object):
     def upload_temp(self, token, source, etags, pool, seq):
         key = "{prefix}temp-archive-{seq}".format(
             prefix=token['prefix'], seq=seq)
-        connection = MPConnection(token)
+        connection = MPConnection(**token)
         with MPUpload(connection, source, key) as uploader:
             etags[key], source = uploader.get_result(
                 uploader.submit_job(pool))
