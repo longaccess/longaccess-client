@@ -78,8 +78,8 @@ class ArchiveTest(TestCase):
 
     def test_zip_urls(self):
         murl = Mock(return_value=StringIO("file contents"))
-        with patch('urllib2.urlopen', murl):
-            from lacli.archive.urls import args
+        from lacli.archive.urls import args
+        with patch('lacli.archive.urls.urlopen', murl):
             cb = Mock()
             a, k = next(args(['http://foobar'], cb))
             self.assertTrue('arcname' in k)
@@ -91,9 +91,9 @@ class ArchiveTest(TestCase):
         fno = {'fileno.return_value': 0,
                'read.side_effect': ["file contents man", None]}
         mrsp = Mock(**fno)
-        with patch('urllib2.urlopen', Mock(return_value=mrsp)):
+        from lacli.archive.urls import dump_urls
+        with patch('lacli.archive.urls.urlopen', Mock(return_value=mrsp)):
             with self._temp_home() as tmpdir:
-                from lacli.archive.urls import dump_urls
                 cb = Mock()
                 archive = Archive('foo', Meta(
                     format='zip', cipher='xor', created='now'))
