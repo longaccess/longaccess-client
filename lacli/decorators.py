@@ -208,4 +208,13 @@ class login(login_async):
 
     def loginfirst(self, *args, **kwargs):
         return super(login, self).loginfirst(*args, **kwargs)
+
+
+def coroutine(func):
+    def start(*args, **kwargs):
+        g = func(*args, **kwargs)
+        g.next()
+        return g
+    return start
+
 # vim: et:sw=4:ts=4

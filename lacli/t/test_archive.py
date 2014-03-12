@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 import os
+import sys
 import operator
+import zipfile
 
 from StringIO import StringIO
 from testtools import TestCase
+from unittest import SkipTest
 from . import makeprefs
 from shutil import rmtree
 from contextlib import contextmanager
 from tempfile import mkdtemp, NamedTemporaryFile
-from mock import Mock, patch
-from lacli.adf import Archive, Meta, Certificate
-from zipfile import ZipFile
+from mock import MagicMock, Mock, patch
 
 
 class ArchiveTest(TestCase):
@@ -56,10 +57,11 @@ class ArchiveTest(TestCase):
         self.assertEqual("home/archives/sample.adf", sample)
 
     def test_folder_args(self):
-        from lacli.archive.folders import args as folder_args
+        from lacli.archive.folders import FolderArchiver
 
         cb = Mock()
-        for a, k in folder_args([self.home], cb):
+        ar = FolderArchiver()
+        for a, k in ar.args([self.home], cb):
             self.assertTrue('arcname' in k)
             self.assertEqual(str, type(k['arcname']))
 
@@ -69,58 +71,91 @@ class ArchiveTest(TestCase):
                                 cb.call_args_list)))
 
     def test_folder_args_exception(self):
-        from lacli.archive.folders import args as folder_args
+        from lacli.archive.folders import FolderArchiver
 
         cb = Mock(side_effect=Exception())
-        args = folder_args([self.home], cb)
+        ar = FolderArchiver()
+        args = ar.args([self.home], cb)
         e = self.assertRaises(Exception, list, args)
         self.assertTrue(hasattr(e, 'filename'))
 
-    def test_zip_urls(self):
+    def test_url_args(self):
         murl = Mock(return_value=StringIO("file contents"))
-        from lacli.archive.urls import args
+        from lacli.archive.urls import UrlArchiver
         with patch('lacli.archive.urls.urlopen', murl):
             cb = Mock()
-            a, k = next(args(['http://foobar'], cb))
+            ar = UrlArchiver()
+            a, k = next(ar.args(['http://foobar'], cb))
             self.assertTrue('arcname' in k)
             self.assertEqual(str, type(k['arcname']))
             self.assertEqual('foobar', k['arcname'])
             self.assertEqual('foobar', cb.call_args[0][1])
+            with a[0] as contents:
+                self.assertEqual('file contents', contents.read())
 
-    def test_dump_urls(self):
-        fno = {'fileno.return_value': 0,
-               'read.side_effect': ["file contents man", None]}
-        mrsp = Mock(**fno)
-        from lacli.archive.urls import dump_urls
-        with patch('lacli.archive.urls.urlopen', Mock(return_value=mrsp)):
-            with self._temp_home() as tmpdir:
-                cb = Mock()
-                archive = Archive('foo', Meta(
-                    format='zip', cipher='xor', created='now'))
-                with NamedTemporaryFile(dir=tmpdir) as dst:
-                    name, path, auth = dump_urls(
-                        archive, ['http://foobar'], Certificate('\0'*8),
-                        dst, cb=cb, tmpdir=tmpdir)
-                    with ZipFile(dst.name) as zf:
-                        for zi in zf.infolist():
-                            zf.extract(zi, tmpdir)
-                    path = os.path.join(tmpdir, "foobar")
-                    self.assertTrue(os.path.exists(path))
-                    with open(path) as f:
-                        self.assertEqual("file contents man", f.read())
+    def test_zip_archiver_tempfile(self):
+        from lacli.archive.zip import ZipArchiver
+        ar = ZipArchiver()
+        foo = MagicMock()
+        with ar._temp_file(foo) as f:
+            f.write("BAR")
+        foo.__enter__.assert_called()
+        foo.__enter__.return_value.write.assert_called_with("BAR")
 
-    def test_dump_folders(self):
-        with self._temp_home() as tmpdir:
-            from lacli.archive.folders import dump_folders
-            cb = Mock()
-            archive = Archive('foo', Meta(
-                format='zip', cipher='xor', created='now'))
-            with NamedTemporaryFile(dir=tmpdir) as dst:
-                name, auth = dump_folders(
-                    archive, [os.path.abspath(self.home)], Certificate('\0'*8),
-                    dst, cb=cb, tmpdir=tmpdir)
-                with ZipFile(dst.name) as zf:
-                    for zi in zf.infolist():
-                        zf.extract(zi, tmpdir)
-                path = os.path.join(tmpdir, "home/archives/sample.adf")
-                self.assertTrue(os.path.exists(path))
+    def test_zip_archiver_args(self):
+        from lacli.archive.zip import ZipArchiver
+        ar = ZipArchiver()
+        cb = Mock()
+        self.assertEqual([], list(ar.args([], cb)))
+        cb.assert_not_called()
+        self.assertEqual([(('bar',), {})], list(ar.args(['bar'], cb)))
+        cb.assert_called_with('bar', 'bar')
+
+    def test_zip_archiver_no_zipstream(self):
+        orig_import = __import__
+
+        def import_mock(name, *args):
+            if name == 'zipstream':
+                raise ImportError()
+            return orig_import(name, *args)
+        with patch('__builtin__.__import__', side_effect=import_mock):
+            if 'lacli.archive.zip' in sys.modules:
+                del sys.modules['lacli.archive.zip']
+            import lacli.archive.zip as azip
+            with NamedTemporaryFile() as f:
+                dst = MagicMock()
+                dst.__enter__.return_value = f
+                ar = azip.ZipArchiver()
+                ar._temp_file = Mock(return_value=dst)
+                list(ar.archive([os.path.abspath(os.path.join(
+                    't', 'data', 'longaccess-74-5N93.html'))], dst, None))
+                dst.__enter__.assert_called()
+                ar._temp_file.assert_called()
+                z = zipfile.ZipFile(f)
+                z.testzip()
+
+    def test_zip_archiver_zipstream(self):
+        try:
+            import zipstream  # noqa
+        except ImportError:
+            raise SkipTest("requires python-zipstream")
+        if 'lacli.archive.zip' in sys.modules:
+            del sys.modules['lacli.archive.zip']
+        from lacli.archive.zip import ZipArchiver
+
+        with NamedTemporaryFile() as f:
+            dst = MagicMock()
+            dst.__enter__.return_value = f
+            ar = ZipArchiver()
+            ar._temp_file = Mock(return_value=dst)
+            list(ar.archive([os.path.abspath(os.path.join(
+                't', 'data', 'longaccess-74-5N93.html'))], dst, None))
+            dst.__enter__.assert_called()
+            ar._temp_file.assert_not_called()
+            z = zipfile.ZipFile(f)
+            z.testzip()
+
+    def test_archive_handle(self):
+        from lacli.archive import archive_handle
+        self.assertEqual('ff612b0d511eaf22c4b50c2ba1e98260',
+                         archive_handle(['foo', 'bar']))
