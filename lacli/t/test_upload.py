@@ -14,4 +14,4 @@ class UploadTest(TestCase):
         return Upload(*args,  **kw)
 
     def test_upload(self):
-        assert self._makeit(Mock(), 4, 4)
+        assert self._makeit(Mock(), 4, 4, Mock())

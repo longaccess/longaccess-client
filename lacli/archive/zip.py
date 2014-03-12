@@ -1,10 +1,8 @@
-import os
-
 from tempfile import NamedTemporaryFile
-from lacli.crypt import CryptIO
 from zipfile import ZipFile, ZIP_DEFLATED
 from shutil import copyfileobj
 from contextlib import contextmanager
+from . import Archiver
 
 try:
     import zipstream
@@ -12,48 +10,45 @@ except ImportError:
     zipstream = None
 
 
-@contextmanager
-def _temp_file(fdst, name, tmpdir):
-    with NamedTemporaryFile(prefix=name, dir=tmpdir) as zf:
-        yield zf
-        zf.flush()
-        zf.seek(0)
-        with fdst as dst:
-            copyfileobj(zf, dst, 1024)
+class ZipArchiver(Archiver):
+    def __init__(self, name=None, tmpdir='/tmp', **kwargs):
+        super(ZipArchiver, self).__init__(**kwargs)
+        if name is None:
+            name = ''
+        self.name = name
+        self.tmpdir = tmpdir
 
+    @contextmanager
+    def _temp_file(self, fdst):
+        with NamedTemporaryFile(prefix=self.name, dir=self.tmpdir) as zf:
+            yield zf
+            zf.flush()
+            zf.seek(0)
+            with fdst as dst:
+                copyfileobj(zf, dst, 1024)
 
-def writer(name, args, cipher, tmpdir, hashobj=None):
+    def args(self, items, cb):
+        for item in items:
+            if cb is not None:
+                cb(item, item)
+            yield ((item,), {})
 
-    tmpargs = {'delete': False,
-               'suffix': ".longaccess",
-               'dir': tmpdir,
-               'prefix': name}
-    dst = NamedTemporaryFile(**tmpargs)
+    def archive(self, items, dst, cb):
 
-    fdst = CryptIO(dst, cipher, hashobj=hashobj)
+        if zipstream is None:
+            # do it in two passes now as vanilla zipfile
+            # can't easily handle streaming
+            dst = self._temp_file(dst)
 
-    if zipstream is None:
-        # do it in two passes now as vanilla zipfile
-        # can't easily handle streaming
-        fdst = _temp_file(fdst, name, tmpdir)
-
-    try:
-        with fdst as zf:
+        with dst as zf:
             zipargs = {'mode': 'w', 'compression': ZIP_DEFLATED,
                        'allowZip64': True}
             if zipstream is None:
                 with ZipFile(zf, **zipargs) as zpf:
-                    for args, kwargs in args:
-                        zpf.write(*args, **kwargs)
+                    for args, kwargs in self.args(items, cb):
+                        yield zpf.write(*args, **kwargs)
             else:
                 with zipstream.ZipFile(**zipargs) as zpf:
-                    zpf.paths_to_write = args
+                    zpf.paths_to_write = self.args(items, cb)
                     for chunk in zpf:
-                        zf.write(chunk)
-    except Exception:
-        path = dst.name
-        dst.close()
-        if os.path.exists(path):
-            os.unlink(path)  # don't leave trash
-        raise
-    return dst.name
+                        yield zf.write(chunk)

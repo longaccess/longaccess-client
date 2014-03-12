@@ -1,3 +1,8 @@
+[run]
+omit =
+    *ClientInterface*
 [report]
+omit =
+    *ClientInterface*
 exclude_lines = 
     pragma: no cover

@@ -7,17 +7,16 @@ import time
 from urlparse import urlparse
 from pkg_resources import resource_string
 from lacli.date import parse_timestamp
+from lacli.dumper.file import FileDumper
 
 from glob import iglob
-from lacli.adf import (load_archive, make_adf, Certificate, Archive,
-                       Meta, Links, Cipher, Signature, as_json)
+from lacli.adf import (load_archive, make_adf, Signature, as_json)
 from lacli.log import getLogger
 from lacli.archive import archive_handle
-from lacli.archive.folders import dump_folders
+from lacli.archive.folders import FolderArchiver
 from lacli.exceptions import InvalidArchiveError, CacheInitException
 from lacli.decorators import contains
 from lacli.server.interface.ClientInterface.ttypes import ArchiveStatus
-from urllib import pathname2url
 from tempfile import NamedTemporaryFile
 from binascii import b2a_hex
 from itertools import izip, imap
@@ -35,6 +34,10 @@ def pairs(it, dl=""):
 
 def fours(it, dl=" "):
     return group(it, 4, dl)
+
+
+class CacheDumper(FileDumper, FolderArchiver):
+    pass
 
 
 class Cache(object):
@@ -125,11 +128,6 @@ class Cache(object):
                     getLogger().debug(fn, exc_info=True)
 
     def prepare(self, title, items, description=None, fmt='zip', cb=None):
-        docs = {
-            'archive': Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)),
-                               description=description),
-            'cert': Certificate(),
-        }
         tmpdir = self._cache_dir('data', write=True)
         if isinstance(items, basestring):
             items = [items]
@@ -141,16 +139,20 @@ class Cache(object):
                 print "Encrypting.."
             else:
                 print path.encode('utf8')
-        name, path, docs['auth'] = dump_folders(
-            docs['archive'], items, docs['cert'], mycb, tmpdir)
-        rel = os.path.relpath(path, self.home)
-        docs['links'] = Links(local=pathname2url(rel))
-        docs['archive'].meta.size = os.path.getsize(path)
+
+        dest = CacheDumper(tmpdir=tmpdir, home=self.home,
+                           title=title, description=description,
+                           fmt=fmt)
+        list(dest.dump(items, mycb))
+
         tmpargs = {'delete': False,
                    'dir': self._cache_dir('archives', write=True)}
+
+        name = archive_handle(list(dest.docs.itervalues()))
+
         with NamedTemporaryFile(prefix=name, suffix=".adf", **tmpargs) as f:
-            make_adf(list(docs.itervalues()), out=f)
-            return (f.name, docs)
+            make_adf(list(dest.docs.itervalues()), out=f)
+            return (f.name, dest.docs)
 
     def archive_status(self, fname, docs):
         if 'signature' in docs:
