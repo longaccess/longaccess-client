@@ -28,8 +28,15 @@ def makeprefs(factory=None):
         'command': {
             'debug': 0,
             'verbose': False,
-            'batch': True
+            'batch': True,
+            'srm': None
         },
+        'gui': {
+            'rememberme': False,
+            'username': None,
+            'password': None,
+            'email': None
+        }
     }
 
 dummykey = a2b_hex(
