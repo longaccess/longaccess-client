@@ -7,10 +7,8 @@ import zipfile
 from StringIO import StringIO
 from testtools import TestCase
 from unittest import SkipTest
-from . import makeprefs
-from shutil import rmtree
-from contextlib import contextmanager
-from tempfile import mkdtemp, NamedTemporaryFile
+from . import makeprefs, _temp_home
+from tempfile import NamedTemporaryFile
 from mock import MagicMock, Mock, patch
 
 
@@ -23,18 +21,12 @@ class ArchiveTest(TestCase):
     def tearDown(self):
         super(ArchiveTest, self).tearDown()
 
-    @contextmanager
-    def _temp_home(self):
-        d = mkdtemp()
-        yield d
-        rmtree(d)
-
     def test_restore(self):
         from lacli.archive import restore_archive
         from lacli.cache import Cache
         cache = Cache(self.home)
         cert = cache.certs()['74-5N93']
-        with self._temp_home() as tmpdir:
+        with _temp_home() as tmpdir:
             cb = Mock()
             cfname = os.path.join(
                 self.home, 'data', '2013-10-22-foobar.zip.crypt')
