@@ -16,13 +16,17 @@ class StreamSource(BufferedIOBase):
         self.chunk = chunk
 
     def sink(self):
-        while True:
-            data = yield
-            if data is None:
-                break
-            else:
-                self.out.send(data)
-        self.end.send(self.size)
+        try:
+            while True:
+                data = yield
+                if data is None:
+                    break
+                else:
+                    self.out.send(data)
+            self.end.send(self.size)
+        except Exception as e:
+            self.end.throw(e)
+            raise Exception("Generator didn't stop after throw")
 
     def _raise_if_closed(self):
         if self.closed:
@@ -78,7 +82,6 @@ class StreamSource(BufferedIOBase):
         else:
             try:
                 self.dst.throw(eType, eValue, eTrace)
-                raise Exception("Generator didn't stop after throw")
             except:
                 if sys.exc_info()[1] is not eValue:
                     raise
