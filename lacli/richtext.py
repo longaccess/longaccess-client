@@ -85,12 +85,13 @@ class RichTextUI:
         else:
             archive_title = archive['title']
         archive_title = archive_title.replace('\n', ' ')
+        created = archive['created']
         print self.archive_design['frmt'].format(
             archive['num'],
             archive['cert'],
             archive['status'],
             archive['size'],
-            archive['created'].strftime('%Y-%m-%d'),
+            created.strftime("%Y-%m-%d") if created else "-",
             archive_title.encode('utf-8'))
 
     def print_capsules_header(self):

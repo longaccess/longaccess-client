@@ -9,7 +9,7 @@ from lacli.cipher import cipher_modes, new_key
 from yaml import SafeLoader
 from yaml import SafeDumper
 from lacli.exceptions import InvalidArchiveError
-from lacli.date import parse_timestamp, today, later, format_timestamp
+from lacli.date import parse_timestamp, today, later, format_timestamp, epoch
 from datetime import datetime
 from base64 import b64encode, b64decode
 
@@ -108,6 +108,7 @@ class Meta(BaseYAMLObject):
     cipher = None
     email = None
     name = None
+    created = None
 
     def __init__(self, format, cipher, size=None, created=None,
                  email=None, name=None):
@@ -434,8 +435,14 @@ def as_adf(data):
 
 
 def creation(docs):
+    """ return signature creation, or if not available, the archive creation.
+        For sorting purposes. Invalid timestamps sort to the start of the epoch
+    """
     created = docs['archive'].meta.created
     sig = docs.get('signature')
     if sig and sig.created:
         created = sig.created
-    return parse_timestamp(created)
+    tstamp = parse_timestamp(created)
+    if not tstamp:
+        tstamp = epoch()
+    return tstamp
