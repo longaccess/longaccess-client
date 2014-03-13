@@ -56,8 +56,9 @@ class ChunkedFile(object):
         self.size = size-skip
         self.chunk = chunk
         if self.chunk is None:
-            self.chunk = min(max(int(self.size/100), self.minchunk),
-                             self.maxchunk)
+            chunk = int(self.size/100)
+            maxchunk = max(chunk, self.minchunk)
+            self.chunk = min(maxchunk, self.maxchunk)
         self.chunks = int(math.ceil(self.size/self.chunk))
         if self.chunks == 0:
             self.chunks = 1
