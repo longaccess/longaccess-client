@@ -109,10 +109,12 @@ exports.getBodyParts = function(config, modules) {
                 path: apiPrefix + '/account/',
                 handler: function(req, res, next) {
                     ret = {displayname: '', email: ''}
-                    if (res.hasOwnProperty('authuser_name'))
-                        ret['email'] = res.authuser_name;
-                    modules.assert.ok(res.hasOwnProperty('authuser_name'),
-                        "client asked for account without providing username")
+                    if (!res.hasOwnProperty('authuser_name')) {
+                        res.statusCode = '401';
+                        res.send("401 - Forbidden")
+                    }
+
+                    ret['email'] = res.authuser_name;
                     res.write(JSON.stringify(ret));
                     res.end();
                 }
