@@ -1,11 +1,10 @@
 import os
 
-from . import makeprefs
+from . import makeprefs, dummycapsule
 from testtools import TestCase
 from testtools.matchers import Contains
 from mock import Mock, patch
 from StringIO import StringIO
-from datetime import datetime
 
 
 class CapsuleCommandTest(TestCase):
@@ -49,14 +48,8 @@ class CapsuleCommandTest(TestCase):
         with patch('sys.stdout', new_callable=StringIO) as out:
             registry = Mock()
             registry.prefs = self.prefs
-            now = datetime.utcfromtimestamp(0)
 
-            registry.session.capsules.return_value = ({'title': 'foo',
-                                                       'id': 'bar',
-                                                       'size': 1230000,
-                                                       'remaining': 0,
-                                                       'expires': now,
-                                                       'created': now},)
+            registry.session.capsules.return_value = (dummycapsule,)
             cli = self._makeit(registry)
             cli.onecmd('list')
             self.assertThat(out.getvalue(),

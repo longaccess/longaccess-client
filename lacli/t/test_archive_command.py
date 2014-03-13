@@ -2,7 +2,7 @@ import os
 
 from testtools import TestCase
 from testtools.matchers import Contains
-from . import makeprefs, _temp_home
+from . import makeprefs, _temp_home, dummycapsule
 from mock import Mock, patch
 from StringIO import StringIO
 
@@ -60,6 +60,7 @@ class ArchiveCommandTest(TestCase):
     def test_do_archive_list_none(self, out):
         registry = Mock()
         registry.cache._for_adf.return_value = {}
+        registry.prefs = self.prefs
         cli = self._makeit(registry, self.prefs)
         cli.onecmd('list')
         self.assertEqual('No available archives.\n', out.getvalue())
@@ -120,6 +121,7 @@ class ArchiveCommandTest(TestCase):
         from lacli.cache import Cache
         registry = Mock()
         registry.cache = Cache(self.home)
+        registry.prefs = self.prefs
         with patch('sys.stdout', new_callable=StringIO) as out:
             cli = self._makeit(registry, self.prefs)
             cli.onecmd('status')
@@ -131,13 +133,16 @@ class ArchiveCommandTest(TestCase):
         with _temp_home() as home:
             registry = Mock()
             registry.cache = Cache(home)
+            registry.prefs = self.prefs
             cli = self._makeit(registry, self.prefs)
             with patch('sys.stdout', new_callable=StringIO) as out:
                 cli.onecmd('upload')
                 self.assertThat(out.getvalue(),
                                 Contains('no such archive'))
         registry = Mock()
-        registry.cache = Cache(home)
+        registry.cache = Cache(self.home)
+        registry.prefs = self.prefs
+        registry.session.capsule_ids.return_value = {'1': dummycapsule}
         cli = self._makeit(registry, self.prefs)
         with patch('sys.stdout', new_callable=StringIO) as out:
             cli.onecmd('upload foobar')
@@ -151,28 +156,13 @@ class ArchiveCommandTest(TestCase):
             self.assertThat(out.getvalue(),
                             Contains('upload is already completed'))
 
-    def test_do_put_not_found(self):
-        from lacli.cache import Cache
-        registry = Mock()
-        registry.cache = Cache(self.home)
-        registry.cache.links = Mock(return_value={})
-        cli = self._makeit(registry, self.prefs)
-        with patch('sys.stdout', new_callable=StringIO) as out:
-            for seq, archive in enumerate(cli.cache._for_adf('archives')):
-                if archive.title == 'My 2013 vacation':
-                    cli.onecmd('upload {}'.format(seq+1))
-            self.assertThat(out.getvalue(), Contains('no local copy exists'))
-
     def test_do_restore_none(self):
         with patch('sys.stdout', new_callable=StringIO) as out:
-            cache = Mock(archives=Mock(return_value=[]))
-            cli = self._makeit(Mock(), cache, self.prefs, Mock())
-            cli.onecmd('extract')
-            self.assertThat(out.getvalue(), Contains('No such archive'))
-            cli.onecmd('restore 1')
-            self.assertThat(out.getvalue(), Contains('No such archive'))
-            cli.onecmd('restore foobar')
-            self.assertThat(out.getvalue(), Contains('No such archive'))
+            registry = Mock()
+            registry.prefs = self.prefs
+            cli = self._makeit(registry)
+            cli.onecmd('extract filedoesnotexist')
+            self.assertThat(out.getvalue(), Contains('does not exist'))
 
     @patch('sys.stdin', new_callable=StringIO)
     def test_do_archive(self, mock_stdin):

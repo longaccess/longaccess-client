@@ -1,5 +1,6 @@
 from boto import set_stream_logger
 from lacli.log import setupLogging
+from lacli.date import epoch
 from binascii import a2b_hex
 from contextlib import contextmanager
 from tempfile import mkdtemp
@@ -29,6 +30,7 @@ def makeprefs(factory=None):
             'debug': 0,
             'verbose': False,
             'batch': True,
+            'unsafe': False,
             'srm': None
         },
         'gui': {
@@ -41,6 +43,15 @@ def makeprefs(factory=None):
 
 dummykey = a2b_hex(
     '824aed71bd74c656ed6bdaa19f2a338faedd824d5fd6e96e85b7fac5c6dabe18')
+
+dummycapsule = {
+    'title': 'foo',
+    'id': 'bar',
+    'size': 1230000,
+    'remaining': 0,
+    'expires': epoch(),
+    'created': epoch()
+}
 
 
 @contextmanager
