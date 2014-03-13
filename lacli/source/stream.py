@@ -83,4 +83,5 @@ class StreamSource(BufferedIOBase):
                 if sys.exc_info()[1] is not eValue:
                     raise
             finally:
+                self.bufsize = 0  # no point in flushing data anymore
                 self.close()
