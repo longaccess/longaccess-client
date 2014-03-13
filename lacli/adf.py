@@ -342,9 +342,12 @@ def make_adf(archive=None, out=None, pretty=False):
     --- !certificate
     key: !!binary |
       /////////////////////w==
-    >>> make_adf([archive, cert], out=sys.stdout)
+    >>> make_adf([archive, cert], out=sys.stdout, pretty=True)
     !archive
-    meta: !meta {cipher: aes-256-ctr, created: now, format: zip}
+    meta: !meta
+      cipher: aes-256-ctr
+      created: now
+      format: zip
     title: title
     --- !certificate
     key: !!binary |
