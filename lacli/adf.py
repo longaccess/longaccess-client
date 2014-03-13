@@ -138,9 +138,10 @@ class Links(BaseYAMLObject):
     'http://foo.bar.com'
     >>> from StringIO import StringIO
     >>> out = StringIO()
-    >>> make_adf(links, out=out)
+    >>> make_adf(links, out=out, pretty=True)
     >>> print out.getvalue()
-    !links {local: 'http://foo.bar.com'}
+    !links
+    local: http://foo.bar.com
     <BLANKLINE>
     """
     yaml_tag = u'!links'
@@ -237,11 +238,12 @@ class MAC(BaseYAMLObject):
 
 class Signature(BaseYAMLObject):
     """
-    >>> sig = Signature('1', 'http://baz.com', 'now')
+    >>> sig = Signature('1', 'http://baz.com', datetime.utcfromtimestamp(0))
     >>> pyaml.dump(sig, sys.stdout)
     !signature
     aid: '1'
-    created: now
+    created: 1970-01-01 00:00:00
+    expires: 2000-01-01 00:00:00
     uri: http://baz.com
     """
     yaml_tag = u'!signature'

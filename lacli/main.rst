@@ -37,15 +37,9 @@ with batch operation:
 >>> prefs, cache = settings({'--home': '/tmp'})
 >>> prefs['command']['batch']
 True
->>> settings({'--home': 'foo/bar'})
-Traceback (most recent call last):
-  File "/usr/local/lib/python2.7/doctest.py", line 1289, in __run
-    compileflags, 1) in test.globs
-  File "<doctest lacli.main.settings[12]>", line 1, in <module>
-    settings({'--home': 'foo/bar'})
-  File "/home/kouk/code/longaccess-cli/lacli/main.py", line 111, in settings
-    sys.exit("{} does not exist!".format(home))
-SystemExit: foo/bar does not exist!
+>>> prefs, cache = settings({'--home': '/tmp/foo/bar'})
+>>> os.path.exists('/tmp/foo/bar')
+True
 
 Command args
 ------------
