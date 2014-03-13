@@ -59,6 +59,12 @@ class StreamSource(BufferedIOBase):
         if self.closed:
             return
         super(StreamSource, self).close()
+        try:
+            self.dst.send(None)
+        except StopIteration:
+            return
+        else:
+            raise Exception("Generator didn't stop")
 
     def readable(self):
         return False
@@ -68,13 +74,7 @@ class StreamSource(BufferedIOBase):
 
     def __exit__(self, eType, eValue, eTrace):
         if eType is None:
-            try:
-                super(StreamSource, self).__exit__(eType, eValue, eTrace)
-                self.dst.send(None)
-            except StopIteration:
-                return
-            else:
-                raise Exception("Generator didn't stop")
+            super(StreamSource, self).__exit__(eType, eValue, eTrace)
         else:
             try:
                 self.dst.throw(eType, eValue, eTrace)
