@@ -79,10 +79,12 @@ class ChunkedFile(object):
         return imap(_save, xrange(self.chunks))
 
     def chunkstart(self, num):
+        if num >= self.chunks:
+            raise ValueError("chunk number out of range")
         return self.skip + num * self.chunk
 
     def chunksize(self, num):
-        start = num * self.chunk
+        start = self.chunkstart(num)
         if (start + self.chunk > self.size):
             # chunk end is EOF
             return self.size - start
