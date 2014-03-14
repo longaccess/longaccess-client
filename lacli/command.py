@@ -508,12 +508,22 @@ class LaArchiveCommand(LaBaseCommand):
                     url = upload['links'].upload
                     status = self.session.upload_status(url)
                     if status['status'] == "completed":
+                        print "status: complete"
                         cert, f = self.cache.save_cert(
                             self.cache.upload_complete(fname, status))
                         if f:
                             print "Certificate", cert, "saved:", f
                         else:
                             print "Certificate", cert, "already exists.\n"
+                        for i in range(3):
+                            try:
+                                UploadState.reset(fname)
+                                break
+                            except OSError as e:
+                                if i < 3 and e.errno == errno.EACCES:
+                                    continue
+                                else:
+                                    raise e
                         print " ".join(("Use lacli certificate list",
                                         "to see your certificates, or",
                                         "lacli certificate --help for",
