@@ -5,24 +5,21 @@ Feature: status command
         And the Longaccess directory exists in HOME
         And the mock API "longaccessmock"
         And the environment variable "LA_API_URL" is "{api_url}path/to/api"
+        And the username "test" 
+        And the password "test"
+        And the API authenticates a test user
+        And I store my credentials in "{homedir}/.netrc"
 
-    Scenario: I poll a non existent status
+    Scenario: I poll a non existent archive
         Given the command line arguments "archive status 1"
         When I run console script "lacli"
-        Then I see "No such upload pending."
+        Then I see "No such archive"
 
-    Scenario: I poll for an upload that doesn't exist
-        Given I have 2 pending uploads
-        And the command line arguments "archive status 3"
+    Scenario: I poll a not started upload
+        Given the command line arguments "archive status 1"
+        And I have 1 available archive
         When I run console script "lacli"
-        Then I see "No such upload pending."
-
-    Scenario: I status with a pending upload
-        Given I have 1 pending uploads
-        And the command line arguments "archive status 1"
-        When I run console script "lacli"
-        Then I see "Pending uploads:"
-        And I see "1) upload"
+        Then I see "status: local"
 
     Scenario: I poll for an upload that is still pending
         Given I have 1 pending uploads
@@ -43,7 +40,7 @@ Feature: status command
         And the command line arguments "archive status 1"
         When I run console script "lacli"
         Then I see "status: complete"
+        And I see "Certificate [^ ]* saved"
         And there is a completed certificate
+        And I see "Use lacli certificate list"
         And there are 0 pending uploads
-        And I see "Certificate:"
-        And I see "!archive"
