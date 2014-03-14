@@ -168,9 +168,14 @@ class login_async(object):
 
     @defer.inlineCallbacks
     def loginfirst(self, prefs, *args, **kwargs):
-        yield self.dologin(prefs)
-        r = yield self.f(self.obj, *args, **kwargs)
-        defer.returnValue(r)
+        try:
+            yield self.dologin(prefs)
+            r = yield self.f(self.obj, *args, **kwargs)
+            defer.returnValue(r)
+        except Exception:
+            getLogger().debug("unhandled error in login decorator",
+                              exc_info=True)
+            raise
 
     def __call__(self, *args, **kwargs):
         if len(args) > 0:
@@ -206,8 +211,9 @@ class login(login_async):
             self.obj.registry.cmd.password = prefs['pass']
             self.obj.registry.cmd.do_login(" ".join(cmdline))
 
-    def loginfirst(self, *args, **kwargs):
-        return super(login, self).loginfirst(*args, **kwargs)
+    def loginfirst(self, prefs, *args, **kwargs):
+        self.dologin(prefs)
+        return self.f(self.obj, *args, **kwargs)
 
 
 def coroutine(func):
