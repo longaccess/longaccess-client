@@ -48,11 +48,17 @@ class LaLoginCommand(LaBaseCommand):
 
         save = (self.username, self.password)
 
-        if not username and not self.batch:
-            username = self.input("Username/email: ")
+        if not username:
+            if self.batch:
+                username = self.username
+            else:
+                username = self.input("Username/email: ")
 
-        if not password and not self.batch:
-            password = getpass("Password: ")
+        if not password:
+            if self.batch:
+                password = self.password
+            else:
+                password = getpass("Password: ")
 
         try:
             self.login_batch(username, password)
