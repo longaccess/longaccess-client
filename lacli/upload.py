@@ -53,6 +53,8 @@ class UploadState(object):
 
     @classmethod
     def reset(cls, fname):
+        if cls.states is None:
+            cls.setup()
         if fname not in cls.states:
             raise ValueError("Upload doesn't exist!")
         cls.cache._del_upload(fname)
