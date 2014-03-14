@@ -7,7 +7,7 @@ var heads               = require('robohydra').heads,
 exports.getBodyParts = function(config, modules) {
     function mockupload() {
         return { id: 1,
-            resource_uri: '/path/to/upload/1',
+            resource_uri: apiPrefix +'/upload/1',
             token_access_key: '123123',
             token_secret_key: '123123',
             token_session: '123123',
@@ -179,6 +179,13 @@ exports.getBodyParts = function(config, modules) {
             oneCapsule: {
                 instructions: "activate 1 capsule.",
                 heads: [
+                    new RoboHydraHead({
+                        path: '/.*',
+                        handler: function(req, res, next) {
+                            res.authuser = true;
+                            next(req, res);
+                        }
+                    }),
                     new RoboHydraHeadStatic({
                         path: apiPrefix + '/capsule/',
                         content: {
@@ -201,6 +208,28 @@ exports.getBodyParts = function(config, modules) {
                                     user: "/api/v1/user/2/",
                                     remaining: 482,
                                     size: 1024
+                                }
+                            ]
+                        }
+                    })
+                ]
+            },
+            oneHugeCapsule: {
+                instructions: "activate 1 capsule.",
+                heads: [
+                    new RoboHydraHeadStatic({
+                        path: apiPrefix + '/capsule/',
+                        content: {
+                            meta: meta(1),
+                            objects: [
+                                {
+                                    created: "2013-06-07T10:45:01",
+                                    id: 1,
+                                    resource_uri: "/api/v1/capsule/1/",
+                                    title: "BFC",
+                                    user: "/api/v1/user/3/",
+                                    remaining: 1024000000,
+                                    size: 1024000000
                                 }
                             ]
                         }
