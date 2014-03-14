@@ -50,27 +50,24 @@ class TwistedRequestsFactory(object):
             return defaults
 
         @defer.inlineCallbacks
-        def get(self, *args, **kwargs):
+        def maybeauth(self, method, *args, **kwargs):
             try:
-                r = yield treq.get(*args, **self._defaults(kwargs))
+                r = yield method(*args, **self._defaults(kwargs))
                 r = yield self.get_content(r)
             except ApiAuthException:
                 kwargs['auth'] = self.session.auth
-                r = yield treq.get(*args, **self._defaults(kwargs))
+                r = yield method(*args, **self._defaults(kwargs))
                 r = yield self.get_content(r)
             defer.returnValue(r)
 
-        @defer.inlineCallbacks
-        def post(self, *args, **kwargs):
-            r = yield treq.post(*args, **self._defaults(kwargs))
-            r = yield self.get_content(r)
-            defer.returnValue(r)
+        def get(self, *args, **kwargs):
+            return self.maybeauth(treq.get, *args, **kwargs)
 
-        @defer.inlineCallbacks
+        def post(self, *args, **kwargs):
+            return self.maybeauth(treq.post, *args, **kwargs)
+
         def patch(self, *args, **kwargs):
-            r = yield treq.patch(*args, **self._defaults(kwargs))
-            r = yield self.get_content(r)
-            defer.returnValue(r)
+            return self.maybeauth(treq.patch, *args, **kwargs)
 
     def __call__(self, prefs={}):
         session = self.TreqSession()
