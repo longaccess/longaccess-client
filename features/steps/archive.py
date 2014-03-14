@@ -1,4 +1,5 @@
 import os
+import json
 
 from lacli.adf import make_adf, Archive, Meta, Links, Certificate
 from behave import step
@@ -84,12 +85,8 @@ def pending_upload(context, title):
     assert(context.mock_api)
     import urlparse
     url = urlparse.urljoin(context.mock_api.url(), 'path/to/api/upload/1')
-    with open(af) as f:
-        from lacli.adf import load_archive, make_adf
-        docs = load_archive(f)
-        docs['links'].upload = url
-        with open(os.path.join(d, os.path.basename(af)), 'w') as out:
-            make_adf(list(docs.itervalues()), out=out)
+    with open(os.path.join(d, os.path.basename(af)), 'w') as out:
+        out.write(json.dumps({'uri': url}))
 
 
 @step(u'the upload status is "{status}"')
@@ -120,8 +117,8 @@ def exists_certificate(context):
         docs = load_archive(f)
     assert 'links' in docs
     assert 'archive' in docs
-    assert hasattr(docs['links'], 'download')
-    assert docs['links'].download == 'https://longaccess.com/yoyoyo'
+    assert hasattr(docs['signature'], 'aid')
+    assert docs['signature'].aid == 'https://longaccess.com/yoyoyo'
 
 
 @step(u'there are {num} pending uploads')
