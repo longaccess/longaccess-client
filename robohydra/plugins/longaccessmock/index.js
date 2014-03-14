@@ -137,6 +137,13 @@ exports.getBodyParts = function(config, modules) {
                 instructions: "Init an upload and then check it's status. it will be 'complete'",
                 heads: [
                     new RoboHydraHead({
+                        path: '/.*',
+                        handler: function(req, res, next) {
+                            res.authuser = true;
+                            next(req, res);
+                        }
+                    }),
+                    new RoboHydraHead({
                         path: apiPrefix + '/upload/1',
                         handler: function(req, res, next) {
                             res.upload_status = 'completed';
