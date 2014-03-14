@@ -3,7 +3,8 @@ from lacli.progress import make_progress, save_progress
 from itertools import repeat, izip
 from lacli.log import getLogger
 from lacli.source.chunked import ChunkedFile
-from lacli.exceptions import UploadEmptyError, WorkerFailureError, PauseEvent
+from lacli.exceptions import (UploadEmptyError, WorkerFailureError, PauseEvent,
+                              CloudProviderUploadError)
 from lacli.control import readControl
 from tempfile import mkdtemp
 from multiprocessing import active_children
@@ -48,7 +49,10 @@ class MPUpload(object):
             return self.connection.newkey(self.key)
 
     def __enter__(self):
-        self.upload = self._getupload()
+        try:
+            self.upload = self._getupload()
+        except Exception as e:
+            raise CloudProviderUploadError(e)
         if not hasattr(self.upload, 'set_contents_from_file'):
             self.upload_id = self.upload.id
             getLogger().debug("multipart upload with id: %s", self.upload_id)
