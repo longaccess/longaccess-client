@@ -217,6 +217,13 @@ exports.getBodyParts = function(config, modules) {
             oneHugeCapsule: {
                 instructions: "activate 1 capsule.",
                 heads: [
+                    new RoboHydraHead({
+                        path: '/.*',
+                        handler: function(req, res, next) {
+                            res.authuser = true;
+                            next(req, res);
+                        }
+                    }),
                     new RoboHydraHeadStatic({
                         path: apiPrefix + '/capsule/',
                         content: {
