@@ -52,6 +52,7 @@ class MPUpload(object):
         try:
             self.upload = self._getupload()
         except Exception as e:
+            getLogger().debug("error getting upload", exc_info=True)
             raise CloudProviderUploadError(e)
         if not hasattr(self.upload, 'set_contents_from_file'):
             self.upload_id = self.upload.id
