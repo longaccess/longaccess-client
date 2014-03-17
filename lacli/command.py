@@ -296,9 +296,12 @@ class LaArchiveCommand(LaBaseCommand):
             if capsule is None:
                 _error += "no capsules found"
 
-        if fname and capsule:
+        if 'links' not in docs:
+            _error += "no local copy exists."
+            link = False
+        else:
             link = docs['links']
-
+        if link and fname and capsule:
             if link.upload or link.download:
                 print "upload is already completed"
             else:
