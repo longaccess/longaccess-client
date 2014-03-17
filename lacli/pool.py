@@ -81,17 +81,6 @@ class MPUpload(object):
             chunks = step
         return pool.imap(upload_part, self.iterargs(chunks))
 
-    def complete_multipart(self, etags):
-        xml = '<CompleteMultipartUpload>\n'
-        for seq, etag in enumerate(etags):
-            xml += '  <Part>\n'
-            xml += '    <PartNumber>{}</PartNumber>\n'.format(seq+1)
-            xml += '    <ETag>{}</ETag>\n'.format(etag)
-            xml += '  </Part>\n'
-        xml += '</CompleteMultipartUpload>'
-        return self.bucket.complete_multipart_upload(
-            self.upload.key_name, self.upload.id, xml)
-
     def get_result(self, rs):
         etags = []
         key = name = None
@@ -112,7 +101,7 @@ class MPUpload(object):
             raise UploadEmptyError()
 
         if hasattr(self.upload, 'complete_upload'):
-            key = self.complete_multipart(etags)
+            key = self.connection.complete_multipart(self.upload, etags)
             name = key.key_name
         else:
             name = key.name

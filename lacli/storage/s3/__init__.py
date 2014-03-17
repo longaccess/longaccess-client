@@ -1,18 +1,23 @@
 from .. import StorageConnection
 from lacli.date import parse_timestamp, remaining_time
 from lacli.log import getLogger
+from lacli.decorators import cached_property
 from boto import connect_s3
 from boto.s3.key import Key
 
 
 class S3Connection(StorageConnection):
     def __init__(self, token_access_key=None, token_secret_key=None,
-                 token_session=None, bucket=None, **kwargs):
+                 token_session=None, token_expiration=None, bucket=None,
+                 prefix='', **kwargs):
         super(S3Connection, self).__init__(**kwargs)
         self.accesskey = token_access_key
         self.secret = token_secret_key
         self.sectoken = token_session
-        self.bucket = bucket
+        self.expires = token_expiration
+        self._bucket = bucket
+        self.prefix = prefix
+        self.kwargs = kwargs
         self.conn = None
 
     def getconnection(self):
@@ -20,20 +25,35 @@ class S3Connection(StorageConnection):
             self.conn = connect_s3(
                 aws_access_key_id=self.accesskey,
                 aws_secret_access_key=self.secret,
-                security_token=self.sectoken)
+                security_token=self.sectoken, **self.kwargs)
         return self.conn
 
-    def getbucket(self):
-        return self.getconnection().get_bucket(self.bucket)
+    @cached_property
+    def bucket(self):
+        return self.getconnection().get_bucket(self._bucket)
 
     def newkey(self, key):
-        return Key(self.getbucket(), key)
+        return Key(self.bucket, self.prefix + key)
 
     def __getstate__(self):
         """ prepare the object for pickling. """
         state = self.__dict__
         state['conn'] = None
         return state
+
+    def newupload(self, key):
+        return self.bucket.initiate_multipart_upload(key)
+
+    def complete_multipart(self, upload, etags):
+        xml = '<CompleteMultipartUpload>\n'
+        for seq, etag in enumerate(etags):
+            xml += '  <Part>\n'
+            xml += '    <PartNumber>{}</PartNumber>\n'.format(seq+1)
+            xml += '    <ETag>{}</ETag>\n'.format(etag)
+            xml += '  </Part>\n'
+        xml += '</CompleteMultipartUpload>'
+        return self.bucket.complete_multipart_upload(
+            upload.key_name, upload.id, xml)
 
 
 class MPConnection(S3Connection):

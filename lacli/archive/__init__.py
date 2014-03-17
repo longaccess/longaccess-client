@@ -31,7 +31,7 @@ class Archiver(object):
     __metaclass__ = ABCMeta
 
     def __init__(self, **kwargs):
-        super(Archiver, self).__init__(**kwargs)
+        pass
 
     @abstractmethod
     def args(self, items, cb=None):
