@@ -13,14 +13,13 @@ from multiprocessing import active_children
 class MPUpload(object):
 
     def __init__(self, connection, source, key, step=None, retries=4):
-        self.connection = connection
+        self.conn = connection
         self.source = source
         self.retries = retries
         self.key = key
         self.upload_id = None
         self.complete = None
         self.tempdir = None
-        self.bucket = None
         self.step = step
 
     def __str__(self):
@@ -35,18 +34,15 @@ class MPUpload(object):
             yield {'uploader': self, 'seq': seq, 'fname': info}
 
     def _getupload(self):
-        if self.bucket is None:
-            self.bucket = self.connection.getbucket()
-
         if self.source.chunks > 1 and self.source.isfile:
             if self.upload_id is None:
-                return self.bucket.initiate_multipart_upload(self.key)
+                return self.conn.bucket.initiate_multipart_upload(self.key)
 
-            for upload in self.bucket.get_all_multipart_uploads():
+            for upload in self.conn.bucket.get_all_multipart_uploads():
                 if self.upload_id == upload.id:
                     return upload
         else:
-            return self.connection.newkey(self.key)
+            return self.conn.newkey(self.key)
 
     def __enter__(self):
         try:
@@ -88,7 +84,7 @@ class MPUpload(object):
         if rs is not None:
             try:
                 while True:
-                    key = rs.next(self.connection.timeout())
+                    key = rs.next(self.conn.timeout())
                     getLogger().debug("got key {} with etag: {}".format(
                         key.name, key.etag))
                     etags.append(key.etag)
@@ -101,7 +97,7 @@ class MPUpload(object):
             raise UploadEmptyError()
 
         if hasattr(self.upload, 'complete_upload'):
-            key = self.connection.complete_multipart(self.upload, etags)
+            key = self.conn.complete_multipart(self.upload, etags)
             name = key.key_name
         else:
             name = key.name
