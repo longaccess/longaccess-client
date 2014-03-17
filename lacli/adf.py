@@ -9,7 +9,7 @@ from lacli.cipher import cipher_modes, new_key
 from yaml import SafeLoader
 from yaml import SafeDumper
 from lacli.exceptions import InvalidArchiveError
-from lacli.date import parse_timestamp, today, later, format_timestamp
+from lacli.date import parse_timestamp, today, later, format_timestamp, epoch
 from datetime import datetime
 from base64 import b64encode, b64decode
 
@@ -108,6 +108,7 @@ class Meta(BaseYAMLObject):
     cipher = None
     email = None
     name = None
+    created = None
 
     def __init__(self, format, cipher, size=None, created=None,
                  email=None, name=None):
@@ -138,9 +139,10 @@ class Links(BaseYAMLObject):
     'http://foo.bar.com'
     >>> from StringIO import StringIO
     >>> out = StringIO()
-    >>> make_adf(links, out=out)
+    >>> make_adf(links, out=out, pretty=True)
     >>> print out.getvalue()
-    !links {local: 'http://foo.bar.com'}
+    !links
+    local: http://foo.bar.com
     <BLANKLINE>
     """
     yaml_tag = u'!links'
@@ -237,11 +239,12 @@ class MAC(BaseYAMLObject):
 
 class Signature(BaseYAMLObject):
     """
-    >>> sig = Signature('1', 'http://baz.com', 'now')
+    >>> sig = Signature('1', 'http://baz.com', datetime.utcfromtimestamp(0))
     >>> pyaml.dump(sig, sys.stdout)
     !signature
     aid: '1'
-    created: now
+    created: 1970-01-01 00:00:00
+    expires: 2000-01-01 00:00:00
     uri: http://baz.com
     """
     yaml_tag = u'!signature'
@@ -342,9 +345,12 @@ def make_adf(archive=None, out=None, pretty=False):
     --- !certificate
     key: !!binary |
       /////////////////////w==
-    >>> make_adf([archive, cert], out=sys.stdout)
+    >>> make_adf([archive, cert], out=sys.stdout, pretty=True)
     !archive
-    meta: !meta {cipher: aes-256-ctr, created: now, format: zip}
+    meta: !meta
+      cipher: aes-256-ctr
+      created: now
+      format: zip
     title: title
     --- !certificate
     key: !!binary |
@@ -429,8 +435,14 @@ def as_adf(data):
 
 
 def creation(docs):
+    """ return signature creation, or if not available, the archive creation.
+        For sorting purposes. Invalid timestamps sort to the start of the epoch
+    """
     created = docs['archive'].meta.created
     sig = docs.get('signature')
     if sig and sig.created:
         created = sig.created
-    return parse_timestamp(created)
+    tstamp = parse_timestamp(created)
+    if not tstamp:
+        tstamp = epoch()
+    return tstamp

@@ -163,10 +163,14 @@ class LaCommand(cmd.Cmd):
         self.dispatch_one(subcmd, line)
 
     def dispatch_one(self, subcmd, line, interactive=False):
-        if line:
-            subcmd.onecmd(line)
-        elif interactive:
-            subcmd.cmdloop()
+        try:
+            if line:
+                subcmd.onecmd(line)
+            elif interactive:
+                subcmd.cmdloop()
+        except Exception as e:
+            getLogger().debug("command returned error", exc_info=True)
+            print "error:", str(e)
 
     def do_archive(self, line):
         self.dispatch_one(self.archive, line, True)

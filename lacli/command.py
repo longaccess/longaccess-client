@@ -296,9 +296,12 @@ class LaArchiveCommand(LaBaseCommand):
             if capsule is None:
                 _error += "no capsules found"
 
-        if fname and capsule:
+        if 'links' not in docs:
+            _error += "no local copy exists."
+            link = False
+        else:
             link = docs['links']
-
+        if link and fname and capsule:
             if link.upload or link.download:
                 print "upload is already completed"
             else:
@@ -508,12 +511,22 @@ class LaArchiveCommand(LaBaseCommand):
                     url = upload['links'].upload
                     status = self.session.upload_status(url)
                     if status['status'] == "completed":
+                        print "status: complete"
                         cert, f = self.cache.save_cert(
                             self.cache.upload_complete(fname, status))
                         if f:
                             print "Certificate", cert, "saved:", f
                         else:
                             print "Certificate", cert, "already exists.\n"
+                        for i in range(3):
+                            try:
+                                UploadState.reset(fname)
+                                break
+                            except OSError as e:
+                                if i < 3 and e.errno == errno.EACCES:
+                                    continue
+                                else:
+                                    raise e
                         print " ".join(("Use lacli certificate list",
                                         "to see your certificates, or",
                                         "lacli certificate --help for",

@@ -74,3 +74,7 @@ class Timeout(BaseAppException):
 
 class PauseEvent(BaseAppException):
     msg = "Paused"
+
+
+class CloudProviderUploadError(BaseAppException):
+    msg = "cloud provider indicated an error while uploading"

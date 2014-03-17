@@ -1,3 +1,4 @@
+@dev
 Feature: restore command
 
     Background: setup the command configuration
@@ -20,20 +21,20 @@ Feature: restore command
         Then I see "No such archive."
 
     Scenario: I restore an archive with no cert
-        Given I have 1 prepared archive titled "foo"
+        Given I have 1 available archive titled "foo"
         And the command line arguments "archive restore"
         When I run console script "lacli"
         Then I see "no matching certificate found"
 
     Scenario: I restore an archive with no local copy
-        Given I have 1 prepared archive titled "foo"
+        Given I have 1 available archive titled "foo"
         And I have a certificate for the archive with title "foo"
         And the command line arguments "archive restore"
         When I run console script "lacli"
         Then I see "no local copy exists"
 
     Scenario: I restore an archive with missing file
-        Given I have 1 prepared archive titled "foo"
+        Given I have 1 available archive titled "foo"
         And I have a certificate for the archive with title "foo"
         And the archive titled "foo" has a link to a local copy
         And the command line arguments "archive restore"
@@ -41,7 +42,7 @@ Feature: restore command
         Then I see "No such file or directory"
 
     Scenario: I restore an archive with empty copy
-        Given I have 1 prepared archive titled "foo"
+        Given I have 1 available archive titled "foo"
         And I have a certificate for the archive with title "foo"
         And the archive titled "foo" has a link to a local copy
         And the local copy for "foo" is an empty file

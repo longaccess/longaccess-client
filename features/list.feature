@@ -47,13 +47,16 @@ Feature: list capsules command
         And I store my credentials in "{homedir}/.netrc"
         And I have 1 capsule
         When I run console script "lacli"
-        Then I see "Available capsules:"
-        And I see "title"
-        And I see "size"
-        And I see "remaining"
+        And I see "SIZE"
+        And I see "FREE"
+        Then I see "TITLE"
+        And I see "Photos"
 
     Scenario: I list capsules without netrc auth
         Given the command line arguments "-u test -p test capsule list"
         And I have 1 capsule
         When I run console script "lacli"
-        Then I see "Available capsules:"
+        And I see "SIZE"
+        And I see "FREE"
+        Then I see "TITLE"
+        And I see "Photos"

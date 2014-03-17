@@ -7,7 +7,7 @@ var heads               = require('robohydra').heads,
 exports.getBodyParts = function(config, modules) {
     function mockupload() {
         return { id: 1,
-            resource_uri: '/path/to/upload/1',
+            resource_uri: apiPrefix +'/upload/1',
             token_access_key: '123123',
             token_secret_key: '123123',
             token_session: '123123',
@@ -109,10 +109,12 @@ exports.getBodyParts = function(config, modules) {
                 path: apiPrefix + '/account/',
                 handler: function(req, res, next) {
                     ret = {displayname: '', email: ''}
-                    if (res.hasOwnProperty('authuser_name'))
-                        ret['email'] = res.authuser_name;
-                    modules.assert.ok(res.hasOwnProperty('authuser_name'),
-                        "client asked for account without providing username")
+                    if (!res.hasOwnProperty('authuser_name')) {
+                        res.statusCode = '401';
+                        res.send("401 - Forbidden")
+                    }
+
+                    ret['email'] = res.authuser_name;
                     res.write(JSON.stringify(ret));
                     res.end();
                 }
@@ -134,6 +136,13 @@ exports.getBodyParts = function(config, modules) {
             uploadComplete: {
                 instructions: "Init an upload and then check it's status. it will be 'complete'",
                 heads: [
+                    new RoboHydraHead({
+                        path: '/.*',
+                        handler: function(req, res, next) {
+                            res.authuser = true;
+                            next(req, res);
+                        }
+                    }),
                     new RoboHydraHead({
                         path: apiPrefix + '/upload/1',
                         handler: function(req, res, next) {
@@ -170,6 +179,13 @@ exports.getBodyParts = function(config, modules) {
             oneCapsule: {
                 instructions: "activate 1 capsule.",
                 heads: [
+                    new RoboHydraHead({
+                        path: '/.*',
+                        handler: function(req, res, next) {
+                            res.authuser = true;
+                            next(req, res);
+                        }
+                    }),
                     new RoboHydraHeadStatic({
                         path: apiPrefix + '/capsule/',
                         content: {
@@ -181,8 +197,8 @@ exports.getBodyParts = function(config, modules) {
                                     resource_uri: "/api/v1/capsule/3/",
                                     title: "Photos",
                                     user: "/api/v1/user/3/",
-                                    remaining: 482,
-                                    size: 1024
+                                    remaining: 1073741824,
+                                    size: 2073741824
                                 },
                                 {
                                     created: "2013-06-07T10:44:38",
@@ -192,6 +208,35 @@ exports.getBodyParts = function(config, modules) {
                                     user: "/api/v1/user/2/",
                                     remaining: 482,
                                     size: 1024
+                                }
+                            ]
+                        }
+                    })
+                ]
+            },
+            oneHugeCapsule: {
+                instructions: "activate 1 capsule.",
+                heads: [
+                    new RoboHydraHead({
+                        path: '/.*',
+                        handler: function(req, res, next) {
+                            res.authuser = true;
+                            next(req, res);
+                        }
+                    }),
+                    new RoboHydraHeadStatic({
+                        path: apiPrefix + '/capsule/',
+                        content: {
+                            meta: meta(1),
+                            objects: [
+                                {
+                                    created: "2013-06-07T10:45:01",
+                                    id: 1,
+                                    resource_uri: "/api/v1/capsule/1/",
+                                    title: "BFC",
+                                    user: "/api/v1/user/3/",
+                                    remaining: 1024000000,
+                                    size: 1024000000
                                 }
                             ]
                         }

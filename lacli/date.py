@@ -27,6 +27,11 @@ def today():
     return datetime.now(dateutil.tz.tzutc()).replace(microsecond=0)
 
 
+def epoch():
+    """ return a time-zone aware timestamp for the Unix epoch """
+    return datetime.utcfromtimestamp(0).replace(tzinfo=dateutil.tz.tzutc())
+
+
 def later(d, **args):
     return d + date_delta(**args)
 

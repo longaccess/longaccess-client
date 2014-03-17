@@ -9,6 +9,11 @@ def one_capsule(context):
     context.mock_api.test('oneCapsule', 'longaccessmock')
 
 
+@step(u'I have 1 huge capsule')
+def one_huge_capsule(context):
+    context.mock_api.test('oneHugeCapsule', 'longaccessmock')
+
+
 @step(u'I store my credentials in "{file}"')
 def my_store_in_netrc(context, file):
     assert(context.mock_api)

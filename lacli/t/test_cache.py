@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import os
 
+from datetime import datetime
 from testtools import TestCase
 from . import makeprefs, dummykey, _temp_home
 from shutil import copy
-from mock import patch, Mock
+from mock import patch, Mock, MagicMock
 from contextlib import nested
 
 
@@ -90,37 +91,38 @@ class CacheTest(TestCase):
                 patch.object(lacli.cache, 'NamedTemporaryFile', create=True),
                 patch.object(lacli.cache, 'archive_slug', create=True),
                 ) as (mock_open, slug):
-            mock_open.return_value.__enter__.return_value = StringIO()
-            meta = Meta('zip', 'xor', created='now')
+            out = StringIO()
+            mock_open.return_value.__enter__.return_value = MagicMock()
+            mock_open.return_value.__enter__.return_value.write = out.write
+            now = datetime.utcfromtimestamp(0)
+            meta = Meta('zip', 'xor', created=now)
             archive = Archive('foo', meta)
             slug.return_value = 'foo'
             cache = self._makeit(self.home)
             cache.save_cert({'archive': archive,
                              'signature': Signature(aid="foo",
                                                     uri="http://baz.com",
-                                                    created="now")})
+                                                    created=now)})
             args, kwargs = mock_open.call_args
             self.assertIn('prefix', kwargs)
-            self.assertEqual('foo', kwargs['prefix'])
-            adf = mock_open.return_value.__enter__.return_value.getvalue()
-            self.assertEqual(ADF_EXAMPLE_1, adf)
+            self.assertEqual(ADF_EXAMPLE_1, out.getvalue())
 
     def test_import_cert(self):
         import lacli.cache
-        from StringIO import StringIO
         with nested(
                 patch.object(lacli.cache, 'NamedTemporaryFile', create=True),
                 patch.object(lacli.cache, 'archive_slug', create=True),
                 _temp_home()
                 ) as (mock_open, slug, home):
-            mock_open.return_value.__enter__.return_value = StringIO()
+            mock_open.return_value.__enter__.return_value = MagicMock()
+            mock_open.return_value.__enter__.return_value.name = "bar"
             slug.return_value = 'foo'
             cache = self._makeit(home)
             cert = os.path.join('t', 'data', 'longaccess-74-5N93.html')
-            aid = cache.import_cert(cert)
+            aid, fname = cache.import_cert(cert)
             args, kwargs = mock_open.call_args
             self.assertIn('prefix', kwargs)
-            self.assertEqual('foo', kwargs['prefix'])
+            self.assertEqual('bar', fname)
             self.assertEqual('74-5N93', aid)
 
     def test_upload_complete(self):
@@ -131,17 +133,42 @@ class CacheTest(TestCase):
                 patch.object(lacli.cache, 'load_archive', create=True),
                 patch.object(lacli.cache, 'make_adf', create=True)
                 ) as (mock_open, mock_load, mock_adf):
-            mock_load.return_value = {}
-            ds = cache.upload_complete("foo", {'archive_key': 'bar'})
+            from lacli.adf import Archive, Meta
+            now = datetime.utcfromtimestamp(0)
+            meta = Meta('zip', 'xor', created=now)
+            archive = Archive('foo', meta)
+            mock_load.return_value = {'archive': archive}
+            uri = 'http://longaccess.com/a'
+            ds = cache.upload_complete("foo", {'archive_key': 'bar',
+                                               'archive': uri})
             self.assertIn('signature', ds)
             self.assertEqual('bar', ds['signature'].aid)
-            self.assertEqual('http://longaccess.com/a/', ds['signature'].uri)
-            args, kwargs = mock_adf.call_args
-            self.assertEqual('bar', args[0][0].aid)
+            self.assertEqual(uri, ds['signature'].uri)
 
 
-ADF_EXAMPLE_1 = """!archive
-meta: !meta {cipher: xor, created: now, format: zip}
-title: foo
---- !signature {aid: foo, created: now, uri: 'http://baz.com'}
+ADF_EXAMPLE_1 = """---
+!archive {
+  ? !!str "meta"
+  : !meta {
+    ? !!str "cipher"
+    : !!str "xor",
+    ? !!str "created"
+    : !!timestamp "1970-01-01 00:00:00",
+    ? !!str "format"
+    : !!str "zip",
+  },
+  ? !!str "title"
+  : !!str "foo",
+}
+---
+!signature {
+  ? !!str "aid"
+  : !!str "foo",
+  ? !!str "created"
+  : !!timestamp "1970-01-01 00:00:00",
+  ? !!str "expires"
+  : !!timestamp "2000-01-01 00:00:00",
+  ? !!str "uri"
+  : !!str "http://baz.com",
+}
 """
