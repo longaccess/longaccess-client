@@ -43,14 +43,13 @@ class S3ConnectionTest(TestCase):
 
     def test_getbucket(self):
         conn = self._makeit(**self._token)
-        bucket = conn.getbucket()
-        self.assertEqual(bucket.name, self._bucket)
+        self.assertEqual(conn.bucket.name, self._bucket)
 
     def test_newkey(self):
         conn = self._makeit(**self._token)
         key = conn.newkey('foobar')
-        self.assertEqual(conn.getbucket().name, key.bucket.name)
-        self.assertEqual('foobar', key.name)
+        self.assertEqual(conn.bucket.name, key.bucket.name)
+        self.assertEqual('upload/14/foobar', key.name)
 
     def test_pickle(self):
         conn = self._makeit(**self._token)

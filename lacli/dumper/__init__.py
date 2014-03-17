@@ -10,16 +10,17 @@ from abc import ABCMeta, abstractmethod
 class Dumper(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, title='', description=None, fmt='zip',
-                 hashf='sha512', **kwargs):
-        super(Dumper, self).__init__(**kwargs)
+    def __init__(self, docs={}, title='', description=None, fmt='zip',
+                 hashf='sha512', chunk=100, **kwargs):
         self.hashobj = MyHashObj(hashf)
-        self.docs = {
-            'archive': Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)),
-                               description=description),
-            'cert': Certificate(),
-        }
-        self.cipher = get_cipher(self.docs['archive'], self.docs['cert'])
+        self.chunk = chunk
+        self.docs = docs
+        if 'archive' not in self.docs:
+            self.docs['archive'] = Archive(
+                title, Meta(fmt, Cipher('aes-256-ctr', 1)),
+                description=description)
+        if 'cert' not in self.docs:
+            self.docs['cert'] = Certificate()
 
     def update(self, result):
         self.docs.update(result)
@@ -44,8 +45,9 @@ class Dumper(object):
             raise NotImplementedError(
                 "you need to inherit from an archiver class")
         with self:
-            with StreamSource(self.end(), self.uploader()) as dest:
-                fdst = CryptIO(dest, self.cipher, hashobj=self.hashobj)
+            with StreamSource(self.end(), self.uploader(), self.chunk) as dest:
+                cipher = get_cipher(self.docs['archive'], self.docs['cert'])
+                fdst = CryptIO(dest, cipher, hashobj=self.hashobj)
                 for result in self.archive(items, fdst, cb):
                     yield result
 
