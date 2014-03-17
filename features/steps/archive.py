@@ -1,7 +1,8 @@
 import os
 import json
 
-from lacli.adf import make_adf, Archive, Meta, Links, Certificate
+from lacli.adf import (make_adf, load_archive, Archive, Meta,
+                       Links, Certificate, Auth)
 from behave import step
 from tempfile import NamedTemporaryFile
 
@@ -17,7 +18,8 @@ def one_archive_titled(context, title):
     if not os.path.isdir(d):
         os.makedirs(d)
     context.archive = NamedTemporaryFile(dir=d, suffix='.adf')
-    context.archive.write(make_adf(Archive(title, Meta('zip', 'aes-256-ctr'))))
+    context.archive.write(make_adf([Archive(title, Meta('zip', 'aes-256-ctr')),
+                                    Auth(md5=('0'*32).decode('hex'))]))
     context.archive.flush()
 
 
@@ -25,10 +27,23 @@ def one_archive_titled(context, title):
 def archive_copy(context, title):
     assert context.archive
     context.archive.seek(0)
-    context.archive.write(make_adf([
-        Archive(title, Meta('zip', 'aes-256-ctr')),
-        Links(local='file://' + os.path.join(context.environ['HOME'],
-                                             "Longaccess/data/test"))]))
+    docs = load_archive(context.archive)
+    context.archive.seek(0)
+    docs['links'] = Links(
+        local='file://' + os.path.join(context.environ['HOME'],
+                                       "Longaccess/data/test"))
+    context.archive.write(make_adf(list(docs.itervalues())))
+    context.archive.flush()
+
+
+@step(u'the archive titled "{title}" is {size} KB big')
+def archive_size(context, title, size):
+    assert context.archive
+    context.archive.seek(0)
+    docs = load_archive(context.archive)
+    context.archive.seek(0)
+    docs['archive'].meta.size = int(size) * 1024 * 1024
+    context.archive.write(make_adf(list(docs.itervalues())))
     context.archive.flush()
 
 
@@ -50,6 +65,7 @@ def archive_cert(context, title):
         os.makedirs(d)
     context.cert = NamedTemporaryFile(dir=d, suffix='.adf')
     context.cert.write(make_adf([Archive(title, Meta('zip', 'aes-256-ctr')),
+                                 Auth(md5=('0'*32).decode('hex')),
                                  Certificate()]))
     context.cert.flush()
 
