@@ -17,7 +17,6 @@ class S3Connection(StorageConnection):
         self.expires = token_expiration
         self._bucket = bucket
         self.prefix = prefix
-        self.kwargs = kwargs
         self.conn = None
 
     def getconnection(self):
@@ -25,7 +24,7 @@ class S3Connection(StorageConnection):
             self.conn = connect_s3(
                 aws_access_key_id=self.accesskey,
                 aws_secret_access_key=self.secret,
-                security_token=self.sectoken, **self.kwargs)
+                security_token=self.sectoken)
         return self.conn
 
     @cached_property
