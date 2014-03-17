@@ -1,3 +1,5 @@
+import os
+
 from .. import StorageConnection
 from lacli.date import parse_timestamp, remaining_time
 from lacli.log import getLogger
@@ -21,10 +23,20 @@ class S3Connection(StorageConnection):
 
     def getconnection(self):
         if self.conn is None:
+            settings = {}
+            port = os.environ.get('S3_PORT')
+            if port is not None:
+                settings['port'] = int(port)
+            host = os.environ.get('S3_HOST')
+            if host is not None:
+                settings['host'] = host
+            is_secure = os.environ.get('S3_SECURE')
+            if is_secure is not None:
+                settings['is_secure'] = True
             self.conn = connect_s3(
                 aws_access_key_id=self.accesskey,
                 aws_secret_access_key=self.secret,
-                security_token=self.sectoken)
+                security_token=self.sectoken, **settings)
         return self.conn
 
     @cached_property
