@@ -47,6 +47,8 @@ class ChunkedFile(object):
 
     def __init__(self, path, skip=0, chunk=None):
         self.path = path
+        if not os.path.exists(path):
+            raise IOError("File {} not found".format(path))
         self.isfile = os.path.isfile(path)
         size = maxint
         if self.isfile:

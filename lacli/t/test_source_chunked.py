@@ -18,7 +18,11 @@ class ChunkedFileTest(TestCase):
         return ChunkedFile(*args,  **kw)
 
     def test_constructor_nopath(self):
-        f = self._makeit('')
+        e = self.assertRaises(IOError, self._makeit, 'foobar')
+        self.assertEqual("File foobar not found", str(e))
+
+    def test_constructor_not_file(self):
+        f = self._makeit(os.devnull)
         self.assertFalse(f.isfile)
 
     def test_constructor_devnull(self):
