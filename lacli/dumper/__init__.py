@@ -11,9 +11,9 @@ class Dumper(object):
     __metaclass__ = ABCMeta
 
     def __init__(self, title='', description=None, fmt='zip',
-                 hashf='sha512', **kwargs):
-        super(Dumper, self).__init__(**kwargs)
+                 hashf='sha512', chunk=100, **kwargs):
         self.hashobj = MyHashObj(hashf)
+        self.chunk = chunk
         self.docs = {
             'archive': Archive(title, Meta(fmt, Cipher('aes-256-ctr', 1)),
                                description=description),
@@ -44,7 +44,7 @@ class Dumper(object):
             raise NotImplementedError(
                 "you need to inherit from an archiver class")
         with self:
-            with StreamSource(self.end(), self.uploader()) as dest:
+            with StreamSource(self.end(), self.uploader(), self.chunk) as dest:
                 fdst = CryptIO(dest, self.cipher, hashobj=self.hashobj)
                 for result in self.archive(items, fdst, cb):
                     yield result
