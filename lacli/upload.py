@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from lacli.log import LogHandler, getLogger
 from lacli.control import ControlHandler
 from lacli.worker import WorkerPool
-from lacli.decorators import block
+from lacli.async import block
 from twisted.internet import defer, threads
 from itertools import count
 from multiprocessing import TimeoutError

@@ -3,7 +3,7 @@ from mock import Mock
 from itertools import repeat
 from . import makeprefs
 from lacli.exceptions import ApiAuthException, ApiErrorException
-from lacli.decorators import block
+from lacli.async import block
 from twisted.internet import defer
 from itertools import imap
 import json

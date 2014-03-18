@@ -1,7 +1,7 @@
 import sys
 import os
 
-from lacli.decorators import block
+from lacli.async import block
 from twisted.internet import defer
 from lacli.adf import Archive, Meta, Cipher, make_adf
 from lacli.api import RequestsFactory, UploadOperation

@@ -1,4 +1,5 @@
-from lacli.decorators import command, block
+from lacli.decorators import command
+from lacli.async import block
 from lacli.command import LaBaseCommand
 from lacli.log import getLogger
 from lacli.exceptions import (ApiAuthException, ApiErrorException,

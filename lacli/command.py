@@ -10,7 +10,8 @@ from lacli.log import getLogger
 from lacli.upload import Upload, UploadState
 from lacli.archive import restore_archive
 from lacli.adf import archive_size, creation
-from lacli.decorators import command, login, block
+from lacli.decorators import command, login
+from lacli.async import block
 from lacli.exceptions import PauseEvent
 from lacli.compose import compose
 from lacli.progress import ConsoleProgressHandler

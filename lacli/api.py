@@ -1,7 +1,7 @@
 from urlparse import urljoin
 from lacli import get_client_info
-from lacli.decorators import (cached_property, deferred_property,
-                              contains, block)
+from lacli.decorators import cached_property, contains
+from lacli.async import deferred_property, block
 from lacli.exceptions import (ApiAuthException, UploadEmptyError,
                               ApiUnavailableException, ApiErrorException)
 from lacli.date import parse_timestamp
