@@ -40,5 +40,5 @@ class Archiver(object):
         """
 
     @abstractmethod
-    def archive(self, items, dest, cb):
+    def archive(self, items, dest, cb=None):
         """ write every item to test and yield the item """

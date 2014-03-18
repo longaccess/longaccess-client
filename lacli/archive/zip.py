@@ -27,13 +27,13 @@ class ZipArchiver(Archiver):
             with fdst as dst:
                 copyfileobj(zf, dst, 1024)
 
-    def args(self, items, cb):
+    def args(self, items, cb=None):
         for item in items:
             if cb is not None:
                 cb(item, item)
             yield ((item,), {})
 
-    def archive(self, items, dst, cb):
+    def archive(self, items, dst, cb=None):
 
         if zipstream is None:
             # do it in two passes now as vanilla zipfile

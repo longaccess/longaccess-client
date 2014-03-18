@@ -40,7 +40,7 @@ class Dumper(object):
         self.docs['archive'].meta.size = yield
         self.update({'auth': self.hashobj.auth()})
 
-    def dump(self, items, cb):
+    def dump(self, items, cb=None):
         if not hasattr(self, 'archive'):
             raise NotImplementedError(
                 "you need to inherit from an archiver class")
