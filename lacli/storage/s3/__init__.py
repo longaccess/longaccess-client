@@ -32,7 +32,7 @@ class S3Connection(StorageConnection):
                 settings['host'] = host
             is_secure = os.environ.get('S3_SECURE')
             if is_secure is not None:
-                settings['is_secure'] = True
+                settings['is_secure'] = (is_secure == '1')
             self.conn = connect_s3(
                 aws_access_key_id=self.accesskey,
                 aws_secret_access_key=self.secret,
