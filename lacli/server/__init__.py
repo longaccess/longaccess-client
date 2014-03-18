@@ -1,6 +1,7 @@
 from lacli import __version__
 from lacli.log import getLogger
-from lacli.adf import make_adf, Archive, Certificate, Meta, Cipher
+from lacli.adf.persist import make_adf
+from lacli.adf.elements import Archive, Certificate, Meta, Cipher
 from lacli.archive import restore_archive
 from lacli.basecmd import LaBaseCommand
 from lacli.command import command

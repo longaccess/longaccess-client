@@ -10,7 +10,8 @@ from lacli.date import parse_timestamp
 from lacli.dumper.file import FileDumper
 
 from glob import iglob
-from lacli.adf import (load_archive, make_adf, Signature, as_json)
+from lacli.adf.persist import load_archive, make_adf, as_json
+from lacli.adf.elements import Signature
 from lacli.log import getLogger
 from lacli.archive import archive_handle
 from lacli.archive.folders import FolderArchiver

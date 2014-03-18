@@ -10,7 +10,7 @@ from pipes import quote
 from lacli.log import getLogger
 from lacli.upload import Upload, UploadState
 from lacli.archive import restore_archive
-from lacli.adf import archive_size, creation
+from lacli.adf.util import archive_size, creation
 from lacli.async import block
 from lacli.cmdutil import command
 from lacli.exceptions import PauseEvent

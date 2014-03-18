@@ -1,5 +1,5 @@
 from tempfile import NamedTemporaryFile
-from lacli.adf import make_adf
+from lacli.adf.persist import make_adf
 from lacli.crypt import CryptIO
 from lacli.cipher import get_cipher
 from lacli.hash import HashIO

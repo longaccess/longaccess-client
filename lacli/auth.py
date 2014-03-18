@@ -1,6 +1,6 @@
 import hashlib
 
-from lacli.adf import Auth
+from lacli.adf.elements import Auth
 
 
 class MyHashObj(object):

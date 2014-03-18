@@ -3,7 +3,8 @@ import os
 
 from lacli.async import block
 from twisted.internet import defer
-from lacli.adf import Archive, Meta, Cipher, make_adf
+from lacli.adf.elements import Archive, Meta, Cipher
+from lacli.adf.persist import make_adf
 from lacli.api import RequestsFactory, UploadOperation
 from lacli.storage.s3 import S3Connection
 from lacli.dumper.s3 import S3Dumper

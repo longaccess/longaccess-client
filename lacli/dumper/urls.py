@@ -1,6 +1,7 @@
 import sys
 
-from lacli.adf import Links, make_adf
+from lacli.adf.elements import Links
+from lacli.adf.persist import make_adf
 from lacli.archive.urls import UrlArchiver
 from . import Dumper
 

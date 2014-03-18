@@ -2,7 +2,7 @@ import os
 from . import Dumper
 from tempfile import NamedTemporaryFile
 from urllib import pathname2url
-from lacli.adf import Links
+from lacli.adf.elements import Links
 
 
 class FileDumper(Dumper):
