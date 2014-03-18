@@ -85,8 +85,6 @@ Feature: upload command
         When I run console script "lacli"
         Then I see "ETA:"
         And I see "done."
-        When the upload status is "completed"
-        Then I see "done."
 
     @dev
     Scenario: I upload a big archive
