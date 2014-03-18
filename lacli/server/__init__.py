@@ -1,10 +1,11 @@
 from lacli import __version__
-from lacli.decorators import command
 from lacli.log import getLogger
 from lacli.adf import make_adf, Archive, Certificate, Meta, Cipher
 from lacli.archive import restore_archive
 from lacli.basecmd import LaBaseCommand
-from lacli.decorators import login_async, expand_args
+from lacli.command import command
+from lacli.loginutil import login_async
+from lacli.decorators import expand_args
 from lacli.exceptions import UploadError
 from twisted.python.log import msg, err, PythonLoggingObserver
 from twisted.internet import reactor, defer, threads, task
