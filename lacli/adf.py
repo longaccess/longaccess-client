@@ -1,10 +1,12 @@
 import yaml
-import pyaml
 import sys
 import json
 import mmap
 import re
-
+try:
+    import pyaml
+except ImportError:
+    pyaml = None
 from lacli.cipher import cipher_modes, new_key
 from yaml import SafeLoader
 from yaml import SafeDumper
@@ -359,7 +361,7 @@ def make_adf(archive=None, out=None, pretty=False):
 
     if not hasattr(archive, '__getitem__'):
         archive = [archive]
-    if pretty:
+    if pretty and pyaml is not None:
         out.write("--- ".join(map(pyaml.dump, archive)))
         return
     return yaml.safe_dump_all(
