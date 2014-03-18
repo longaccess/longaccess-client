@@ -9,7 +9,6 @@ Feature: upload command
         And the password "test"
         And I have 1 capsule
         And I store my credentials in "{homedir}/.netrc"
-        And the environment variable "LA_BATCH_OPERATION" is "1"
 
     Scenario: I try an upload without files
         Given the command line arguments "archive upload"
@@ -41,12 +40,13 @@ Feature: upload command
         And the command line arguments "archive upload"
         When I run console script "lacli"
         Then I see "ETA:"
-        And I see "done."
+        And I see "waiting for verification"
 
     Scenario: I upload an empty file to an incorrect API url
         Given I prepare an archive with a file "test"
         And the command line arguments "archive upload 1"
         And the environment variable "LA_API_URL" is "http://stage.longaccess.com/foobar"
+        And the environment variable "LA_BATCH_OPERATION" is "1"
         When I run console script "lacli"
         Then I see "error: resource not found" 
 
@@ -74,7 +74,19 @@ Feature: upload command
         And an S3 bucket named "foobucket"
         When I run console script "lacli"
         Then I see "ETA:"
+        When the upload status is "completed"
+        Then I wait 5 seconds to see "done."
+
+    Scenario: I upload an archive in batch operation
+        Given I prepare an archive with a file "test"
+        And the command line arguments "archive upload 1"
+        And an S3 bucket named "foobucket"
+        And the environment variable "LA_BATCH_OPERATION" is "1"
+        When I run console script "lacli"
+        Then I see "ETA:"
         And I see "done."
+        When the upload status is "completed"
+        Then I see "done."
 
     @dev
     Scenario: I upload a big archive
