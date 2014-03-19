@@ -1,8 +1,21 @@
 import os
+import multiprocessing
 from progressbar import (ProgressBar, Bar,
                          ETA, FileTransferSpeed)
-from lacli.log import queueHandler, getLogger
+from lacli.log import getLogger
 from abc import ABCMeta, abstractmethod
+from logutils.queue import QueueListener
+
+
+class queueHandler(object):
+    def __enter__(self):
+        q = multiprocessing.Queue()
+        self.listener = QueueListener(q, self)
+        self.listener.start()
+        return q
+
+    def __exit__(self, type, value, traceback):
+        self.listener.stop()
 
 
 class BaseProgressHandler(queueHandler, ProgressBar):

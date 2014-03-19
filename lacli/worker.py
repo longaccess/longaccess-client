@@ -1,8 +1,9 @@
+import logging
 import sys
 import os
 import signal
 
-from lacli.log import logToQueue, getLogger
+from lacli.log import getLogger
 from lacli.progress import progressToQueue
 from lacli.control import controlByQueue
 from multiprocessing import cpu_count, pool, current_process, Process
@@ -10,6 +11,31 @@ try:
     from setproctitle import setproctitle
 except ImportError:
     setproctitle = lambda x: x
+
+
+def logToQueue(queue):
+    logging.config.dictConfig({
+        'version': 1,
+        'disable_existing_loggers': True,
+        'handlers': {
+            'queue': {
+                'class': 'logutils.queue.QueueHandler',
+                'queue': queue,
+            },
+        },
+        'loggers': {
+            'boto': {
+                'handlers': ['queue']
+            },
+            'lacli': {
+                'level': 'DEBUG',
+                'handlers': ['queue']
+            },
+        },
+        'root': {
+            'level': 'DEBUG',
+        },
+    })
 
 
 def initworker(logq, progq, ctrlq, stdin=None):

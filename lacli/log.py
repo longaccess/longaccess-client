@@ -1,6 +1,4 @@
 import logging
-import multiprocessing
-from logutils.queue import QueueListener
 from boto import config as boto_config
 from twisted.internet.defer import setDebugging as debugTwisted
 from twisted.python import log as twisted_log
@@ -75,8 +73,6 @@ def setupLogging(level, logfile=None, queue=False):
 
     logging.config.dictConfig(logconf)
 
-    multiprocessing.get_logger()  # initialize mp logging
-
     return log_open(logfile)
 
 
@@ -101,50 +97,6 @@ def log_open(log):
 
     if logfile is not None:
         logfile.close()
-
-
-class queueHandler(object):
-    def __enter__(self):
-        q = multiprocessing.Queue()
-        self.listener = QueueListener(q, self)
-        self.listener.start()
-        return q
-
-    def __exit__(self, type, value, traceback):
-        self.listener.stop()
-
-
-class LogHandler(queueHandler):
-    def __init__(self, logger='lacli'):
-        self.logger = getLogger(logger)
-
-    def handle(self, msg):
-        self.logger.handle(msg)
-
-
-def logToQueue(queue):
-    logging.config.dictConfig({
-        'version': 1,
-        'disable_existing_loggers': True,
-        'handlers': {
-            'queue': {
-                'class': 'logutils.queue.QueueHandler',
-                'queue': queue,
-            },
-        },
-        'loggers': {
-            'boto': {
-                'handlers': ['queue']
-            },
-            'lacli': {
-                'level': 'DEBUG',
-                'handlers': ['queue']
-            },
-        },
-        'root': {
-            'level': 'DEBUG',
-        },
-    })
 
 
 def getLogger(logger='lacli'):
