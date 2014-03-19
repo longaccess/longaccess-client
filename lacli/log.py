@@ -1,7 +1,5 @@
 import logging
 from boto import config as boto_config
-from twisted.internet.defer import setDebugging as debugTwisted
-from twisted.python import log as twisted_log
 from contextlib import contextmanager
 
 
@@ -9,7 +7,7 @@ simplefmt = '%(name)-15s %(levelname)-8s %(processName)-10s %(message)s'
 logging.basicConfig(format=simplefmt)
 
 
-def setupLogging(level, logfile=None, queue=False):
+def setupLogging(level=0, logfile=None):
     # this overrides any user debug setting in the boto configuration
     if not boto_config.has_section('Boto'):
         boto_config.add_section('Boto')
@@ -29,7 +27,6 @@ def setupLogging(level, logfile=None, queue=False):
     else:
         level = 'DEBUG'
         boto_config.set('Boto', 'debug', '2')
-        debugTwisted(True)
 
     logconf = {
         'version': 1,
@@ -88,12 +85,7 @@ def log_open(log):
         except Exception:
             getLogger().debug("couldn't open log", exc_info=True)
 
-    observer = twisted_log.PythonLoggingObserver()
-    observer.start()
-
     yield None
-
-    observer.stop()
 
     if logfile is not None:
         logfile.close()

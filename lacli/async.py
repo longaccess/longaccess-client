@@ -1,7 +1,10 @@
 from twisted.python.failure import Failure
 from twisted.internet import reactor, defer
+from twisted.internet.defer import setDebugging as debugTwisted
+from twisted.python import log as twisted_log
 from crochet import setup, run_in_reactor, TimeoutError
 from functools import update_wrapper, wraps, partial
+from contextlib import contextmanager
 
 
 def block(f):
@@ -46,3 +49,15 @@ class deferred_property(object):
 
     def __set__(self, obj, value):
         obj.__dict__[self.f.__name__] = value
+
+
+@contextmanager
+def twisted_log_observer(level):
+    if level > 2:
+        debugTwisted(True)
+    observer = twisted_log.PythonLoggingObserver()
+    observer.start()
+
+    yield None
+
+    observer.stop()
