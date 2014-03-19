@@ -1,8 +1,8 @@
 import os
 import json
 
-from lacli.adf import (make_adf, load_archive, Archive, Meta,
-                       Links, Certificate, Auth)
+from lacli.adf.elements import Archive, Meta, Links, Certificate, Auth
+from lacli.adf.persist import make_adf, load_archive
 from behave import step
 from tempfile import NamedTemporaryFile
 
@@ -127,7 +127,7 @@ def exists_certificate(context):
     from glob import glob
     files = glob(os.path.join(context.environ['HOME'], "Longaccess/certs/*"))
     assert len(files) > 0, "there is a certificate"
-    from lacli.adf import load_archive
+    from lacli.adf.persist import load_archive
     docs = {}
     with open(files[0]) as f:
         docs = load_archive(f)

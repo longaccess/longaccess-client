@@ -1,7 +1,7 @@
 from lacli.source.stream import StreamSource
 from lacli.auth import MyHashObj
 from lacli.decorators import coroutine
-from lacli.adf import Certificate, Archive, Meta, Cipher
+from lacli.adf.elements import Certificate, Archive, Meta, Cipher
 from lacli.cipher import get_cipher
 from lacli.crypt import CryptIO
 from abc import ABCMeta, abstractmethod
@@ -40,7 +40,7 @@ class Dumper(object):
         self.docs['archive'].meta.size = yield
         self.update({'auth': self.hashobj.auth()})
 
-    def dump(self, items, cb):
+    def dump(self, items, cb=None):
         if not hasattr(self, 'archive'):
             raise NotImplementedError(
                 "you need to inherit from an archiver class")

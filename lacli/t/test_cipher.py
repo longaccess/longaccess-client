@@ -84,7 +84,7 @@ class CipherTest(TestCase):
         self.assertEqual("00"*10, b2a_hex(cipher._unpad(padded)))
 
     def test_get_cipher(self):
-        from lacli.adf import Archive, Meta, Cipher
+        from lacli.adf.elements import Archive, Meta, Cipher
         from lacli.cipher import get_cipher
         with patch('lacli.cipher.xor.CipherXOR.__init__') as xorinit:
             xorinit.return_value = None

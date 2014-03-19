@@ -1,12 +1,14 @@
 from lacli import __version__
-from lacli.decorators import command
 from lacli.log import getLogger
-from lacli.adf import make_adf, Archive, Certificate, Meta, Cipher
+from lacli.adf.persist import make_adf
+from lacli.adf.elements import Archive, Certificate, Meta, Cipher
 from lacli.archive import restore_archive
 from lacli.basecmd import LaBaseCommand
-from lacli.decorators import login_async, expand_args
+from lacli.command import command
+from lacli.loginutil import login_async
+from lacli.decorators import expand_args
 from lacli.exceptions import UploadError
-from twisted.python.log import msg, err, PythonLoggingObserver
+from twisted.python.log import msg, err
 from twisted.internet import reactor, defer, threads, task
 from thrift.transport import TTwisted
 from thrift.protocol import TBinaryProtocol
@@ -70,8 +72,6 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             f = ShellFactory()
             f.username = f.password = 'admin'
             reactor.listenTCP(port+1, f)
-        tlog = PythonLoggingObserver()
-        tlog.start()
         msg('Running reactor')
         self.batch = True
         if self.prefs['gui']['rememberme'] is True:
@@ -80,7 +80,6 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             self.logincmd.email = self.prefs['gui']['email']
         reactor.run()
         self.batch = False
-        tlog.stop()
 
     def process(self, iprot, oprot):
         d = CLI.Processor.process(self, iprot, oprot)

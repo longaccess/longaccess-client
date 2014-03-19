@@ -3,15 +3,25 @@ from lacli.pool import MPUpload
 from lacli.source.chunked import ChunkedFile
 from lacli.storage.s3 import MPConnection
 from contextlib import contextmanager
-from lacli.log import LogHandler, getLogger
+from lacli.log import getLogger
+from lacli.progress import queueHandler
 from lacli.control import ControlHandler
 from lacli.worker import WorkerPool
-from lacli.decorators import block
+from lacli.async import block
 from twisted.internet import defer, threads
 from itertools import count
 from multiprocessing import TimeoutError
+from multiprocessing import get_logger as mp_logging_init
 import errno
 import signal
+
+
+class LogHandler(queueHandler):
+    def __init__(self, logger='lacli'):
+        self.logger = getLogger(logger)
+
+    def handle(self, msg):
+        self.logger.handle(msg)
 
 
 class UploadState(object):
@@ -191,6 +201,7 @@ class Upload(object):
     def _workers(self, progq):
         with self.log as logq:
             with self.state.control as ctrlq:
+                mp_logging_init()
                 pool = WorkerPool(
                     self.prefs, logq, progq, ctrlq)
                 try:

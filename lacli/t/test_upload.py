@@ -1,6 +1,6 @@
 from testtools import TestCase
 from mock import Mock, MagicMock
-from lacli.decorators import block
+from lacli.async import block
 
 
 class UploadTest(TestCase):

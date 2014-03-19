@@ -1,7 +1,8 @@
 import sys
 
 from lacli.log import getLogger
-from lacli.adf import Links, make_adf
+from lacli.adf.elements import Links
+from lacli.adf.persist import make_adf
 from lacli.archive.urls import UrlArchiver
 from lacli.storage.s3 import S3Connection
 from . import Dumper
