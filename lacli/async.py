@@ -7,22 +7,28 @@ from functools import update_wrapper, wraps, partial
 from contextlib import contextmanager
 
 
-def block(f):
-    """ Decorate a method to block in crochet reactor
-    """
-    fblocking = run_in_reactor(f)
+def block_timeout(timeout):
+    def _block(f):
+        """ Decorate a method to block in crochet reactor
+        """
+        fblocking = run_in_reactor(f)
 
-    @wraps(f)
-    def wrap(*args, **kwargs):
-        if not reactor.running:
-            setup()
-        result = fblocking(*args, **kwargs)
-        try:
-            return result.wait()
-        except TimeoutError:
-            result.cancel()
-            raise
-    return wrap
+        @wraps(f)
+        def wrap(*args, **kwargs):
+            if not reactor.running:
+                setup()
+            result = fblocking(*args, **kwargs)
+            try:
+                return result.wait(timeout=timeout)
+            except TimeoutError:
+                result.cancel()
+                raise
+        return wrap
+    return _block
+
+
+def block(f):
+    return block_timeout(None)(f)
 
 
 class deferred_property(object):
