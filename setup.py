@@ -83,7 +83,7 @@ setup(version=pep386adapt(__version__),
           'pyOpenSSL>=0.13, <1',
           'thrift>=0.9, <1',
           'blessings>=1.5, <2',
-          'lacore>=0.1'
+          'lacore>=0.1, <2'
       ],
       tests_require=['testtools'],
       test_suite="lacli.t",
