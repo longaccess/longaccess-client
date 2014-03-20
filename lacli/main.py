@@ -27,15 +27,15 @@ import sys
 import os
 import cmd
 
-from lacli.log import setupLogging, getLogger
+from lacore.log import setupLogging, getLogger
 from docopt import docopt, DocoptExit
 from lacli.command import LaCapsuleCommand, LaCertsCommand, LaArchiveCommand
 from lacli.login import LaLoginCommand
 from lacli.server import LaServerCommand
 from lacli import get_client_info, __version__
-from lacli.api import RequestsFactory
+from lacore.api import RequestsFactory
 from lacli.cache import Cache
-from lacli.async import twisted_log_observer
+from lacore.async import twisted_log_observer
 from lacli.registry import LaRegistry
 from datetime import datetime
 

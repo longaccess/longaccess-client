@@ -1,13 +1,13 @@
 from lacli import __version__
-from lacli.log import getLogger
-from lacli.adf.persist import make_adf
-from lacli.adf.elements import Archive, Certificate, Meta, Cipher
-from lacli.archive import restore_archive
+from lacore.log import getLogger
+from lacore.adf.persist import make_adf
+from lacore.adf.elements import Archive, Certificate, Meta, Cipher
+from lacore.archive import restore_archive
 from lacli.basecmd import LaBaseCommand
 from lacli.command import command
 from lacli.loginutil import login_async
-from lacli.decorators import expand_args
-from lacli.exceptions import UploadError
+from lacore.decorators import expand_args
+from lacore.exceptions import UploadError
 from twisted.python.log import msg, err
 from twisted.internet import reactor, defer, threads, task
 from thrift.transport import TTwisted

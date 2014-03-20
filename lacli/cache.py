@@ -6,17 +6,18 @@ import shlex
 import time
 from urlparse import urlparse
 from pkg_resources import resource_string
-from lacli.date import parse_timestamp
-from lacli.dumper.file import FileDumper
+from lacore.date import parse_timestamp
+from lacore.dumper.file import FileDumper
 
 from glob import iglob
-from lacli.adf.persist import load_archive, make_adf, as_json
-from lacli.adf.elements import Signature
-from lacli.log import getLogger
+from lacore.adf.persist import load_archive, make_adf, as_json
+from lacore.adf.elements import Signature
+from lacore.log import getLogger
 from lacli.archive import archive_handle
-from lacli.archive.folders import FolderArchiver
-from lacli.exceptions import InvalidArchiveError, CacheInitException
-from lacli.decorators import contains
+from lacore.archive.folders import FolderArchiver
+from lacore.exceptions import InvalidArchiveError
+from lacli.exceptions import CacheInitException
+from lacore.decorators import contains
 from lacli.server.interface.ClientInterface.ttypes import ArchiveStatus
 from tempfile import NamedTemporaryFile
 from binascii import b2a_hex

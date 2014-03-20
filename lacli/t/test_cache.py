@@ -85,7 +85,7 @@ class CacheTest(TestCase):
 
     def test_save_cert(self):
         import lacli.cache
-        from lacli.adf.elements import Archive, Meta, Signature
+        from lacore.adf.elements import Archive, Meta, Signature
         from StringIO import StringIO
         with nested(
                 patch.object(lacli.cache, 'NamedTemporaryFile', create=True),
@@ -133,7 +133,7 @@ class CacheTest(TestCase):
                 patch.object(lacli.cache, 'load_archive', create=True),
                 patch.object(lacli.cache, 'make_adf', create=True)
                 ) as (mock_open, mock_load, mock_adf):
-            from lacli.adf.elements import Archive, Meta
+            from lacore.adf.elements import Archive, Meta
             now = datetime.utcfromtimestamp(0)
             meta = Meta('zip', 'xor', created=now)
             archive = Archive('foo', meta)

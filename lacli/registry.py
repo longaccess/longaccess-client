@@ -2,8 +2,8 @@ import os
 
 from urlparse import urlparse
 from netrc import netrc
-from lacli.log import getLogger
-from lacli.decorators import cached_property
+from lacore.log import getLogger
+from lacore.decorators import cached_property
 
 
 API_URL = 'https://www.longaccess.com/api/v1/'

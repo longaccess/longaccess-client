@@ -1,7 +1,7 @@
 import shlex
 
-from lacli.log import getLogger
-from lacli.enc import get_unicode
+from lacore.log import getLogger
+from lacore.enc import get_unicode
 from lacli.exceptions import CacheInitException
 from functools import wraps
 from docopt import docopt, DocoptExit

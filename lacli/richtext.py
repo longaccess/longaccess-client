@@ -7,7 +7,7 @@ except ImportError:
 import sys
 import time
 import pyaml
-from lacli.adf.util import creation
+from lacore.adf.util import creation
 
 
 def format_size(bytes):

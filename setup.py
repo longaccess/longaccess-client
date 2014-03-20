@@ -82,14 +82,14 @@ setup(version=pep386adapt(__version__),
           'treq>=0.2.0, <0.3',
           'pyOpenSSL>=0.13, <1',
           'thrift>=0.9, <1',
-          'blessings>=1.5, <2'
+          'blessings>=1.5, <2',
+          'lacore>=0.1'
       ],
       tests_require=['testtools'],
       test_suite="lacli.t",
       entry_points="""
       [console_scripts]
       lacli = lacli.main:main
-      ladec = lacli.cipher.dec:main
       """,
       cmdclass={'build_py': build_py, 'gen_thrift': gen_thrift},
       package_data={'lacli': ['data/certificate.html']},

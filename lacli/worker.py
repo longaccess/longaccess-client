@@ -3,7 +3,7 @@ import sys
 import os
 import signal
 
-from lacli.log import getLogger
+from lacore.log import getLogger
 from lacli.progress import progressToQueue
 from lacli.control import controlByQueue
 from multiprocessing import cpu_count, pool, current_process, Process

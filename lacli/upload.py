@@ -1,13 +1,13 @@
 from lacli.exceptions import PauseEvent
 from lacli.pool import MPUpload
-from lacli.source.chunked import ChunkedFile
-from lacli.storage.s3 import MPConnection
+from lacore.source.chunked import ChunkedFile
+from lacore.storage.s3 import MPConnection
 from contextlib import contextmanager
-from lacli.log import getLogger
+from lacore.log import getLogger
 from lacli.progress import queueHandler
 from lacli.control import ControlHandler
 from lacli.worker import WorkerPool
-from lacli.async import block
+from lacore.async import block
 from twisted.internet import defer, threads
 from itertools import count
 from multiprocessing import TimeoutError
