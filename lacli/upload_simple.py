@@ -1,13 +1,13 @@
 import sys
 import os
 
-from lacli.async import block
+from lacore.async import block
 from twisted.internet import defer
-from lacli.adf.elements import Archive, Meta, Cipher
-from lacli.adf.persist import make_adf
-from lacli.api import RequestsFactory, UploadOperation
-from lacli.storage.s3 import S3Connection
-from lacli.dumper.s3 import S3Dumper
+from lacore.adf.elements import Archive, Meta, Cipher
+from lacore.adf.persist import make_adf
+from lacore.api import RequestsFactory, UploadOperation
+from lacore.storage.s3 import S3Connection
+from lacore.dumper.s3 import S3Dumper
 
 
 API_URL = 'https://www.longaccess.com/api/v1/'
@@ -46,6 +46,6 @@ def upload(title, urls, description=None,
 
 
 if __name__ == "__main__":
-    from lacli.log import setupLogging
+    from lacore.log import setupLogging
     setupLogging(4)
     upload('test', sys.argv[2:], capsule=sys.argv[1])

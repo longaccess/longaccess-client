@@ -67,7 +67,7 @@ class ArchiveCommandTest(TestCase):
 
     @patch('sys.stdout', new_callable=StringIO)
     def test_do_archive_list_some(self, out):
-        from lacli.adf.elements import Archive, Meta
+        from lacore.adf.elements import Archive, Meta
         meta = Meta(format='', size=None, cipher='')
         archive = Archive(title="foo", description='',
                           tags=[], meta=meta)
@@ -81,7 +81,7 @@ class ArchiveCommandTest(TestCase):
 
     @patch('sys.stdout', new_callable=StringIO)
     def test_do_archive_list_debug(self, out):
-        from lacli.adf.elements import Archive, Meta
+        from lacore.adf.elements import Archive, Meta
         meta = Meta(format='', size=None, cipher='')
         archive = Archive(title="foo", description='',
                           tags=[], meta=meta)
@@ -97,7 +97,7 @@ class ArchiveCommandTest(TestCase):
     def test_do_archive_list_more(self):
         with patch('sys.stdout', new_callable=StringIO) as out:
             for size in [(25, '25 B'), (1024, '1 KB'), (2000000, '1 MB')]:
-                from lacli.adf.elements import Archive, Meta
+                from lacore.adf.elements import Archive, Meta
                 meta = Meta(format='', size=size[0], cipher='')
                 archive = Archive(title="foo", description='',
                                   tags=[], meta=meta)

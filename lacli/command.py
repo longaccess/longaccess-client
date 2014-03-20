@@ -7,11 +7,11 @@ import errno
 import operator
 
 from pipes import quote
-from lacli.log import getLogger
+from lacore.log import getLogger
 from lacli.upload import Upload, UploadState
-from lacli.archive import restore_archive
-from lacli.adf.util import archive_size, creation
-from lacli.async import block
+from lacore.archive import restore_archive
+from lacore.adf.util import archive_size, creation
+from lacore.async import block
 from lacli.cmdutil import command
 from lacli.exceptions import PauseEvent
 from lacli.compose import compose
