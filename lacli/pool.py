@@ -37,11 +37,9 @@ class MPUpload(object):
     def _getupload(self):
         if self.source.chunks > 1 and self.source.isfile:
             if self.upload_id is None:
-                return self.conn.bucket.initiate_multipart_upload(self.key)
-
-            for upload in self.conn.bucket.get_all_multipart_uploads():
-                if self.upload_id == upload.id:
-                    return upload
+                return self.conn.newupload(self.key)
+            else:
+                return self.conn.getupload(self.upload_id)
         else:
             return self.conn.newkey(self.key)
 

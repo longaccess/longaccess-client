@@ -28,11 +28,11 @@ class MPUploadTest(TestCase):
 
     def test_getupload_2(self):
         c = Mock()
-        c.bucket.initiate_multipart_upload.return_value = 'yo'
+        c.newupload.return_value = 'yo'
         mp = self._makeit(c, Mock(chunks=2), 'foo')
         self.assertEqual('yo', mp._getupload())
-        c.bucket.initiate_multipart_upload.assert_called_with('foo')
-        c.bucket.get_all_multipart_uploads.return_value = (Mock(id='bar'),)
+        c.newupload.assert_called_with('foo')
+        c.getupload.return_value = Mock(id='bar')
         mp.upload_id = 'bar'
         self.assertEqual('bar', mp._getupload().id)
-        c.bucket.get_all_multipart_uploads.assert_called()
+        c.getupload.assert_called()
