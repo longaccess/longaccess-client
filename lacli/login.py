@@ -1,7 +1,7 @@
 from lacli.cmdutil import command
 from lacore.async import block
 from lacli.command import LaBaseCommand
-from lacore.log import getLogger
+from lacli.log import getLogger
 from lacli.exceptions import ApiNoSessionError
 from lacore.exceptions import (ApiAuthException, ApiErrorException,
                                ApiUnavailableException)

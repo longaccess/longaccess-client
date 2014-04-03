@@ -1,5 +1,5 @@
 from boto import set_stream_logger
-from lacore.log import setupLogging
+from lacli.log import setupLogging
 from lacore.date import epoch
 from binascii import a2b_hex
 from contextlib import contextmanager

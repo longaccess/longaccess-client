@@ -3,7 +3,7 @@ from lacli.pool import MPUpload
 from lacore.source.chunked import ChunkedFile
 from lacore.storage.s3 import MPConnection
 from contextlib import contextmanager
-from lacore.log import getLogger
+from lacli.log import getLogger
 from lacli.progress import queueHandler
 from lacli.control import ControlHandler
 from lacli.worker import WorkerPool

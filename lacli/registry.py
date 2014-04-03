@@ -2,7 +2,7 @@ import os
 
 from urlparse import urlparse
 from netrc import netrc
-from lacore.log import getLogger
+from lacli.log import getLogger
 from lacore.decorators import cached_property
 
 

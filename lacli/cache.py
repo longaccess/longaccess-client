@@ -12,7 +12,7 @@ from lacore.dumper.file import FileDumper
 from glob import iglob
 from lacore.adf.persist import load_archive, make_adf, as_json
 from lacore.adf.elements import Signature
-from lacore.log import getLogger
+from lacli.log import getLogger
 from lacli.archive import archive_handle
 from lacore.archive.folders import FolderArchiver
 from lacore.exceptions import InvalidArchiveError

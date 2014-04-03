@@ -2,7 +2,7 @@ from lacore.exceptions import ApiAuthException, BaseAppException
 from lacli.exceptions import PauseEvent
 from lacli.server.interface.ClientInterface.ttypes import InvalidOperation
 from lacli.server.interface.ClientInterface.ttypes import ErrorType
-from lacore.log import getLogger
+from lacli.log import getLogger
 from twisted.python import log as twisted_log
 from twisted.internet import defer
 from functools import wraps

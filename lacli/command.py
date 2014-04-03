@@ -7,7 +7,7 @@ import errno
 import operator
 
 from pipes import quote
-from lacore.log import getLogger
+from lacli.log import getLogger
 from lacli.upload import Upload, UploadState
 from lacore.archive import restore_archive
 from lacore.adf.util import archive_size, creation

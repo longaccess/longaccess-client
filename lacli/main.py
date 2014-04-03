@@ -27,7 +27,7 @@ import sys
 import os
 import cmd
 
-from lacore.log import setupLogging, getLogger
+from lacli.log import setupLogging, getLogger
 from docopt import docopt, DocoptExit
 from lacli.command import LaCapsuleCommand, LaCertsCommand, LaArchiveCommand
 from lacli.login import LaLoginCommand

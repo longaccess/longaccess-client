@@ -1,7 +1,7 @@
 import os
 from lacli.progress import make_progress, save_progress
 from itertools import repeat, izip
-from lacore.log import getLogger
+from lacli.log import getLogger
 from lacore.source.chunked import ChunkedFile
 from lacore.exceptions import UploadEmptyError
 from lacli.exceptions import (WorkerFailureError, PauseEvent,

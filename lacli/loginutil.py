@@ -1,6 +1,6 @@
 from functools import update_wrapper, wraps
 from twisted.internet import defer
-from lacore.log import getLogger
+from lacli.log import getLogger
 
 
 class login_async(object):
