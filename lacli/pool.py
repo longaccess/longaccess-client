@@ -96,7 +96,11 @@ class MPUpload(object):
             raise UploadEmptyError()
 
         if hasattr(self.upload, 'complete_upload'):
-            key = self.conn.complete_multipart(self.upload, etags)
+            try:
+                key = self.conn.complete_multipart(self.upload, etags)
+            except Exception as e:
+                getLogger().debug("error completing multipart", exc_info=True)
+                raise CloudProviderUploadError(e)
             name = key.key_name
         else:
             name = key.name

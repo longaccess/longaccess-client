@@ -8,3 +8,4 @@ pyandoc==0.0.1
 testtools==0.9.35
 wheel==0.22.0
 check-manifest==0.19
+-e hg+https://bitbucket.org/khinsen/monoprocessing#egg=monoprocessing
