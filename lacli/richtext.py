@@ -1,12 +1,7 @@
-try:
-    from blessings import Terminal
-    WITH_BLESSINGS = True
-except ImportError:
-    WITH_BLESSINGS = False
-
 import sys
 import time
 import pyaml
+from blessed import Terminal
 from lacore.adf.util import creation
 
 
@@ -30,13 +25,8 @@ def format_size(bytes):
 class RichTextUI:
     def __init__(self):
 
-        if WITH_BLESSINGS:
-            t = Terminal()
-            self.width = t.width
-        else:
-            self.width = 78
-        if not self.width:
-            self.width = 78
+        t = Terminal()
+        self.width = t.width
 
         h_titles = '#   ID         STATUS    SIZE   DATE         TITLE'
         h_pattern = ('--- ---------- --------- ------ ------------ '
@@ -138,7 +128,9 @@ class RichTextUI:
             for cert in sorted(certs.itervalues(), key=creation):
                 aid = cert['signature'].aid
                 title = cert['archive'].title
-                size = format_size(cert['archive'].meta.size)
+                size = cert['archive'].meta.size or ""
+                if size is not "":
+                    size = format_size(cert['archive'].meta.size)
                 self.print_certificates_line(certificate={
                     'aid': aid,
                     'size': size,
