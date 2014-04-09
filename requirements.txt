@@ -20,3 +20,4 @@ treq==0.2.1
 Twisted==13.2.0
 zope.interface==4.1.0
 lacore==0.1
+blessed==1.8.3

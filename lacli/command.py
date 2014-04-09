@@ -11,6 +11,7 @@ from lacli.log import getLogger
 from lacli.upload import Upload, UploadState
 from lacore.archive import restore_archive
 from lacore.adf.util import archive_size, creation
+from lacore.adf.elements import Archive, Certificate, Meta, Signature
 from lacore.async import block
 from lacli.cmdutil import command
 from lacli.exceptions import PauseEvent
@@ -19,6 +20,7 @@ from lacli.progress import ConsoleProgressHandler
 from lacli.server.interface.ClientInterface.ttypes import ArchiveStatus
 from lacli.basecmd import LaBaseCommand
 from lacli.loginutil import login
+from lacli.certinput import ask_key
 from twisted.internet import defer, reactor, task
 
 from richtext import RichTextUI as UIClass
@@ -31,7 +33,7 @@ class LaCertsCommand(LaBaseCommand):
     Usage: lacli certificate list
            lacli certificate print <cert_id>
            lacli certificate export <cert_id>
-           lacli certificate import <filename>
+           lacli certificate import [<filename>]
            lacli certificate delete <cert_id> [<srm>]
            lacli certificate --help
 
@@ -55,7 +57,8 @@ class LaCertsCommand(LaBaseCommand):
             line.append(options["<cert_id>"])
         elif options['import']:
             line.append("import")
-            line.append(options["<filename>"])
+            if options['<filename>']:
+                line.append(options["<filename>"])
         return " ".join(line)
 
     @command()
@@ -130,8 +133,25 @@ class LaCertsCommand(LaBaseCommand):
     @command(filename=unicode)
     def do_import(self, filename=None):
         """
-        Usage: import <filename>
+        Usage: import [<filename>]
         """
+        if filename is None:
+            cert = raw_input("Enter the certificate ID:")
+            if cert in self.cache.certs():
+                print "A certificate with this ID already exists"
+            else:
+                title = raw_input("Enter the certificate title:")
+                key = ask_key()
+                if key is not None:
+                    print "Imported certificate {}".format(
+                        self.cache.save_cert({
+                            'archive': Archive(title,
+                                               Meta('zip', 'aes-256-ctr')),
+                            'cert': Certificate(key),
+                            'signature': Signature(aid=cert, uri='',)
+                        })[0])
+            return
+
         certs = self.cache.certs([filename])
         if len(certs) > 0:
             for key, cert in certs.iteritems():
