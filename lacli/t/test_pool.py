@@ -1,41 +1,38 @@
+
 from testtools import TestCase
-from mock import MagicMock, patch
+from moto import mock_s3
+from mock import Mock
 
 
-class MPConnectionTest(TestCase):
+class MPUploadTest(TestCase):
+
     def setUp(self):
-        super(MPConnectionTest, self).setUp()
+        self.s3 = mock_s3()
+        self.s3.start()
+
+        super(MPUploadTest, self).setUp()
 
     def tearDown(self):
-        super(MPConnectionTest, self).tearDown()
+        self.s3.stop()
+        super(MPUploadTest, self).tearDown()
 
     def _makeit(self, *args, **kw):
-        from lacli.pool import MPConnection
-        return MPConnection(*args,  **kw)
+        from lacli.pool import MPUpload
+        return MPUpload(*args,  **kw)
 
-    def _token(self, uid=None):
-        return {
-            'token_access_key': None,
-            'token_secret_key': None,
-            'token_session': None,
-            'token_expiration': None,
-            'token_uid': uid,
-            'bucket': None
-            }
+    def test_getupload_1(self):
+        mp = self._makeit(Mock(newkey=Mock(return_value='baz')),
+                          Mock(chunks=1), 'foo')
+        self.assertEqual('baz', mp._getupload())
+        mp.conn.newkey.assert_called_with('foo')
 
-    def test_makeit(self):
-        assert self._makeit(MagicMock(), 4)
-
-    def test_no_expiration(self):
-        conn = self._makeit(self._token("lala"), 4)
-        self.assertEqual(None, conn.timeout())
-
-    @patch('lacli.pool.getLogger', create=True)
-    def test_timeout_parse_error(self, log):
-        token = self._token("lala")
-        token['token_expiration'] = "foobar"
-        conn = self._makeit(token, 4)
-        self.assertEqual(None, conn.timeout())
-        log.assert_called_with()
-        log.return_value.debug.assert_called_with(
-            'invalid token expiration: %s', 'foobar')
+    def test_getupload_2(self):
+        c = Mock()
+        c.bucket.initiate_multipart_upload.return_value = 'yo'
+        mp = self._makeit(c, Mock(chunks=2), 'foo')
+        self.assertEqual('yo', mp._getupload())
+        c.bucket.initiate_multipart_upload.assert_called_with('foo')
+        c.bucket.get_all_multipart_uploads.return_value = (Mock(id='bar'),)
+        mp.upload_id = 'bar'
+        self.assertEqual('bar', mp._getupload().id)
+        c.bucket.get_all_multipart_uploads.assert_called()

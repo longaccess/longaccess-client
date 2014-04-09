@@ -1,4 +1,4 @@
-from lacli.log import getLogger
+from lacore.log import getLogger
 from lacli.exceptions import PauseEvent
 from multiprocessing import Queue, active_children
 from Queue import Empty

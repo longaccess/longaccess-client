@@ -7,7 +7,7 @@ except ImportError:
 import sys
 import time
 import pyaml
-from lacli.adf import creation
+from lacore.adf.util import creation
 
 
 def format_size(bytes):
@@ -85,12 +85,13 @@ class RichTextUI:
         else:
             archive_title = archive['title']
         archive_title = archive_title.replace('\n', ' ')
+        created = archive['created']
         print self.archive_design['frmt'].format(
             archive['num'],
             archive['cert'],
             archive['status'],
             archive['size'],
-            archive['created'].strftime('%Y-%m-%d'),
+            created.strftime("%Y-%m-%d") if created else "-",
             archive_title.encode('utf-8'))
 
     def print_capsules_header(self):
@@ -103,13 +104,15 @@ class RichTextUI:
             capsule_title = capsule['title'][0:len(h_parts[-1])-2]+'..'
         else:
             capsule_title = capsule['title']
+        created = capsule['created']
+        expires = capsule['expires']
         print self.capsule_design['frmt'].format(
             capsule['num'],
             capsule['id'],
             format_size(capsule['size']),
             format_size(capsule['remaining']),
-            capsule['created'].strftime('%Y-%m-%d'),
-            capsule['expires'].strftime('%Y-%m-%d'),
+            created.strftime('%Y-%m-%d') if created else "-",
+            expires.strftime('%Y-%m-%d') if expires else "-",
             capsule_title.encode('utf-8'))
 
     def print_certificates_header(self):

@@ -15,8 +15,8 @@ Feature: upload command
     Scenario: I run the command interactively with no home
         Given the command line arguments "-i"
         When I run console script "lacli"
-        Then I see "~/Longaccess does not exist."
-        And I see "Should I create it? (yes/no)"
+        Then I see "{home}/Longaccess does not exist."
+        And I see "Should I create it\? \(yes/no\):"
         When I type "yes"
         Then I see "lacli>"
 
@@ -30,6 +30,6 @@ Feature: upload command
         And I have 1 available archive
         When I run console script "lacli"
         Then I see "{home}/whatevah does not exist"
-        And I see "Should I create it? (yes/no)"
+        And I see "Should I create it\? \(yes/no\):"
         When I type "yes"
         Then I see "No available archives."

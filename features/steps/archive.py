@@ -1,6 +1,8 @@
 import os
+import json
 
-from lacli.adf import make_adf, Archive, Meta, Links, Certificate
+from lacore.adf.elements import Archive, Meta, Links, Certificate, Auth
+from lacore.adf.persist import make_adf, load_archive
 from behave import step
 from tempfile import NamedTemporaryFile
 
@@ -16,7 +18,8 @@ def one_archive_titled(context, title):
     if not os.path.isdir(d):
         os.makedirs(d)
     context.archive = NamedTemporaryFile(dir=d, suffix='.adf')
-    context.archive.write(make_adf(Archive(title, Meta('zip', 'aes-256-ctr'))))
+    context.archive.write(make_adf([Archive(title, Meta('zip', 'aes-256-ctr')),
+                                    Auth(md5=('0'*32).decode('hex'))]))
     context.archive.flush()
 
 
@@ -24,10 +27,23 @@ def one_archive_titled(context, title):
 def archive_copy(context, title):
     assert context.archive
     context.archive.seek(0)
-    context.archive.write(make_adf([
-        Archive(title, Meta('zip', 'aes-256-ctr')),
-        Links(local='file://' + os.path.join(context.environ['HOME'],
-                                             "Longaccess/data/test"))]))
+    docs = load_archive(context.archive)
+    context.archive.seek(0)
+    docs['links'] = Links(
+        local='file://' + os.path.join(context.environ['HOME'],
+                                       "Longaccess/data/test"))
+    context.archive.write(make_adf(list(docs.itervalues())))
+    context.archive.flush()
+
+
+@step(u'the archive titled "{title}" is {size} KB big')
+def archive_size(context, title, size):
+    assert context.archive
+    context.archive.seek(0)
+    docs = load_archive(context.archive)
+    context.archive.seek(0)
+    docs['archive'].meta.size = int(size) * 1024 * 1024
+    context.archive.write(make_adf(list(docs.itervalues())))
     context.archive.flush()
 
 
@@ -49,6 +65,7 @@ def archive_cert(context, title):
         os.makedirs(d)
     context.cert = NamedTemporaryFile(dir=d, suffix='.adf')
     context.cert.write(make_adf([Archive(title, Meta('zip', 'aes-256-ctr')),
+                                 Auth(md5=('0'*32).decode('hex')),
                                  Certificate()]))
     context.cert.flush()
 
@@ -84,12 +101,8 @@ def pending_upload(context, title):
     assert(context.mock_api)
     import urlparse
     url = urlparse.urljoin(context.mock_api.url(), 'path/to/api/upload/1')
-    with open(af) as f:
-        from lacli.adf import load_archive, make_adf
-        docs = load_archive(f)
-        docs['links'].upload = url
-        with open(os.path.join(d, os.path.basename(af)), 'w') as out:
-            make_adf(list(docs.itervalues()), out=out)
+    with open(os.path.join(d, os.path.basename(af)), 'w') as out:
+        out.write(json.dumps({'uri': url}))
 
 
 @step(u'the upload status is "{status}"')
@@ -103,9 +116,9 @@ def upload_status(context, status):
 @step(u'there is an archive titled "{title}"')
 def exists_archive_titled(context, title):
     context.execute_steps(u"""
-        Given the command line arguments "archive create"
+        Given the command line arguments "archive list"
         When I run console script "lacli"
-        Then I see ") {}"
+        Then I see "[ ]*{}"
         """.format(title))
 
 
@@ -114,14 +127,14 @@ def exists_certificate(context):
     from glob import glob
     files = glob(os.path.join(context.environ['HOME'], "Longaccess/certs/*"))
     assert len(files) > 0, "there is a certificate"
-    from lacli.adf import load_archive
+    from lacore.adf.persist import load_archive
     docs = {}
     with open(files[0]) as f:
         docs = load_archive(f)
     assert 'links' in docs
     assert 'archive' in docs
-    assert hasattr(docs['links'], 'download')
-    assert docs['links'].download == 'https://longaccess.com/yoyoyo'
+    assert hasattr(docs['signature'], 'aid')
+    assert docs['signature'].aid == 'https://longaccess.com/yoyoyo'
 
 
 @step(u'there are {num} pending uploads')
@@ -144,6 +157,6 @@ def prepare_archive(context, title):
 @step(u'I prepare an archive with a directory "{title}"')
 def prepare_archive_folder(context, title):
     context.execute_steps(u'''
-        Given the command line arguments "archive create {title}"
+        Given the command line arguments "archive create -t "{t}" {{{t}}}"
         When I run console script "lacli"
-        Then I see "archive prepared"'''.format(title=title))
+        Then I see "archive prepared"'''.format(t=title))

@@ -1,7 +1,8 @@
 import os
 
-from . import makeprefs
+from . import makeprefs, dummycapsule
 from testtools import TestCase
+from testtools.matchers import Contains
 from mock import Mock, patch
 from StringIO import StringIO
 
@@ -27,28 +28,35 @@ class CapsuleCommandTest(TestCase):
 
     def test_do_list_exception(self):
         with patch('sys.stdout', new_callable=StringIO) as out:
-            s = Mock(capsules=Mock(side_effect=Exception("foo")))
-            cli = self._makeit(s, Mock(), self.prefs)
+            registry = Mock()
+            registry.prefs = self.prefs
+            registry.session.capsules.side_effect = Exception("foo")
+            cli = self._makeit(registry)
             cli.onecmd('list')
             self.assertEqual("error: foo\n", out.getvalue())
 
     def test_list_capsules(self):
         with patch('sys.stdout', new_callable=StringIO) as out:
-            s = Mock(capsules=Mock(return_value=()))
-            cli = self._makeit(s, Mock(), self.prefs)
+            registry = Mock()
+            registry.prefs = self.prefs
+            registry.session.capsules.return_value = ()
+            cli = self._makeit(registry)
             cli.onecmd('list')
             self.assertEqual("No available capsules.\n", out.getvalue())
 
     def test_list_capsules_some(self):
         with patch('sys.stdout', new_callable=StringIO) as out:
-            s = Mock(capsules=Mock(return_value=({'title': 'foo', 'a': 'b'},)))
-            cli = self._makeit(s, Mock(), self.prefs)
+            registry = Mock()
+            registry.prefs = self.prefs
+
+            registry.session.capsules.return_value = (dummycapsule,)
+            cli = self._makeit(registry)
             cli.onecmd('list')
-            r = '''\
-Available capsules:
-title     :       foo
-a         :         b
-
-
-'''
-            self.assertEqual(r, out.getvalue())
+            self.assertThat(out.getvalue(),
+                            Contains('foo'))
+            self.assertThat(out.getvalue(),
+                            Contains('bar'))
+            self.assertThat(out.getvalue(),
+                            Contains('1 MB'))
+            self.assertThat(out.getvalue(),
+                            Contains('1970-01-01'))

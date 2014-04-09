@@ -1,7 +1,10 @@
-from lacli.decorators import command, block
+from lacli.cmdutil import command
+from lacore.async import block
 from lacli.command import LaBaseCommand
-from lacli.log import getLogger
-from lacli.exceptions import ApiAuthException
+from lacore.log import getLogger
+from lacli.exceptions import ApiNoSessionError
+from lacore.exceptions import (ApiAuthException, ApiErrorException,
+                               ApiUnavailableException)
 from twisted.internet import defer
 from re import match, IGNORECASE
 from getpass import getpass
@@ -48,11 +51,17 @@ class LaLoginCommand(LaBaseCommand):
 
         save = (self.username, self.password)
 
-        if not username and not self.batch:
-            username = self.input("Username/email: ")
+        if not username:
+            if self.batch:
+                username = self.username
+            else:
+                username = self.input("Username/email: ")
 
-        if not password and not self.batch:
-            password = getpass("Password: ")
+        if not password:
+            if self.batch:
+                password = self.password
+            else:
+                password = getpass("Password: ")
 
         try:
             self.login_batch(username, password)
@@ -80,6 +89,12 @@ class LaLoginCommand(LaBaseCommand):
             self.email = account['email']
             self.session = session
             getLogger().debug("logged in {}".format(self.email))
+        except ApiErrorException:
+            raise
+        except ApiUnavailableException:
+            raise
+        except ApiNoSessionError:
+            raise
         except Exception as e:
             self.username = self.password = None
             getLogger().debug("auth failure", exc_info=True)

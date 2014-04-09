@@ -1,15 +1,27 @@
 from lacli.exceptions import PauseEvent
-from lacli.pool import MPConnection, MPUpload, MPFile
+from lacli.pool import MPUpload
+from lacore.source.chunked import ChunkedFile
+from lacore.storage.s3 import MPConnection
 from contextlib import contextmanager
-from lacli.log import LogHandler, getLogger
+from lacore.log import getLogger
+from lacli.progress import queueHandler
 from lacli.control import ControlHandler
 from lacli.worker import WorkerPool
-from lacli.decorators import block
+from lacore.async import block
 from twisted.internet import defer, threads
 from itertools import count
 from multiprocessing import TimeoutError
+from multiprocessing import get_logger as mp_logging_init
 import errno
 import signal
+
+
+class LogHandler(queueHandler):
+    def __init__(self, logger='lacli'):
+        self.logger = getLogger(logger)
+
+    def handle(self, msg):
+        self.logger.handle(msg)
 
 
 class UploadState(object):
@@ -51,6 +63,8 @@ class UploadState(object):
 
     @classmethod
     def reset(cls, fname):
+        if cls.states is None:
+            cls.setup()
         if fname not in cls.states:
             raise ValueError("Upload doesn't exist!")
         cls.cache._del_upload(fname)
@@ -187,6 +201,7 @@ class Upload(object):
     def _workers(self, progq):
         with self.log as logq:
             with self.state.control as ctrlq:
+                mp_logging_init()
                 pool = WorkerPool(
                     self.prefs, logq, progq, ctrlq)
                 try:
@@ -199,7 +214,7 @@ class Upload(object):
     def upload_temp(self, token, source, etags, pool, seq):
         key = "{prefix}temp-archive-{seq}".format(
             prefix=token['prefix'], seq=seq)
-        connection = MPConnection(token)
+        connection = MPConnection(**token)
         with MPUpload(connection, source, key) as uploader:
             etags[key], source = uploader.get_result(
                 uploader.submit_job(pool))
@@ -209,7 +224,7 @@ class Upload(object):
     def upload(self, fname, upload, progq):
         with self._workers(progq) as pool:
             etags = {}
-            source = MPFile(fname, self.state.progress)
+            source = ChunkedFile(fname, self.state.progress)
 
             token = yield upload.status
 

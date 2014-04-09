@@ -5,17 +5,20 @@ import pyaml
 import sys
 import errno
 import operator
+
 from pipes import quote
-from lacli.log import getLogger
+from lacore.log import getLogger
 from lacli.upload import Upload, UploadState
-from lacli.archive import restore_archive
-from lacli.adf import archive_size, creation
-from lacli.decorators import command, login, block
+from lacore.archive import restore_archive
+from lacore.adf.util import archive_size, creation
+from lacore.async import block
+from lacli.cmdutil import command
 from lacli.exceptions import PauseEvent
 from lacli.compose import compose
 from lacli.progress import ConsoleProgressHandler
 from lacli.server.interface.ClientInterface.ttypes import ArchiveStatus
 from lacli.basecmd import LaBaseCommand
+from lacli.loginutil import login
 from twisted.internet import defer, reactor, task
 
 from richtext import RichTextUI as UIClass
@@ -296,9 +299,12 @@ class LaArchiveCommand(LaBaseCommand):
             if capsule is None:
                 _error += "no capsules found"
 
-        if fname and capsule:
+        if 'links' not in docs:
+            _error += "no local copy exists."
+            link = False
+        else:
             link = docs['links']
-
+        if link and fname and capsule:
             if link.upload or link.download:
                 print "upload is already completed"
             else:
@@ -508,12 +514,22 @@ class LaArchiveCommand(LaBaseCommand):
                     url = upload['links'].upload
                     status = self.session.upload_status(url)
                     if status['status'] == "completed":
+                        print "status: complete"
                         cert, f = self.cache.save_cert(
                             self.cache.upload_complete(fname, status))
                         if f:
                             print "Certificate", cert, "saved:", f
                         else:
                             print "Certificate", cert, "already exists.\n"
+                        for i in range(3):
+                            try:
+                                UploadState.reset(fname)
+                                break
+                            except OSError as e:
+                                if i < 3 and e.errno == errno.EACCES:
+                                    continue
+                                else:
+                                    raise e
                         print " ".join(("Use lacli certificate list",
                                         "to see your certificates, or",
                                         "lacli certificate --help for",

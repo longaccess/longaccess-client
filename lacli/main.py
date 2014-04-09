@@ -27,14 +27,15 @@ import sys
 import os
 import cmd
 
-from lacli.log import setupLogging, getLogger
+from lacore.log import setupLogging, getLogger
 from docopt import docopt, DocoptExit
 from lacli.command import LaCapsuleCommand, LaCertsCommand, LaArchiveCommand
 from lacli.login import LaLoginCommand
 from lacli.server import LaServerCommand
 from lacli import get_client_info, __version__
-from lacli.api import RequestsFactory
+from lacore.api import RequestsFactory
 from lacli.cache import Cache
+from lacore.async import twisted_log_observer
 from lacli.registry import LaRegistry
 from datetime import datetime
 
@@ -163,10 +164,14 @@ class LaCommand(cmd.Cmd):
         self.dispatch_one(subcmd, line)
 
     def dispatch_one(self, subcmd, line, interactive=False):
-        if line:
-            subcmd.onecmd(line)
-        elif interactive:
-            subcmd.cmdloop()
+        try:
+            if line:
+                subcmd.onecmd(line)
+            elif interactive:
+                subcmd.cmdloop()
+        except Exception as e:
+            getLogger().debug("command returned error", exc_info=True)
+            print "error:", str(e)
 
     def do_archive(self, line):
         self.dispatch_one(self.archive, line, True)
@@ -191,14 +196,16 @@ def main(args=sys.argv[1:]):
                      version='lacli {}'.format(__version__),
                      options_first=True)
     prefs, cache = settings(options)
-    with setupLogging(prefs['command']['debug'], logfile=cache.log):
-        getLogger().debug("{} starting on {}".format(
-            get_client_info(), datetime.now().isoformat()))
-        cli = LaCommand(cache, prefs)
-        if options['<command>']:
-            cli.dispatch(options['<command>'], options['<args>'])
-        elif options['--interactive']:
-            cli.cmdloop()
+    level = prefs['command']['debug']
+    with setupLogging(level=level, logfile=cache.log):
+        with twisted_log_observer(level):
+            getLogger().debug("{} starting on {}".format(
+                get_client_info(), datetime.now().isoformat()))
+            cli = LaCommand(cache, prefs)
+            if options['<command>']:
+                cli.dispatch(options['<command>'], options['<args>'])
+            elif options['--interactive']:
+                cli.cmdloop()
 
 if __name__ == "__main__":
     main()
