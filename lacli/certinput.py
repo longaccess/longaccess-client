@@ -34,7 +34,10 @@ def ask_key():
                 print rows[i],
                 print t.underline("".join(value[2*i*s:(2*i+1)*s])),
                 print t.underline("".join(value[(2*i+1)*s:(2*i+2)*s]))
-            print "key valid, press enter to accept" if valid() else ""
+            if valid():
+                print "key valid, press enter to accept"
+            else:
+                print t.clear_eol
             if validvalue is not None:
                 break
             sys.stdout.write(t.move_up * (nrows+1))
