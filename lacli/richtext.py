@@ -25,7 +25,7 @@ def format_size(bytes):
 class RichTextUI:
     def __init__(self):
 
-        t = Terminal()
+        t = Terminal(stream=sys.stdout)
         self.width = t.width
 
         h_titles = '#   ID         STATUS    SIZE   DATE         TITLE'
