@@ -212,8 +212,7 @@ class Upload(object):
                     pool.join()
 
     def upload_temp(self, token, source, etags, pool, seq):
-        key = "{prefix}temp-archive-{seq}".format(
-            prefix=token['prefix'], seq=seq)
+        key = "temp-archive-{seq}".format(seq=seq)
         connection = MPConnection(**token)
         with MPUpload(connection, source, key) as uploader:
             etags[key], source = uploader.get_result(
