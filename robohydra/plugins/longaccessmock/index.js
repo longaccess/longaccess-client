@@ -71,7 +71,11 @@ exports.getBodyParts = function(config, modules) {
                     account: {
                         list_endpoint: apiPrefix + "/account/",
                         schema: apiPrefix + "/account/schema/"
-                    }
+                    },
+                    archive: {
+                        list_endpoint: apiPrefix + "/archive/",
+                        schema: apiPrefix + "/archive/schema/"
+                    },
                 }
             }),
             new RoboHydraHeadStatic({
@@ -147,7 +151,14 @@ exports.getBodyParts = function(config, modules) {
                     res.write(JSON.stringify(ret));
                     res.end();
                 }
-            })
+            }),
+            new RoboHydraHeadStatic({
+                path: apiPrefix + '/archive/',
+                content: {
+                    meta: meta(0),
+                    objects: []
+                }
+            }),
         ],
         scenarios: {
             uploadError: {
