@@ -290,7 +290,6 @@ exports.getBodyParts = function(config, modules) {
                     new RoboHydraHead({
                         path: '/.*',
                         handler: function(req, res, next) {
-                            console.log("SCENARIO")
                             res.authuser = true;
                             next(req, res);
                         }
@@ -311,7 +310,8 @@ exports.getBodyParts = function(config, modules) {
                             meta: meta(2),
                             objects: [
                                 capsules.Photos,
-                                capsules.Stuff
+                                capsules.Stuff,
+                                capsules.BFC
                             ]
                         }
                     })

@@ -24,6 +24,7 @@ from lacli.certinput import ask_key
 from twisted.internet import defer, reactor, task
 
 from richtext import RichTextUI as UIClass
+from richtext import format_size
 ui = UIClass()
 
 
@@ -180,6 +181,8 @@ class LaCapsuleCommand(LaBaseCommand):
             line.append("list")
         if options['archives']:
             line.append('archives')
+            if options['<capsule>']:
+                line.append(options['<capsule>'])
         return " ".join(line)
 
     @login
@@ -218,23 +221,28 @@ class LaCapsuleCommand(LaBaseCommand):
         try:
             if capsule is not None:
                 capsules = self.session.capsule_ids()
-                if len(capsules) < capsule:
+                if capsule not in capsules:
                     print "No such capsule"
                     return
+                capsule = capsules[capsule]
             archives = self.session.archives()
             if capsule is not None:
                 archives = [a for a in archives
                             if a['capsule'] == capsule['resource_uri']]
             if len(archives) > 0:
+                capsules = dict(
+                    [(c['resource_uri'], c['title'])
+                     for c in self.session.capsules()])
                 ui.print_archives_header()
                 for n, archive in enumerate(archives):
                     ui.print_archives_line(archive={
                         'num': n+1,
-                        'size': archive['size'],
+                        'size': format_size(int(archive['size'])),
                         'title': archive['title'],
                         'cert': archive['key'],
                         'created': archive['created'],
-                        'status': "COMPLETE"
+                        'status': "COMPLETE",
+                        'capsule': capsules.get(archive['capsule'], '')
                     })
             else:
                 print "No available archives."

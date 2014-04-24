@@ -47,30 +47,30 @@ Feature: list archives command
         And I store my credentials in "{homedir}/.netrc"
         And I have 2 uploaded archives
         When I run console script "lacli"
-        Then I see "TITLE"
-        And I see "My wedding"
-        And I see "CAPSULE"
+        Then I see "CAPSULE"
+        And I see "TITLE"
         And I see "Photos"
+        And I see "My wedding"
 
     Scenario: I list archives of specific capsule
-        Given the command line arguments "capsule archives 1"
+        Given the command line arguments "capsule archives 3"
         And I store my credentials in "{homedir}/.netrc"
         And I have 2 uploaded archives
         When I run console script "lacli"
-        Then I see "TITLE"
-        And I see "My wedding"
-        And I see "CAPSULE"
+        Then I see "CAPSULE"
+        And I see "TITLE"
         And I see "Photos"
+        And I see "My wedding"
 
     Scenario: I list archives of specific capsule with no archives
-        Given the command line arguments "capsule archives 2"
+        Given the command line arguments "capsule archives 1"
         And I store my credentials in "{homedir}/.netrc"
         And I have 2 uploaded archives
         When I run console script "lacli"
         Then I see "No available archives"
 
     Scenario: I list archives of nonexistent capsule
-        Given the command line arguments "capsule archives 3"
+        Given the command line arguments "capsule archives 1"
         And I store my credentials in "{homedir}/.netrc"
         When I run console script "lacli"
         Then I see "No such capsule"
@@ -79,7 +79,7 @@ Feature: list archives command
         Given the command line arguments "-u test -p test capsule archives"
         And I have 2 uploaded archives
         When I run console script "lacli"
-        Then I see "TITLE"
-        And I see "My wedding"
-        And I see "CAPSULE"
+        Then I see "CAPSULE"
+        And I see "TITLE"
         And I see "Photos"
+        And I see "My wedding"

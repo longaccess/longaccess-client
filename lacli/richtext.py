@@ -28,11 +28,12 @@ class RichTextUI:
         t = Terminal(stream=sys.stdout)
         self.width = t.width
 
-        h_titles = '#   ID         STATUS    SIZE   DATE         TITLE'
+        h_titles = ('#   ID         STATUS    SIZE   DATE         '
+                    'CAPSULE     TITLE')
         h_pattern = ('--- ---------- --------- ------ ------------ '
-                     '---------------------------------')
+                     '----------- ---------------------------------')
         h_pattern = h_pattern.ljust(self.width, '-')
-        h_frmt = "{:0%sd} {:>%s} {:<%s} {:>%s} {:<%s} {:<%s}" % tuple(
+        h_frmt = "{:0%sd} {:>%s} {:<%s} {:>%s} {:<%s} {:<%s} {:<%s}" % tuple(
             len(p) for p in h_pattern.split(' '))
         self.archive_design = {
             'titles': h_titles,
@@ -82,6 +83,7 @@ class RichTextUI:
             archive['status'],
             archive['size'],
             created.strftime("%Y-%m-%d") if created else "-",
+            archive.get('capsule', ''),
             archive_title.encode('utf-8'))
 
     def print_capsules_header(self):

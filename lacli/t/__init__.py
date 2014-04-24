@@ -50,14 +50,15 @@ dummycapsule = {
     'size': 1230000,
     'remaining': 0,
     'expires': epoch(),
-    'created': epoch()
+    'created': epoch(),
+    'resource_uri': '/foo/bar'
 }
 
 dummyarchive = {
     'capsule': '/foo/bar',
     'description': "dummy capsule",
     'resource_uri': '/foo/baz',
-    'title': 'foo',
+    'title': 'faz',
     'key': 'baz',
     'size': 1230000,
     'expires': epoch(),
