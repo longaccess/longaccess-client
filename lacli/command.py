@@ -137,11 +137,11 @@ class LaCertsCommand(LaBaseCommand):
         Usage: import [<filename>]
         """
         if filename is None:
-            cert = raw_input("Enter the certificate ID:")
+            cert = self.input("Enter the certificate ID:")
             if cert in self.cache.certs():
                 print "A certificate with this ID already exists"
             else:
-                title = raw_input("Enter the certificate title:")
+                title = self.input("Enter the certificate title:")
                 key = ask_key()
                 if key is not None:
                     print "Imported certificate {}".format(

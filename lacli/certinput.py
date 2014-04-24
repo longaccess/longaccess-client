@@ -3,6 +3,7 @@ from blessed import Terminal
 
 
 def ask_key():
+    sys.__stdin__ = sys.stdin
     t = Terminal()
     width = 64
     lwidth = 16
