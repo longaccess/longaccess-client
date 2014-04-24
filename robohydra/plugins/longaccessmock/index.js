@@ -5,6 +5,35 @@ var heads               = require('robohydra').heads,
     apiPrefix           = "/path/to/api";
 
 exports.getBodyParts = function(config, modules) {
+    capsules = {
+        'Photos': {
+            created: "2013-06-07T10:45:01",
+            id: 3,
+            resource_uri: "/api/v1/capsule/3/",
+            title: "Photos",
+            user: "/api/v1/user/3/",
+            remaining: 1073741824,
+            size: 2073741824
+        },
+        'Stuff': {
+            created: "2013-06-07T10:44:38",
+            id: 2,
+            resource_uri: "/api/v1/capsule/2/",
+            title: "Stuff",
+            user: "/api/v1/user/2/",
+            remaining: 482,
+            size: 1024
+        },
+        'BFC': {
+            created: "2013-06-07T10:45:01",
+            id: 1,
+            resource_uri: "/api/v1/capsule/1/",
+            title: "BFC",
+            user: "/api/v1/user/3/",
+            remaining: 1024000000,
+            size: 1024000000
+        }
+    }
     function mockupload() {
         return { id: 1,
             resource_uri: apiPrefix +'/upload/1',
@@ -191,24 +220,8 @@ exports.getBodyParts = function(config, modules) {
                         content: {
                             meta: meta(1),
                             objects: [
-                                {
-                                    created: "2013-06-07T10:45:01",
-                                    id: 3,
-                                    resource_uri: "/api/v1/capsule/3/",
-                                    title: "Photos",
-                                    user: "/api/v1/user/3/",
-                                    remaining: 1073741824,
-                                    size: 2073741824
-                                },
-                                {
-                                    created: "2013-06-07T10:44:38",
-                                    id: 2,
-                                    resource_uri: "/api/v1/capsule/2/",
-                                    title: "Stuff",
-                                    user: "/api/v1/user/2/",
-                                    remaining: 482,
-                                    size: 1024
-                                }
+                                capsules.Photos,
+                                capsules.Stuff
                             ]
                         }
                     })
@@ -229,15 +242,7 @@ exports.getBodyParts = function(config, modules) {
                         content: {
                             meta: meta(1),
                             objects: [
-                                {
-                                    created: "2013-06-07T10:45:01",
-                                    id: 1,
-                                    resource_uri: "/api/v1/capsule/1/",
-                                    title: "BFC",
-                                    user: "/api/v1/user/3/",
-                                    remaining: 1024000000,
-                                    size: 1024000000
-                                }
+                                capsules.BFC
                             ]
                         }
                     })
