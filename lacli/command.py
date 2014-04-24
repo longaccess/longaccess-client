@@ -739,4 +739,53 @@ class LaArchiveCommand(LaBaseCommand):
                 print "Please remove manually"
             else:
                 print "Deleted archive", archive.title
+
+
+class LaFetchCommand(LaBaseCommand):
+    """Fetch Long Access Certificates
+
+    Usage: lacli fetch <archiveid> [<key>]
+    """
+    prompt = 'lacli:fetch> '
+
+    def makecmd(self, options):
+        line = ["fetch"]
+        line.append(options['<archiveid>'])
+        if options['<key>']:
+            line.append(options['<key>'])
+        return " ".join(line)
+
+    @login
+    @command(archiveid=str, key=str)
+    def do_fetch(self, archiveid, key=None):
+        """
+        Usage: fetch <archiveid> [<key>]
+        """
+        try:
+            archives = [a for a in self.session.archives()
+                        if a['key'] == archiveid]
+            if len(archives) == 0:
+                print "Archive not found"
+            elif len(archives) > 1:
+                print "More than one archive with same ID!"
+            else:
+                archive = archives[0]
+                print "title:", archive['title']
+                print "description:", archive['description']
+                print "expiration:", archive['expires'].strftime("%Y-%m-%d")
+                print "created:", archive['created'].strftime("%Y-%m-%d")
+                key = ask_key() if key is None else key.decode('hex')
+                print "Fetched certificate {}".format(
+                    self.cache.save_cert({
+                        'archive': Archive(archive['title'],
+                                           Meta('zip', 'aes-256-ctr'),
+                                           description=archive['description']),
+                        'cert': Certificate(key),
+                        'signature': Signature(
+                            aid=archive['key'], uri='',
+                            created=archive['created'],
+                            expires=archive['expires'])
+                    })[0])
+        except Exception as e:
+            print "error: " + str(e)
 # vim: et:sw=4:ts=4
