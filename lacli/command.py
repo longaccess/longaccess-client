@@ -168,7 +168,7 @@ class LaCapsuleCommand(LaBaseCommand):
     """Manage Long Access Capsules
 
     Usage: lacli capsule list
-           lacli capsule create <title>
+           lacli capsule archives [<capsule>]
            lacli capsule --help
 
     """
@@ -178,6 +178,8 @@ class LaCapsuleCommand(LaBaseCommand):
         line = []
         if options['list']:
             line.append("list")
+        if options['archives']:
+            line.append('archives')
         return " ".join(line)
 
     @login
@@ -204,6 +206,38 @@ class LaCapsuleCommand(LaBaseCommand):
                     })
             else:
                 print "No available capsules."
+        except Exception as e:
+            print "error: " + str(e)
+
+    @login
+    @command(capsule=int)
+    def do_archives(self, capsule=None):
+        """
+        Usage: archives [<capsule>]
+        """
+        try:
+            capsules = self.session.capsule_ids()
+            if capsule is not None:
+                if len(capsules) < capsule:
+                    print "No such capsule"
+                    return
+            archives = self.session.archives()
+            if capsule is not None:
+                archives = [a for a in archives
+                            if a['capsule'] == capsule['resource_uri']]
+            if len(archives) > 0:
+                ui.print_archives_header()
+                for n, archive in enumerate(archives):
+                    ui.print_archives_line(archive={
+                        'num': n+1,
+                        'size': archive['size'],
+                        'title': archive['title'],
+                        'cert': archive['key'],
+                        'created': archive['created'],
+                        'status': "COMPLETE"
+                    })
+            else:
+                print "No available archives."
         except Exception as e:
             print "error: " + str(e)
 

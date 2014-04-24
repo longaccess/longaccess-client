@@ -53,6 +53,17 @@ dummycapsule = {
     'created': epoch()
 }
 
+dummyarchive = {
+    'capsule': '/foo/bar',
+    'description': "dummy capsule",
+    'resource_uri': '/foo/baz',
+    'title': 'foo',
+    'key': 'baz',
+    'size': 1230000,
+    'expires': epoch(),
+    'created': epoch()
+}
+
 
 @contextmanager
 def _temp_home():
