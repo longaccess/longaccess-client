@@ -14,6 +14,14 @@ def one_huge_capsule(context):
     context.mock_api.test('oneHugeCapsule', 'longaccessmock')
 
 
+@step(u'I have {num} uploaded archives')
+def num_archives(context, num):
+    if int(num) == 2:
+        context.mock_api.test('twoArchives', 'longaccessmock')
+    else:
+        raise NotImplementedError("mock api only supports 2 archives")
+
+
 @step(u'I store my credentials in "{file}"')
 def my_store_in_netrc(context, file):
     assert(context.mock_api)
