@@ -216,8 +216,8 @@ class LaCapsuleCommand(LaBaseCommand):
         Usage: archives [<capsule>]
         """
         try:
-            capsules = self.session.capsule_ids()
             if capsule is not None:
+                capsules = self.session.capsule_ids()
                 if len(capsules) < capsule:
                     print "No such capsule"
                     return
