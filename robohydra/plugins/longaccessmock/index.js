@@ -34,6 +34,31 @@ exports.getBodyParts = function(config, modules) {
             size: 1024000000
         }
     }
+    archives = {
+        'wedding': {
+            created: "2013-06-07T10:45:01",
+            expires: "2043-06-07T10:45:01",
+            id: 1,
+            key: 'FOOKEY1',
+            resource_uri: "/api/v1/archive/1/",
+            title: "My wedding",
+            description: "photos from my wedding",
+            capsule: "/api/v1/capsule/3/",
+            size: 2073741824
+        },
+        'other': {
+            created: "2013-06-07T10:44:38",
+            expires: "2043-06-07T10:45:01",
+            id: 2,
+            key: 'FOOKEY2',
+            resource_uri: "/api/v1/archive/2/",
+            title: "something else",
+            description: "whatevah",
+            capsule: "/api/v1/capsule/3/",
+            capsule: "/api/v1/capsule/2/",
+            size: 1024
+        }
+    }
     function mockupload() {
         return { id: 1,
             resource_uri: apiPrefix +'/upload/1',
@@ -229,7 +254,7 @@ exports.getBodyParts = function(config, modules) {
                     new RoboHydraHeadStatic({
                         path: apiPrefix + '/capsule/',
                         content: {
-                            meta: meta(1),
+                            meta: meta(2),
                             objects: [
                                 capsules.Photos,
                                 capsules.Stuff
@@ -254,6 +279,39 @@ exports.getBodyParts = function(config, modules) {
                             meta: meta(1),
                             objects: [
                                 capsules.BFC
+                            ]
+                        }
+                    })
+                ]
+            },
+            twoArchives: {
+                instructions: "activate 2 archives.",
+                heads: [
+                    new RoboHydraHead({
+                        path: '/.*',
+                        handler: function(req, res, next) {
+                            console.log("SCENARIO")
+                            res.authuser = true;
+                            next(req, res);
+                        }
+                    }),
+                    new RoboHydraHeadStatic({
+                        path: apiPrefix + '/archive/',
+                        content: {
+                            meta: meta(2),
+                            objects: [
+                                archives.wedding,
+                                archives.other,
+                            ]
+                        }
+                    }),
+                    new RoboHydraHeadStatic({
+                        path: apiPrefix + '/capsule/',
+                        content: {
+                            meta: meta(2),
+                            objects: [
+                                capsules.Photos,
+                                capsules.Stuff
                             ]
                         }
                     })

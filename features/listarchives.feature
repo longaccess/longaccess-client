@@ -45,7 +45,6 @@ Feature: list archives command
     Scenario: I list archives
         Given the command line arguments "capsule archives"
         And I store my credentials in "{homedir}/.netrc"
-        And I have 1 capsule
         And I have 2 uploaded archives
         When I run console script "lacli"
         Then I see "TITLE"
@@ -56,7 +55,6 @@ Feature: list archives command
     Scenario: I list archives of specific capsule
         Given the command line arguments "capsule archives 1"
         And I store my credentials in "{homedir}/.netrc"
-        And I have 1 capsule
         And I have 2 uploaded archives
         When I run console script "lacli"
         Then I see "TITLE"
@@ -67,7 +65,6 @@ Feature: list archives command
     Scenario: I list archives of specific capsule with no archives
         Given the command line arguments "capsule archives 2"
         And I store my credentials in "{homedir}/.netrc"
-        And I have 1 capsule
         And I have 2 uploaded archives
         When I run console script "lacli"
         Then I see "No available archives"
@@ -75,13 +72,11 @@ Feature: list archives command
     Scenario: I list archives of nonexistent capsule
         Given the command line arguments "capsule archives 3"
         And I store my credentials in "{homedir}/.netrc"
-        And I have 1 capsule
         When I run console script "lacli"
         Then I see "No such capsule"
 
     Scenario: I list archives without netrc auth
         Given the command line arguments "-u test -p test capsule archives"
-        And I have 1 capsule
         And I have 2 uploaded archives
         When I run console script "lacli"
         Then I see "TITLE"
