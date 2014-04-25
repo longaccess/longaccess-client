@@ -23,6 +23,11 @@ Feature: fetch certificate command
         Then I see "key valid"
         When I type " "
         Then I see "Fetched certificate FOOKEY1"
+        And there is a file "*.adf" under "{homedir}/Longaccess/certs"
+        Given the command line arguments "certificate list"
+        When I run console script "lacli"
+        Then I see "FOOKEY1"
+
 
     Scenario: I import a certificate by fetching with key
         Given the command line arguments "fetch FOOKEY1 DEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF"
@@ -31,3 +36,7 @@ Feature: fetch certificate command
         When I run console script "lacli"
         Then I see "photos from my wedding"
         And I see "Fetched certificate FOOKEY1"
+        And there is a file "*.adf" under "{homedir}/Longaccess/certs"
+        Given the command line arguments "certificate list"
+        When I run console script "lacli"
+        Then I see "FOOKEY1"
