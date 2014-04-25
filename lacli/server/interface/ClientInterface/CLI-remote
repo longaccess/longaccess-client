@@ -31,7 +31,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print '   GetCapsules()'
   print '  Archive CreateArchive( filePaths)'
   print '   GetUploads()'
-  print '  void UploadToCapsule(string ArchiveLocalID, string CapsuleID, string title, string description)'
+  print '  void UploadToCapsule(string ArchiveLocalID, string CapsuleID, string title, string description, bool sandbox)'
   print '  void ResumeUpload(string ArchiveLocalID)'
   print '  TransferStatus QueryArchiveStatus(string ArchiveLocalID)'
   print '  void PauseUpload(string ArchiveLocalID)'
@@ -143,10 +143,10 @@ elif cmd == 'GetUploads':
   pp.pprint(client.GetUploads())
 
 elif cmd == 'UploadToCapsule':
-  if len(args) != 4:
-    print 'UploadToCapsule requires 4 args'
+  if len(args) != 5:
+    print 'UploadToCapsule requires 5 args'
     sys.exit(1)
-  pp.pprint(client.UploadToCapsule(args[0],args[1],args[2],args[3],))
+  pp.pprint(client.UploadToCapsule(args[0],args[1],args[2],args[3],eval(args[4]),))
 
 elif cmd == 'ResumeUpload':
   if len(args) != 1:

@@ -61,6 +61,7 @@ struct Archive {
   1: string LocalID,  
   2: ArchiveStatus Status, 
   3: ArchiveInfo Info
+  4: bool Sandbox
 }
 struct Signature {
   1: string ArchiveID,
@@ -114,7 +115,7 @@ service CLI {
 
   list<Archive> GetUploads(),
   
-  void UploadToCapsule(1: string ArchiveLocalID, 2: string CapsuleID, 3: string title, 4: string description) throws (1:InvalidOperation error),
+  void UploadToCapsule(1: string ArchiveLocalID, 2: string CapsuleID, 3: string title, 4: string description, 5: bool sandbox) throws (1:InvalidOperation error),
 
   void ResumeUpload(1: string ArchiveLocalID) throws (1:InvalidOperation error),
   
