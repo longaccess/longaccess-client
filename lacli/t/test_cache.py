@@ -107,6 +107,36 @@ class CacheTest(TestCase):
             self.assertIn('prefix', kwargs)
             self.assertEqual(ADF_EXAMPLE_1, out.getvalue())
 
+    def test_save_upload(self):
+        import lacli.cache
+        from lacore.adf.elements import Archive, Meta, Signature, Links
+        from StringIO import StringIO
+        with patch.object(lacli.cache, 'archive_slug', create=True) as slug:
+            now = datetime.utcfromtimestamp(0)
+            meta = Meta('zip', 'xor', created=now)
+            archive = Archive('foo', meta)
+            slug.return_value = 'foo'
+            cache = self._makeit(self.home)
+            out = StringIO()
+            aopen = MagicMock()
+            aopen.return_value.__enter__.return_value = MagicMock()
+            aopen.return_value.__enter__.return_value.write = out.write
+            cache._archive_open = aopen
+            r = cache.save_upload('lalafname',
+                                  {'archive': archive,
+                                   'signature': Signature(aid="foo",
+                                                          uri="http://baz.com",
+                                                          created=now),
+                                   'links': Links()},
+                                  uri='http://foo.bar',
+                                  capsule='Photos')
+            self.assertEqual(
+                r, {'fname': 'lalafname', 'link': 'http://foo.bar#C:Photos:',
+                    'archive': archive})
+            args, kwargs = aopen.call_args
+            self.assertEqual(('lalafname', 'w'), args)
+            self.assertEqual(ADF_EXAMPLE_2, out.getvalue())
+
     def test_import_cert(self):
         import lacli.cache
         with nested(
@@ -159,6 +189,39 @@ ADF_EXAMPLE_1 = """---
   },
   ? !!str "title"
   : !!str "foo",
+}
+---
+!signature {
+  ? !!str "aid"
+  : !!str "foo",
+  ? !!str "created"
+  : !!timestamp "1970-01-01 00:00:00",
+  ? !!str "expires"
+  : !!timestamp "2000-01-01 00:00:00",
+  ? !!str "uri"
+  : !!str "http://baz.com",
+}
+"""
+
+
+ADF_EXAMPLE_2 = """---
+!archive {
+  ? !!str "meta"
+  : !meta {
+    ? !!str "cipher"
+    : !!str "xor",
+    ? !!str "created"
+    : !!timestamp "1970-01-01 00:00:00",
+    ? !!str "format"
+    : !!str "zip",
+  },
+  ? !!str "title"
+  : !!str "foo",
+}
+---
+!links {
+  ? !!str "upload"
+  : !!str "http://foo.bar#C:Photos:",
 }
 ---
 !signature {

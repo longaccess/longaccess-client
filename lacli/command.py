@@ -9,6 +9,7 @@ import operator
 from pipes import quote
 from lacli.log import getLogger
 from lacli.upload import Upload, UploadState
+from lacli.capsule import archive_capsule
 from lacore.archive import restore_archive
 from lacore.adf.util import archive_size, creation
 from lacore.adf.elements import Archive, Certificate, Meta, Signature
@@ -454,7 +455,8 @@ class LaArchiveCommand(LaBaseCommand):
             status = yield op.finalize(auth, state.keys)
         if status['status'] != 'failed':
             account = yield self.session.async_account
-            saved = yield self.cache.save_upload(fname, docs, op.uri, account)
+            saved = yield self.cache.save_upload(
+                fname, docs, op.uri, account, state.capsule['title'])
             defer.returnValue(saved)
 
     def upload(self, docs, fname, progq, state):
@@ -537,13 +539,15 @@ class LaArchiveCommand(LaBaseCommand):
                     status = "UNKNOWN"
                 title = archive['archive'].title
                 size = archive_size(archive['archive'])
+
                 ui.print_archives_line(archive={
                     'num': n+1,
                     'size': size,
                     'title': title,
                     'status': status,
                     'cert': cert,
-                    'created': archive['archive'].meta.created
+                    'created': archive['archive'].meta.created,
+                    'capsule': archive_capsule(archive) or '-'
                 })
                 if self.debug > 2:
                     for doc in archive.itervalues():

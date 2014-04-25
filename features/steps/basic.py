@@ -4,9 +4,14 @@ from behave import step
 from urlparse import urlparse
 
 
+@step(u'I have 2 capsules')
+def two_capsules(context):
+    context.mock_api.test('oneCapsule', 'longaccessmock')
+
+
 @step(u'I have 1 capsule')
 def one_capsule(context):
-    context.mock_api.test('oneCapsule', 'longaccessmock')
+    two_capsules(context)
 
 
 @step(u'I have 1 huge capsule')
