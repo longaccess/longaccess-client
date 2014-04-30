@@ -254,7 +254,7 @@ class LaCapsuleCommand(LaBaseCommand):
 class LaArchiveCommand(LaBaseCommand):
     """Upload a file to Long Access
 
-    Usage: lacli archive upload [-n <np>] [<index>] [<capsule>]
+    Usage: lacli archive upload [-T] [-n <np>] [<index>] [<capsule>]
            lacli archive list
            lacli archive status <index>
            lacli archive create <dirname> -t <title> [--desc <description>]
@@ -264,6 +264,7 @@ class LaArchiveCommand(LaBaseCommand):
            lacli archive --help
 
     Options:
+        -T, --test                          upload to sandbox
         -n <np>, --procs <np>               number of processes [default: auto]
         -t <title>, --title <title>         title for prepared archive
         --desc <description>                description for prepared archive
@@ -281,6 +282,7 @@ class LaArchiveCommand(LaBaseCommand):
         super(LaArchiveCommand, self).__init__(*args, **kwargs)
         UploadState.init(self.cache)
         self.nprocs = None
+        self.sandbox = False
 
     def setopt(self, options):
         try:
@@ -289,6 +291,8 @@ class LaArchiveCommand(LaBaseCommand):
         except ValueError:
             print "error: illegal value for 'procs' parameter."
             raise
+        if options['--test']:
+            self.sandbox = True
 
     def makecmd(self, options):
         self.setopt(options)
@@ -372,7 +376,8 @@ class LaArchiveCommand(LaBaseCommand):
                 print "upload is already completed"
             else:
                 try:
-                    with UploadState.get(fname, size, capsule) as state:
+                    with UploadState.get(
+                            fname, size, capsule, self.sandbox) as state:
                         handler = ConsoleProgressHandler(
                             maxval=size, fname=fname, state=state)
                         with handler as progq:
@@ -444,7 +449,7 @@ class LaArchiveCommand(LaBaseCommand):
         archive = docs['archive']
         auth = docs['auth']
         path = self.cache.data_file(docs['links'])
-        op = yield self.session.upload(state.capsule, archive, state)
+        op = yield self.session.upload(archive, state)
         status = yield op.status  # init uri and status
         if status['status'] == 'pending':
             if state.uri is None:

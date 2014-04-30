@@ -120,7 +120,8 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         return ttypes.Archive(
             ident,
             status,
-            self.toArchiveInfo(docs))
+            self.toArchiveInfo(docs),
+            False)
 
     def PingCLI(self):
         msg('pingCLI()')
@@ -247,10 +248,10 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
     @tthrow
     @login_async
     @defer.inlineCallbacks
-    def UploadToCapsule(self, archive, capsule, title, description):
+    def UploadToCapsule(self, archive, capsule, title, description, sandbox):
         """
           void UploadToCapsule(1: string ArchiveLocalID, 2: string CapsuleID,
-            3: string title, 4: string description)
+            3: string title, 4: string description, 5: bool sandbox)
         """
         docs = self.cache.get_adf(archive)
         docs['archive'].title = title
@@ -270,7 +271,7 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
         else:
             raise ValueError("Capsule not found")
 
-        state = UploadState.get(archive, size, capsule)
+        state = UploadState.get(archive, size, capsule, sandbox)
         if state.exc is not None:
             raise ValueError("Archive has error")
 

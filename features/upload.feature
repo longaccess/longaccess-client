@@ -77,6 +77,18 @@ Feature: upload command
         When the upload status is "completed"
         Then I wait 5 seconds to see "done."
 
+    Scenario: I upload a test archive
+        Given I prepare an archive with a file "test"
+        And the command line arguments "archive upload --test 1"
+        And an S3 bucket named "foobucket"
+        When I run console script "lacli"
+        Then I see "ETA:"
+        When the upload status is "completed"
+        Then I wait 5 seconds to see "done."
+        Given the command line arguments "certificate list"
+        When I run console script "lacli"
+        Then I see "testarchive"
+
     Scenario: I upload an archive to a nonexistent capsule
         Given I prepare an archive with a file "test"
         And the command line arguments "archive upload 1 2000"

@@ -59,8 +59,11 @@ exports.getBodyParts = function(config, modules) {
             size: 1024
         }
     }
-    function mockupload() {
-        return { id: 1,
+    upload_is_sandbox = false
+    function mockupload(sandbox) {
+        console.log("SANDBOX " + upload_is_sandbox)
+        return { 
+            id: 1,
             resource_uri: apiPrefix +'/upload/1',
             token_access_key: '123123',
             token_secret_key: '123123',
@@ -69,6 +72,7 @@ exports.getBodyParts = function(config, modules) {
             bucket: 'foobucket',
             prefix: 'foobar',
             status: 'pending',
+            sandbox: upload_is_sandbox
         }
     }
     function meta(n){
@@ -121,6 +125,9 @@ exports.getBodyParts = function(config, modules) {
                     modules.assert.ok("description" in content)
                     modules.assert.ok("capsule" in content)
                     modules.assert.ok("size" in content)
+                    upload_is_sandbox = false
+                    if ("sandbox" in content)
+                        upload_is_sandbox = content['sandbox']
                     res.statusCode='200';
                     var ret = mockupload();
                     date = new Date();
@@ -157,7 +164,10 @@ exports.getBodyParts = function(config, modules) {
                     if (res.hasOwnProperty('upload_status'))
                         ret['status'] = res.upload_status;
                         if (res.upload_status == 'completed')
-                            ret['archive_key'] = 'https://longaccess.com/yoyoyo';
+                            if (ret['sandbox'])
+                                ret['archive_key'] = 'testarchive';
+                            else
+                                ret['archive_key'] = 'https://longaccess.com/yoyoyo';
 
                     res.write(JSON.stringify(ret));
                     res.end(); 
