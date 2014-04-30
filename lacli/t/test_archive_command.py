@@ -80,6 +80,28 @@ class ArchiveCommandTest(TestCase):
                         Contains('foo'))
 
     @patch('sys.stdout', new_callable=StringIO)
+    def test_do_archive_list_capsule(self, out):
+        from lacore.adf.elements import Archive, Meta, Links
+        meta = Meta(format='', size=None, cipher='')
+        archive = Archive(title="foo", description='',
+                          tags=[], meta=meta)
+        links = Links(upload='http://foo.bar.com/123#C:Photos:')
+        registry = Mock()
+        registry.cache._for_adf.return_value = {
+            'foo': {
+                'archive': archive,
+                'links': links
+            }
+        }
+        registry.prefs = self.prefs
+        cli = self._makeit(registry)
+        cli.onecmd('list')
+        self.assertThat(out.getvalue(),
+                        Contains('foo'))
+        self.assertThat(out.getvalue(),
+                        Contains('Photos'))
+
+    @patch('sys.stdout', new_callable=StringIO)
     def test_do_archive_list_debug(self, out):
         from lacore.adf.elements import Archive, Meta
         meta = Meta(format='', size=None, cipher='')

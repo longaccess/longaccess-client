@@ -14,6 +14,7 @@ from lacore.adf.persist import load_archive, make_adf, as_json
 from lacore.adf.elements import Signature
 from lacli.log import getLogger
 from lacli.archive import archive_handle
+from lacli.capsule import archive_uri
 from lacore.archive.folders import FolderArchiver
 from lacore.exceptions import InvalidArchiveError
 from lacli.exceptions import CacheInitException
@@ -172,9 +173,9 @@ class Cache(object):
                 return ArchiveStatus.Paused
         return ArchiveStatus.Local
 
-    def save_upload(self, fname, docs, uri=None, account=None):
+    def save_upload(self, fname, docs, uri=None, account=None, capsule=None):
         if uri is not None:
-            docs['links'].upload = uri
+            docs['links'].upload = archive_uri(uri, capsule)
             if account is not None:
                 docs['archive'].meta.email = account['email']
                 docs['archive'].meta.name = account['displayname']

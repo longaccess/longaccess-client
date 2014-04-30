@@ -1,6 +1,6 @@
 import os
 
-from . import makeprefs, dummycapsule
+from . import makeprefs, dummycapsule, dummyarchive
 from testtools import TestCase
 from testtools.matchers import Contains
 from mock import Mock, patch
@@ -60,3 +60,60 @@ class CapsuleCommandTest(TestCase):
                             Contains('1 MB'))
             self.assertThat(out.getvalue(),
                             Contains('1970-01-01'))
+
+    def test_show_archives(self):
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            registry = Mock()
+            registry.prefs = self.prefs
+            registry.session.archives.return_value = ()
+            cli = self._makeit(registry)
+            cli.onecmd('archives')
+            self.assertEqual("No available archives.\n", out.getvalue())
+
+    def test_show_archives_some(self):
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            registry = Mock()
+            registry.prefs = self.prefs
+
+            registry.session.capsules.return_value = (dummycapsule,)
+            registry.session.archives.return_value = (dummyarchive,)
+            cli = self._makeit(registry)
+            cli.onecmd('archives')
+            self.assertThat(out.getvalue(),
+                            Contains('faz'))
+            self.assertThat(out.getvalue(),
+                            Contains('baz'))
+            self.assertThat(out.getvalue(),
+                            Contains('1 MB'))
+            self.assertThat(out.getvalue(),
+                            Contains('1970-01-01'))
+            self.assertThat(out.getvalue(),
+                            Contains('foo'))
+
+    def test_show_archives_nonexistent(self):
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            registry = Mock()
+            registry.prefs = self.prefs
+
+            registry.session.capsules.return_value = ()
+            registry.session.capsule_ids.return_value = {}
+            registry.session.archives.return_value = (dummyarchive,)
+            cli = self._makeit(registry)
+            cli.onecmd('archives 1')
+            self.assertThat(out.getvalue(),
+                            Contains('No such capsule'))
+
+    def test_show_archives_wrong_capsule(self):
+        with patch('sys.stdout', new_callable=StringIO) as out:
+            registry = Mock()
+            registry.prefs = self.prefs
+
+            othercapsule = dummycapsule
+            othercapsule['resource_uri'] = 'blabla'
+            registry.session.capsules.return_value = (othercapsule,)
+            registry.session.capsule_ids.return_value = {1: othercapsule}
+            registry.session.archives.return_value = (dummyarchive,)
+            cli = self._makeit(registry)
+            cli.onecmd('archives 1')
+            self.assertThat(out.getvalue(),
+                            Contains('No available archives'))

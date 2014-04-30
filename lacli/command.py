@@ -9,6 +9,7 @@ import operator
 from pipes import quote
 from lacli.log import getLogger
 from lacli.upload import Upload, UploadState
+from lacli.capsule import archive_capsule
 from lacore.archive import restore_archive
 from lacore.adf.util import archive_size, creation
 from lacore.adf.elements import Archive, Certificate, Meta, Signature
@@ -24,6 +25,7 @@ from lacli.certinput import ask_key
 from twisted.internet import defer, reactor, task
 
 from richtext import RichTextUI as UIClass
+from richtext import format_size
 ui = UIClass()
 
 
@@ -136,11 +138,11 @@ class LaCertsCommand(LaBaseCommand):
         Usage: import [<filename>]
         """
         if filename is None:
-            cert = raw_input("Enter the certificate ID:")
+            cert = self.input("Enter the certificate ID:")
             if cert in self.cache.certs():
                 print "A certificate with this ID already exists"
             else:
-                title = raw_input("Enter the certificate title:")
+                title = self.input("Enter the certificate title:")
                 key = ask_key()
                 if key is not None:
                     print "Imported certificate {}".format(
@@ -168,7 +170,7 @@ class LaCapsuleCommand(LaBaseCommand):
     """Manage Long Access Capsules
 
     Usage: lacli capsule list
-           lacli capsule create <title>
+           lacli capsule archives [<capsule>]
            lacli capsule --help
 
     """
@@ -178,6 +180,10 @@ class LaCapsuleCommand(LaBaseCommand):
         line = []
         if options['list']:
             line.append("list")
+        if options['archives']:
+            line.append('archives')
+            if options['<capsule>']:
+                line.append(options['<capsule>'])
         return " ".join(line)
 
     @login
@@ -204,6 +210,43 @@ class LaCapsuleCommand(LaBaseCommand):
                     })
             else:
                 print "No available capsules."
+        except Exception as e:
+            print "error: " + str(e)
+
+    @login
+    @command(capsule=int)
+    def do_archives(self, capsule=None):
+        """
+        Usage: archives [<capsule>]
+        """
+        try:
+            if capsule is not None:
+                capsules = self.session.capsule_ids()
+                if capsule not in capsules:
+                    print "No such capsule"
+                    return
+                capsule = capsules[capsule]
+            archives = self.session.archives()
+            if capsule is not None:
+                archives = [a for a in archives
+                            if a['capsule'] == capsule['resource_uri']]
+            if len(archives) > 0:
+                capsules = dict(
+                    [(c['resource_uri'], c['title'])
+                     for c in self.session.capsules()])
+                ui.print_archives_header()
+                for n, archive in enumerate(archives):
+                    ui.print_archives_line(archive={
+                        'num': n+1,
+                        'size': format_size(int(archive['size'])),
+                        'title': archive['title'],
+                        'cert': archive['key'],
+                        'created': archive['created'],
+                        'status': "COMPLETE",
+                        'capsule': capsules.get(archive['capsule'], '')
+                    })
+            else:
+                print "No available archives."
         except Exception as e:
             print "error: " + str(e)
 
@@ -412,7 +455,8 @@ class LaArchiveCommand(LaBaseCommand):
             status = yield op.finalize(auth, state.keys)
         if status['status'] != 'failed':
             account = yield self.session.async_account
-            saved = yield self.cache.save_upload(fname, docs, op.uri, account)
+            saved = yield self.cache.save_upload(
+                fname, docs, op.uri, account, state.capsule['title'])
             defer.returnValue(saved)
 
     def upload(self, docs, fname, progq, state):
@@ -495,13 +539,15 @@ class LaArchiveCommand(LaBaseCommand):
                     status = "UNKNOWN"
                 title = archive['archive'].title
                 size = archive_size(archive['archive'])
+
                 ui.print_archives_line(archive={
                     'num': n+1,
                     'size': size,
                     'title': title,
                     'status': status,
                     'cert': cert,
-                    'created': archive['archive'].meta.created
+                    'created': archive['archive'].meta.created,
+                    'capsule': archive_capsule(archive) or '-'
                 })
                 if self.debug > 2:
                     for doc in archive.itervalues():
@@ -697,4 +743,53 @@ class LaArchiveCommand(LaBaseCommand):
                 print "Please remove manually"
             else:
                 print "Deleted archive", archive.title
+
+
+class LaFetchCommand(LaBaseCommand):
+    """Fetch Long Access Certificates
+
+    Usage: lacli fetch <archiveid> [<key>]
+    """
+    prompt = 'lacli:fetch> '
+
+    def makecmd(self, options):
+        line = ["fetch"]
+        line.append(options['<archiveid>'])
+        if options['<key>']:
+            line.append(options['<key>'])
+        return " ".join(line)
+
+    @login
+    @command(archiveid=str, key=str)
+    def do_fetch(self, archiveid, key=None):
+        """
+        Usage: fetch <archiveid> [<key>]
+        """
+        try:
+            archives = [a for a in self.session.archives()
+                        if a['key'] == archiveid]
+            if len(archives) == 0:
+                print "Archive not found"
+            elif len(archives) > 1:
+                print "More than one archive with same ID!"
+            else:
+                archive = archives[0]
+                print "title:", archive['title']
+                print "description:", archive['description']
+                print "expiration:", archive['expires'].strftime("%Y-%m-%d")
+                print "created:", archive['created'].strftime("%Y-%m-%d")
+                key = ask_key() if key is None else key.decode('hex')
+                print "Fetched certificate {}".format(
+                    self.cache.save_cert({
+                        'archive': Archive(archive['title'],
+                                           Meta('zip', 'aes-256-ctr'),
+                                           description=archive['description']),
+                        'cert': Certificate(key),
+                        'signature': Signature(
+                            aid=archive['key'], uri='',
+                            created=archive['created'],
+                            expires=archive['expires'])
+                    })[0])
+        except Exception as e:
+            print "error: " + str(e)
 # vim: et:sw=4:ts=4

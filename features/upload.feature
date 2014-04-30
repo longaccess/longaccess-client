@@ -7,7 +7,7 @@ Feature: upload command
         And the environment variable "LA_API_URL" is "{api_url}path/to/api"
         And the username "test" 
         And the password "test"
-        And I have 1 capsule
+        And I have 2 capsules
         And I store my credentials in "{homedir}/.netrc"
 
     Scenario: I try an upload without files
@@ -76,6 +76,26 @@ Feature: upload command
         Then I see "ETA:"
         When the upload status is "completed"
         Then I wait 5 seconds to see "done."
+
+    Scenario: I upload an archive to a nonexistent capsule
+        Given I prepare an archive with a file "test"
+        And the command line arguments "archive upload 1 2000"
+        And an S3 bucket named "foobucket"
+        When I run console script "lacli"
+        Then I see "Cannot upload: no capsules found"
+
+    Scenario: I upload an archive to a specific capsule
+        Given I prepare an archive with a file "test"
+        And the command line arguments "archive upload 1 3"
+        And an S3 bucket named "foobucket"
+        When I run console script "lacli"
+        Then I see "ETA:"
+        When the upload status is "completed"
+        Then I wait 5 seconds to see "done."
+        Given the command line arguments "archive list"
+        When I run console script "lacli"
+        Then I see "CAPSULE"
+        And I see "Photos"
 
     Scenario: I upload an archive in batch operation
         Given I prepare an archive with a file "test"

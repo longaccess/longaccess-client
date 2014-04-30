@@ -5,6 +5,60 @@ var heads               = require('robohydra').heads,
     apiPrefix           = "/path/to/api";
 
 exports.getBodyParts = function(config, modules) {
+    capsules = {
+        'Photos': {
+            created: "2013-06-07T10:45:01",
+            id: 3,
+            resource_uri: "/api/v1/capsule/3/",
+            title: "Photos",
+            user: "/api/v1/user/3/",
+            remaining: 1073741824,
+            size: 2073741824
+        },
+        'Stuff': {
+            created: "2013-06-07T10:44:38",
+            id: 2,
+            resource_uri: "/api/v1/capsule/2/",
+            title: "Stuff",
+            user: "/api/v1/user/2/",
+            remaining: 482,
+            size: 1024
+        },
+        'BFC': {
+            created: "2013-06-07T10:45:01",
+            id: 1,
+            resource_uri: "/api/v1/capsule/1/",
+            title: "BFC",
+            user: "/api/v1/user/3/",
+            remaining: 1024000000,
+            size: 1024000000
+        }
+    }
+    archives = {
+        'wedding': {
+            created: "2013-06-07T10:45:01",
+            expires: "2043-06-07T10:45:01",
+            id: 1,
+            key: 'FOOKEY1',
+            resource_uri: "/api/v1/archive/1/",
+            title: "My wedding",
+            description: "photos from my wedding",
+            capsule: "/api/v1/capsule/3/",
+            size: 2073741824
+        },
+        'other': {
+            created: "2013-06-07T10:44:38",
+            expires: "2043-06-07T10:45:01",
+            id: 2,
+            key: 'FOOKEY2',
+            resource_uri: "/api/v1/archive/2/",
+            title: "something else",
+            description: "whatevah",
+            capsule: "/api/v1/capsule/3/",
+            capsule: "/api/v1/capsule/2/",
+            size: 1024
+        }
+    }
     function mockupload() {
         return { id: 1,
             resource_uri: apiPrefix +'/upload/1',
@@ -42,7 +96,11 @@ exports.getBodyParts = function(config, modules) {
                     account: {
                         list_endpoint: apiPrefix + "/account/",
                         schema: apiPrefix + "/account/schema/"
-                    }
+                    },
+                    archive: {
+                        list_endpoint: apiPrefix + "/archive/",
+                        schema: apiPrefix + "/archive/schema/"
+                    },
                 }
             }),
             new RoboHydraHeadStatic({
@@ -118,7 +176,14 @@ exports.getBodyParts = function(config, modules) {
                     res.write(JSON.stringify(ret));
                     res.end();
                 }
-            })
+            }),
+            new RoboHydraHeadStatic({
+                path: apiPrefix + '/archive/',
+                content: {
+                    meta: meta(0),
+                    objects: []
+                }
+            }),
         ],
         scenarios: {
             uploadError: {
@@ -189,26 +254,10 @@ exports.getBodyParts = function(config, modules) {
                     new RoboHydraHeadStatic({
                         path: apiPrefix + '/capsule/',
                         content: {
-                            meta: meta(1),
+                            meta: meta(2),
                             objects: [
-                                {
-                                    created: "2013-06-07T10:45:01",
-                                    id: 3,
-                                    resource_uri: "/api/v1/capsule/3/",
-                                    title: "Photos",
-                                    user: "/api/v1/user/3/",
-                                    remaining: 1073741824,
-                                    size: 2073741824
-                                },
-                                {
-                                    created: "2013-06-07T10:44:38",
-                                    id: 2,
-                                    resource_uri: "/api/v1/capsule/2/",
-                                    title: "Stuff",
-                                    user: "/api/v1/user/2/",
-                                    remaining: 482,
-                                    size: 1024
-                                }
+                                capsules.Photos,
+                                capsules.Stuff
                             ]
                         }
                     })
@@ -229,15 +278,40 @@ exports.getBodyParts = function(config, modules) {
                         content: {
                             meta: meta(1),
                             objects: [
-                                {
-                                    created: "2013-06-07T10:45:01",
-                                    id: 1,
-                                    resource_uri: "/api/v1/capsule/1/",
-                                    title: "BFC",
-                                    user: "/api/v1/user/3/",
-                                    remaining: 1024000000,
-                                    size: 1024000000
-                                }
+                                capsules.BFC
+                            ]
+                        }
+                    })
+                ]
+            },
+            twoArchives: {
+                instructions: "activate 2 archives.",
+                heads: [
+                    new RoboHydraHead({
+                        path: '/.*',
+                        handler: function(req, res, next) {
+                            res.authuser = true;
+                            next(req, res);
+                        }
+                    }),
+                    new RoboHydraHeadStatic({
+                        path: apiPrefix + '/archive/',
+                        content: {
+                            meta: meta(2),
+                            objects: [
+                                archives.wedding,
+                                archives.other,
+                            ]
+                        }
+                    }),
+                    new RoboHydraHeadStatic({
+                        path: apiPrefix + '/capsule/',
+                        content: {
+                            meta: meta(2),
+                            objects: [
+                                capsules.Photos,
+                                capsules.Stuff,
+                                capsules.BFC
                             ]
                         }
                     })

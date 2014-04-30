@@ -1,7 +1,9 @@
 import os
 import json
+import base64
 
-from lacore.adf.elements import Archive, Meta, Links, Certificate, Auth
+from lacore.adf.elements import (Archive, Meta, Links, Certificate,
+                                 Signature, Auth)
 from lacore.adf.persist import make_adf, load_archive
 from behave import step
 from tempfile import NamedTemporaryFile
@@ -63,11 +65,26 @@ def archive_cert(context, title):
     d = os.path.join(context.environ['HOME'], "Longaccess/certs")
     if not os.path.isdir(d):
         os.makedirs(d)
-    context.cert = NamedTemporaryFile(dir=d, suffix='.adf')
+    context.cert = NamedTemporaryFile(dir=d, suffix='.adf', delete=False)
     context.cert.write(make_adf([Archive(title, Meta('zip', 'aes-256-ctr')),
                                  Auth(md5=('0'*32).decode('hex')),
                                  Certificate()]))
     context.cert.flush()
+
+
+@step(u'I have 1 certificate titled "{title}"')
+def one_cert(context, title):
+    d = os.path.join(context.environ['HOME'], "Longaccess/certs")
+    if not os.path.isdir(d):
+        os.makedirs(d)
+    context.certid = base64.urlsafe_b64encode(os.urandom(10))
+    f = NamedTemporaryFile(dir=d, suffix='.adf', delete=False)
+    f.write(make_adf([Archive(title, Meta('zip', 'aes-256-ctr')),
+                      Auth(md5=('0'*32).decode('hex')),
+                      Signature(aid=context.certid, uri=''),
+                      Certificate()]))
+    f.flush()
+    context.certs[context.certid] = f
 
 
 @step(u'I have downloaded an archive containing "{folder}"')
