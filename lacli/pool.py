@@ -2,6 +2,7 @@ import os
 from lacli.progress import make_progress, save_progress
 from itertools import repeat, izip
 from lacli.log import getLogger
+from lacli.nice import with_low_priority
 from lacore.source.chunked import ChunkedFile
 from lacore.exceptions import UploadEmptyError
 from lacli.exceptions import (WorkerFailureError, PauseEvent,
@@ -121,6 +122,7 @@ class MPUpload(object):
         save_progress(name, size)
         return (key.etag, newsource)
 
+    @with_low_priority
     def do_part(self, seq, **kwargs):
         """ transfer a part. runs in a separate process. """
 

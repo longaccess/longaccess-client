@@ -10,7 +10,7 @@ from pipes import quote
 from lacli.log import getLogger
 from lacli.upload import Upload, UploadState
 from lacli.capsule import archive_capsule
-from lacore.archive import restore_archive
+from lacli.archive import restore_archive
 from lacore.adf.util import archive_size, creation
 from lacore.adf.elements import Archive, Certificate, Meta, Signature
 from lacore.async import block

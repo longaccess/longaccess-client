@@ -12,6 +12,7 @@ from lacore.dumper.file import FileDumper
 from glob import iglob
 from lacore.adf.persist import load_archive, make_adf, as_json
 from lacore.adf.elements import Signature
+from lacli.nice import with_low_priority
 from lacli.log import getLogger
 from lacli.archive import archive_handle
 from lacli.capsule import archive_uri
@@ -130,6 +131,7 @@ class Cache(object):
                 except InvalidArchiveError:
                     getLogger().debug(fn, exc_info=True)
 
+    @with_low_priority
     def prepare(self, title, items, description=None, fmt='zip', cb=None):
         tmpdir = self._cache_dir('data', write=True)
         if isinstance(items, basestring):
