@@ -1,6 +1,6 @@
 from lacli.exceptions import PauseEvent
 from lacli.pool import MPUpload
-from lacore.source.chunked import ChunkedFile
+from lacli.source.chunked import ChunkedFile
 from lacore.storage.s3 import MPConnection
 from lacore.api import UploadState as BaseUploadState
 from contextlib import contextmanager
