@@ -2,7 +2,7 @@ from lacli import __version__
 from lacli.log import getLogger
 from lacore.adf.persist import make_adf
 from lacore.adf.elements import Archive, Certificate, Meta, Cipher
-from lacore.archive import restore_archive
+from lacli.archive import restore_archive
 from lacli.basecmd import LaBaseCommand
 from lacli.command import command
 from lacli.loginutil import login_async
