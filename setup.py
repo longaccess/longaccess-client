@@ -83,7 +83,7 @@ setup(version=pep386adapt(__version__),
           'pyOpenSSL>=0.13, <1',
           'thrift>=0.9, <1',
           'blessed>=1.8.3, <2',
-          'lacore>=0.1.3, <2',
+          'lacore>=0.1.3.1, <2',
           'psutil>=2.1, <3'
       ],
       tests_require=['testtools'],
