@@ -19,6 +19,6 @@ thrift==0.9.1
 treq==0.2.1
 Twisted==13.2.0
 zope.interface==4.1.0
--e git+git@github.com:longaccess/longaccess-core.git@08f6fa25cbb5d201798a425246719b738cda1a88#egg=lacore
+lacore==0.1.2
 blessed==1.8.3
 psutil==2.1.0
