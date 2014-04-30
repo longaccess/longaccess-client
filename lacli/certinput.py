@@ -1,8 +1,19 @@
 import sys
-from blessed import Terminal
+try:
+    from blessed import Terminal
+except ImportError:
+    Terminal = None
 
 
 def ask_key():
+    if Terminal is None:
+        try:
+            value = raw_input(
+                "Type the decryption key, "
+                "without spaces or other special characters: ")
+            return value.strip().decode('hex')
+        except TypeError:
+            return None
     sys.__stdin__ = sys.stdin
     t = Terminal()
     width = 64

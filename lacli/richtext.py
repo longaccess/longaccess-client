@@ -1,7 +1,10 @@
 import sys
 import time
 import pyaml
-from blessed import Terminal
+try:
+    from blessed import Terminal
+except ImportError:
+    Terminal = None
 from lacore.adf.util import creation
 
 
@@ -25,8 +28,10 @@ def format_size(bytes):
 class RichTextUI:
     def __init__(self):
 
-        t = Terminal(stream=sys.stdout)
-        self.width = t.width
+        self.width = 78
+        if Terminal is not None:
+            t = Terminal(stream=sys.stdout)
+            self.width = t.width
 
         h_titles = ('#   ID         STATUS    SIZE   DATE         '
                     'CAPSULE     TITLE')
