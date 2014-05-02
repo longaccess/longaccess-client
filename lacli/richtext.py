@@ -1,12 +1,10 @@
-try:
-    from blessings import Terminal
-    WITH_BLESSINGS = True
-except ImportError:
-    WITH_BLESSINGS = False
-
 import sys
 import time
 import pyaml
+try:
+    from blessed import Terminal
+except ImportError:
+    Terminal = None
 from lacore.adf.util import creation
 
 
@@ -30,19 +28,17 @@ def format_size(bytes):
 class RichTextUI:
     def __init__(self):
 
-        if WITH_BLESSINGS:
-            t = Terminal()
+        self.width = 78
+        if Terminal is not None:
+            t = Terminal(stream=sys.stdout)
             self.width = t.width
-        else:
-            self.width = 78
-        if not self.width:
-            self.width = 78
 
-        h_titles = '#   ID         STATUS    SIZE   DATE         TITLE'
+        h_titles = ('#   ID         STATUS    SIZE   DATE         '
+                    'CAPSULE     TITLE')
         h_pattern = ('--- ---------- --------- ------ ------------ '
-                     '---------------------------------')
+                     '----------- ---------------------------------')
         h_pattern = h_pattern.ljust(self.width, '-')
-        h_frmt = "{:0%sd} {:>%s} {:<%s} {:>%s} {:<%s} {:<%s}" % tuple(
+        h_frmt = "{:0%sd} {:>%s} {:<%s} {:>%s} {:<%s} {:<%s} {:<%s}" % tuple(
             len(p) for p in h_pattern.split(' '))
         self.archive_design = {
             'titles': h_titles,
@@ -92,6 +88,7 @@ class RichTextUI:
             archive['status'],
             archive['size'],
             created.strftime("%Y-%m-%d") if created else "-",
+            archive.get('capsule', ''),
             archive_title.encode('utf-8'))
 
     def print_capsules_header(self):
@@ -138,7 +135,9 @@ class RichTextUI:
             for cert in sorted(certs.itervalues(), key=creation):
                 aid = cert['signature'].aid
                 title = cert['archive'].title
-                size = format_size(cert['archive'].meta.size)
+                size = cert['archive'].meta.size or ""
+                if size is not "":
+                    size = format_size(cert['archive'].meta.size)
                 self.print_certificates_line(certificate={
                     'aid': aid,
                     'size': size,

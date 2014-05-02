@@ -1,9 +1,10 @@
 from lacli.exceptions import PauseEvent
 from lacli.pool import MPUpload
-from lacore.source.chunked import ChunkedFile
+from lacli.source.chunked import ChunkedFile
 from lacore.storage.s3 import MPConnection
+from lacore.api import UploadState as BaseUploadState
 from contextlib import contextmanager
-from lacore.log import getLogger
+from lacli.log import getLogger
 from lacli.progress import queueHandler
 from lacli.control import ControlHandler
 from lacli.worker import WorkerPool
@@ -24,7 +25,7 @@ class LogHandler(queueHandler):
         self.logger.handle(msg)
 
 
-class UploadState(object):
+class UploadState(BaseUploadState):
     states = None
 
     @classmethod
@@ -49,16 +50,24 @@ class UploadState(object):
                       if k in a}
 
     @classmethod
-    def get(cls, fname, size=None, capsule=None):
+    def get(cls, fname, size=None, capsule=None, sandbox=False):
         if cls.states is None:
             cls.setup()
         if fname in cls.states:
+            state = cls.states[fname]
+            msg = "Can't change {} for upload"
             if size is not None:
+                assert state.size == size, msg.format('size')
                 cls.states[fname].size = size
             if capsule is not None:
+                assert state.capsule.id == capsule.id, msg.format('capsule')
                 cls.states[fname].capsule = capsule
+            if sandbox is True:
+                assert state.sandbox == sandbox, msg.format('sandbox status')
+                cls.states[fname].sandbox = True
             return cls.states[fname]
-        cls.states[fname] = UploadState(fname, size, capsule=capsule)
+        cls.states[fname] = UploadState(fname, size, capsule=capsule,
+                                        sandbox=sandbox)
         return cls.states[fname]
 
     @classmethod
@@ -70,19 +79,16 @@ class UploadState(object):
         cls.cache._del_upload(fname)
         return cls.states.pop(fname)
 
-    def __init__(self, archive, size, uri=None, keys=[], capsule=None,
-                 exc=None, paused=True):
+    def __init__(self, archive, size, keys=[],
+                 exc=None, paused=True, **kwargs):
+        super(UploadState, self).__init__(archive, size, **kwargs)
         self.cache = type(self).cache
-        self.archive = archive
         self.logfile = self.control = None
         self.keys = keys
         self.progress = reduce(lambda x, y: x + y['size'], self.keys, 0)
-        self.size = size
         self.pausing = False
         self._paused = paused
-        self.uri = uri
         self.exc = exc
-        self.capsule = capsule
         self.deferred_upload = None
 
     def __enter__(self):
@@ -212,8 +218,7 @@ class Upload(object):
                     pool.join()
 
     def upload_temp(self, token, source, etags, pool, seq):
-        key = "{prefix}temp-archive-{seq}".format(
-            prefix=token['prefix'], seq=seq)
+        key = "temp-archive-{seq}".format(seq=seq)
         connection = MPConnection(**token)
         with MPUpload(connection, source, key) as uploader:
             etags[key], source = uploader.get_result(

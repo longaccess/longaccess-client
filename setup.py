@@ -82,8 +82,9 @@ setup(version=pep386adapt(__version__),
           'treq>=0.2.0, <0.3',
           'pyOpenSSL>=0.13, <1',
           'thrift>=0.9, <1',
-          'blessings>=1.5, <2',
-          'lacore>=0.1, <2'
+          'blessed>=1.8.3, <2',
+          'lacore>=0.1.3.1, <2',
+          'psutil>=2.1, <3'
       ],
       tests_require=['testtools'],
       test_suite="lacli.t",

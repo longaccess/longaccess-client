@@ -46,6 +46,6 @@ def upload(title, urls, description=None,
 
 
 if __name__ == "__main__":
-    from lacore.log import setupLogging
+    from lacli.log import setupLogging
     setupLogging(4)
     upload('test', sys.argv[2:], capsule=sys.argv[1])

@@ -1,5 +1,5 @@
 from boto import set_stream_logger
-from lacore.log import setupLogging
+from lacli.log import setupLogging
 from lacore.date import epoch
 from binascii import a2b_hex
 from contextlib import contextmanager
@@ -49,6 +49,18 @@ dummycapsule = {
     'id': 'bar',
     'size': 1230000,
     'remaining': 0,
+    'expires': epoch(),
+    'created': epoch(),
+    'resource_uri': '/foo/bar'
+}
+
+dummyarchive = {
+    'capsule': '/foo/bar',
+    'description': "dummy capsule",
+    'resource_uri': '/foo/baz',
+    'title': 'faz',
+    'key': 'baz',
+    'size': 1230000,
     'expires': epoch(),
     'created': epoch()
 }

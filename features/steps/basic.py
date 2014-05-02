@@ -4,14 +4,27 @@ from behave import step
 from urlparse import urlparse
 
 
+@step(u'I have 2 capsules')
+def two_capsules(context):
+    context.mock_api.test('oneCapsule', 'longaccessmock')
+
+
 @step(u'I have 1 capsule')
 def one_capsule(context):
-    context.mock_api.test('oneCapsule', 'longaccessmock')
+    two_capsules(context)
 
 
 @step(u'I have 1 huge capsule')
 def one_huge_capsule(context):
     context.mock_api.test('oneHugeCapsule', 'longaccessmock')
+
+
+@step(u'I have {num} uploaded archives')
+def num_archives(context, num):
+    if int(num) == 2:
+        context.mock_api.test('twoArchives', 'longaccessmock')
+    else:
+        raise NotImplementedError("mock api only supports 2 archives")
 
 
 @step(u'I store my credentials in "{file}"')

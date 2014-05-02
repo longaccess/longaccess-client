@@ -3,7 +3,7 @@ import sys
 import os
 import signal
 
-from lacore.log import getLogger
+from lacli.log import getLogger
 from lacli.progress import progressToQueue
 from lacli.control import controlByQueue
 from multiprocessing import cpu_count, pool, current_process, Process
@@ -28,6 +28,10 @@ def logToQueue(queue):
                 'handlers': ['queue']
             },
             'lacli': {
+                'level': 'DEBUG',
+                'handlers': ['queue']
+            },
+            'lacore': {
                 'level': 'DEBUG',
                 'handlers': ['queue']
             },

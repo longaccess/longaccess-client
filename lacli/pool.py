@@ -1,8 +1,9 @@
 import os
 from lacli.progress import make_progress, save_progress
 from itertools import repeat, izip
-from lacore.log import getLogger
-from lacore.source.chunked import ChunkedFile
+from lacli.log import getLogger
+from lacli.nice import with_low_priority
+from lacli.source.chunked import ChunkedFile
 from lacore.exceptions import UploadEmptyError
 from lacli.exceptions import (WorkerFailureError, PauseEvent,
                               CloudProviderUploadError)
@@ -37,11 +38,9 @@ class MPUpload(object):
     def _getupload(self):
         if self.source.chunks > 1 and self.source.isfile:
             if self.upload_id is None:
-                return self.conn.bucket.initiate_multipart_upload(self.key)
-
-            for upload in self.conn.bucket.get_all_multipart_uploads():
-                if self.upload_id == upload.id:
-                    return upload
+                return self.conn.newupload(self.key)
+            else:
+                return self.conn.getupload(self.upload_id)
         else:
             return self.conn.newkey(self.key)
 
@@ -98,7 +97,11 @@ class MPUpload(object):
             raise UploadEmptyError()
 
         if hasattr(self.upload, 'complete_upload'):
-            key = self.conn.complete_multipart(self.upload, etags)
+            try:
+                key = self.conn.complete_multipart(self.upload, etags)
+            except Exception as e:
+                getLogger().debug("error completing multipart", exc_info=True)
+                raise CloudProviderUploadError(e)
             name = key.key_name
         else:
             name = key.name
@@ -119,6 +122,7 @@ class MPUpload(object):
         save_progress(name, size)
         return (key.etag, newsource)
 
+    @with_low_priority
     def do_part(self, seq, **kwargs):
         """ transfer a part. runs in a separate process. """
 

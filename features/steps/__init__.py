@@ -20,3 +20,7 @@ def mp_setup(ctx):
 
 def mp_teardown(ctx):
     s3teardown(ctx)
+
+
+def cert_vars(ctx):
+    return {'certid': ctx.certid}

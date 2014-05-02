@@ -19,14 +19,21 @@ exports.getBodyParts = function(config, modules) {
                             if (creds[0] == "test" && creds[1] == "test") {
                                 res.authuser_name = creds[0]
                                 return next(req, res);
+                            } else {
+                                res.authfail = true
                             }
-                        } else if (!res.hasOwnProperty('authfail'))
-                                return next(req, res);
-                        
+                        }
                     }
-                    res.headers["www-authenticate"] = 'Basic realm="foobar"';
-                    res.statusCode = '401';
-                    res.send("401 - Forbidden")
+                    if (res.hasOwnProperty('authuser')) {
+                        res.authfail = true
+                    }
+                    if (res.hasOwnProperty('authfail')) {
+                        res.headers["www-authenticate"] = 'Basic realm="foobar"';
+                        res.statusCode = '401';
+                        res.send("401 - Forbidden")
+                    } else {
+                        return next(req, res)
+                    }
                 }
             })
         ],

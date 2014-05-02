@@ -55,13 +55,14 @@ class Iface(Interface):
   def GetUploads():
     pass
 
-  def UploadToCapsule(ArchiveLocalID, CapsuleID, title, description):
+  def UploadToCapsule(ArchiveLocalID, CapsuleID, title, description, sandbox):
     """
     Parameters:
      - ArchiveLocalID
      - CapsuleID
      - title
      - description
+     - sandbox
     """
     pass
 
@@ -383,20 +384,21 @@ class Client(object):
       return d.callback(result.success)
     return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "GetUploads failed: unknown result"))
 
-  def UploadToCapsule(self, ArchiveLocalID, CapsuleID, title, description):
+  def UploadToCapsule(self, ArchiveLocalID, CapsuleID, title, description, sandbox):
     """
     Parameters:
      - ArchiveLocalID
      - CapsuleID
      - title
      - description
+     - sandbox
     """
     self._seqid += 1
     d = self._reqs[self._seqid] = defer.Deferred()
-    self.send_UploadToCapsule(ArchiveLocalID, CapsuleID, title, description)
+    self.send_UploadToCapsule(ArchiveLocalID, CapsuleID, title, description, sandbox)
     return d
 
-  def send_UploadToCapsule(self, ArchiveLocalID, CapsuleID, title, description):
+  def send_UploadToCapsule(self, ArchiveLocalID, CapsuleID, title, description, sandbox):
     oprot = self._oprot_factory.getProtocol(self._transport)
     oprot.writeMessageBegin('UploadToCapsule', TMessageType.CALL, self._seqid)
     args = UploadToCapsule_args()
@@ -404,6 +406,7 @@ class Client(object):
     args.CapsuleID = CapsuleID
     args.title = title
     args.description = description
+    args.sandbox = sandbox
     args.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -992,7 +995,7 @@ class Processor(TProcessor):
     args.read(iprot)
     iprot.readMessageEnd()
     result = UploadToCapsule_result()
-    d = defer.maybeDeferred(self._handler.UploadToCapsule, args.ArchiveLocalID, args.CapsuleID, args.title, args.description)
+    d = defer.maybeDeferred(self._handler.UploadToCapsule, args.ArchiveLocalID, args.CapsuleID, args.title, args.description, args.sandbox)
     d.addCallback(self.write_results_success_UploadToCapsule, result, seqid, oprot)
     d.addErrback(self.write_results_exception_UploadToCapsule, result, seqid, oprot)
     return d
@@ -2196,6 +2199,7 @@ class UploadToCapsule_args(object):
    - CapsuleID
    - title
    - description
+   - sandbox
   """
 
   thrift_spec = (
@@ -2204,13 +2208,15 @@ class UploadToCapsule_args(object):
     (2, TType.STRING, 'CapsuleID', None, None, ), # 2
     (3, TType.STRING, 'title', None, None, ), # 3
     (4, TType.STRING, 'description', None, None, ), # 4
+    (5, TType.BOOL, 'sandbox', None, None, ), # 5
   )
 
-  def __init__(self, ArchiveLocalID=None, CapsuleID=None, title=None, description=None,):
+  def __init__(self, ArchiveLocalID=None, CapsuleID=None, title=None, description=None, sandbox=None,):
     self.ArchiveLocalID = ArchiveLocalID
     self.CapsuleID = CapsuleID
     self.title = title
     self.description = description
+    self.sandbox = sandbox
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -2241,6 +2247,11 @@ class UploadToCapsule_args(object):
           self.description = iprot.readString();
         else:
           iprot.skip(ftype)
+      elif fid == 5:
+        if ftype == TType.BOOL:
+          self.sandbox = iprot.readBool();
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -2266,6 +2277,10 @@ class UploadToCapsule_args(object):
     if self.description is not None:
       oprot.writeFieldBegin('description', TType.STRING, 4)
       oprot.writeString(self.description)
+      oprot.writeFieldEnd()
+    if self.sandbox is not None:
+      oprot.writeFieldBegin('sandbox', TType.BOOL, 5)
+      oprot.writeBool(self.sandbox)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()

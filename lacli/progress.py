@@ -2,7 +2,7 @@ import os
 import multiprocessing
 from progressbar import (ProgressBar, Bar,
                          ETA, FileTransferSpeed)
-from lacore.log import getLogger
+from lacli.log import getLogger
 from abc import ABCMeta, abstractmethod
 from logutils.queue import QueueListener
 

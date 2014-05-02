@@ -688,6 +688,7 @@ class Archive(object):
    - LocalID
    - Status
    - Info
+   - Sandbox
   """
 
   thrift_spec = (
@@ -695,12 +696,14 @@ class Archive(object):
     (1, TType.STRING, 'LocalID', None, None, ), # 1
     (2, TType.I32, 'Status', None, None, ), # 2
     (3, TType.STRUCT, 'Info', (ArchiveInfo, ArchiveInfo.thrift_spec), None, ), # 3
+    (4, TType.BOOL, 'Sandbox', None, None, ), # 4
   )
 
-  def __init__(self, LocalID=None, Status=None, Info=None,):
+  def __init__(self, LocalID=None, Status=None, Info=None, Sandbox=None,):
     self.LocalID = LocalID
     self.Status = Status
     self.Info = Info
+    self.Sandbox = Sandbox
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -727,6 +730,11 @@ class Archive(object):
           self.Info.read(iprot)
         else:
           iprot.skip(ftype)
+      elif fid == 4:
+        if ftype == TType.BOOL:
+          self.Sandbox = iprot.readBool();
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -748,6 +756,10 @@ class Archive(object):
     if self.Info is not None:
       oprot.writeFieldBegin('Info', TType.STRUCT, 3)
       self.Info.write(oprot)
+      oprot.writeFieldEnd()
+    if self.Sandbox is not None:
+      oprot.writeFieldBegin('Sandbox', TType.BOOL, 4)
+      oprot.writeBool(self.Sandbox)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()

@@ -9,6 +9,7 @@ Commands (run lacli <command> -h for options):
     archive         manage archives
     capsule         manage capsules
     certificate     manage certificates
+    fetch           fetch certificates
     login           configure access credentials
     server          run a RPC server
 
@@ -27,9 +28,10 @@ import sys
 import os
 import cmd
 
-from lacore.log import setupLogging, getLogger
+from lacli.log import setupLogging, getLogger
 from docopt import docopt, DocoptExit
 from lacli.command import LaCapsuleCommand, LaCertsCommand, LaArchiveCommand
+from lacli.command import LaFetchCommand
 from lacli.login import LaLoginCommand
 from lacli.server import LaServerCommand
 from lacli import get_client_info, __version__
@@ -143,6 +145,7 @@ class LaCommand(cmd.Cmd):
         self.certificate = LaCertsCommand(registry)
         self.login = LaLoginCommand(registry)
         self.server = LaServerCommand(registry)
+        self.fetch = LaFetchCommand(registry)
 
     def do_EOF(self, line):
         print
@@ -181,6 +184,9 @@ class LaCommand(cmd.Cmd):
 
     def do_certificate(self, line):
         self.dispatch_one(self.certificate, line, True)
+
+    def do_fetch(self, line):
+        self.server.onecmd('fetch ' + line)
 
     def do_login(self, line):
         self.login.onecmd('login ' + line)
