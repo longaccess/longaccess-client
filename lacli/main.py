@@ -79,7 +79,8 @@ def settings(options):
             'pass': options.get('--password'),
             'url': os.getenv('LA_API_URL'),
             'verify': verify,
-            'factory': RequestsFactory
+            'factory': RequestsFactory,
+            'user_agent': get_client_info(terse=True)
         },
         'command': {
             'debug': debug,

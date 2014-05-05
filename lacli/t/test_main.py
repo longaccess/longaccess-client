@@ -59,3 +59,12 @@ class SettingsTest(TestCase):
         finally:
             if (tmpdir and os.path.isdir(tmphome)):
                 shutil.rmtree(tmpdir)
+
+    @patch('lacli.main.get_client_info')
+    def test_user_agent(self, info):
+        settings = self._makeit()
+        info.return_value = self.getUniqueString()
+        prefs, _ = settings({'--home': self.home})
+        self.assertIn('api', prefs)
+        self.assertIn('user_agent', prefs['api'])
+        self.assertEqual(info.return_value, prefs['api']['user_agent'])

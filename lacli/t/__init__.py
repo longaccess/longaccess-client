@@ -5,6 +5,7 @@ from binascii import a2b_hex
 from contextlib import contextmanager
 from tempfile import mkdtemp
 from shutil import rmtree
+from logging import Handler as LogHandler
 
 
 def setup():
@@ -71,3 +72,36 @@ def _temp_home():
     d = mkdtemp()
     yield d
     rmtree(d)
+
+
+class MockLoggingHandler(LogHandler):
+    """Mock logging handler to check for expected logs.
+
+    Messages are available from an instance's ``messages`` dict,
+    in order, indexed by a lowercase log level string (e.g.,
+    'debug', 'info', etc.).
+
+    Adapted from: http://stackoverflow.com/questions/899067/
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.messages = {'debug': [], 'info': [], 'warning': [], 'error': [],
+                         'critical': []}
+        super(MockLoggingHandler, self).__init__(*args, **kwargs)
+
+    def emit(self, record):
+        "Store a message from ``record`` in the instance's ``messages`` dict."
+        self.acquire()
+        try:
+            self.messages[record.levelname.lower()].append(
+                (record.getMessage(), record.exc_info))
+        finally:
+            self.release()
+
+    def reset(self):
+        self.acquire()
+        try:
+            for message_list in self.messages.values():
+                del message_list[:]
+        finally:
+            self.release()
