@@ -1,7 +1,7 @@
 -i https://pypi.longaccess.io/simple
 boto==2.26.1
 cffi==0.8.1
-crochet==1.0.0
+crochet==1.2.0
 cryptography==0.2.2
 docopt==0.6.1
 filechunkio==1.5
