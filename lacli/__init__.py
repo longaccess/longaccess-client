@@ -1,5 +1,4 @@
 from __future__ import unicode_literals
-from lacore import get_client_info as lacore_info
 
 try:
     from lacli.version import __version__
@@ -8,6 +7,7 @@ except ImportError:
 
 
 def get_client_info(terse=False):
+    from lacore import get_client_info as lacore_info
     el = ["Longaccess client"]
     el.append(__version__)
     el.append(lacore_info(terse))
