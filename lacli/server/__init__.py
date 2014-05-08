@@ -78,6 +78,9 @@ class LaServerCommand(LaBaseCommand, CLI.Processor):
             self.logincmd.username = self.prefs['gui']['username']
             self.logincmd.password = self.prefs['gui']['password']
             self.logincmd.email = self.prefs['gui']['email']
+        ua = os.getenv("LA_API_AGENT_INFO")
+        if ua is not None:
+            self.registry.session.prefs['user_agent'] += " (" + ua + ")"
         reactor.run()
         self.batch = False
 

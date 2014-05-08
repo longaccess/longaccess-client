@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import crochet
 
 from testtools import TestCase
 from twisted.internet import defer
@@ -8,6 +9,11 @@ from mock import patch, Mock
 
 
 class ServerTest(TestCase):
+
+    @classmethod
+    def setup_class(cls):
+        crochet.setup()
+
     def setUp(self):
         super(ServerTest, self).setUp()
         self.prefs = makeprefs()
@@ -24,6 +30,7 @@ class ServerTest(TestCase):
         from lacli.server.interface.ClientInterface import ttypes
         return ttypes
 
+    @crochet.wait_for(2.0)
     @defer.inlineCallbacks
     def test_get_latest_version(self):
         registry = Mock()
@@ -45,6 +52,7 @@ class ServerTest(TestCase):
                     self.assertEqual(
                         v, self.ttypes().VersionInfo('1.2.3'))
 
+    @crochet.wait_for(2.0)
     @defer.inlineCallbacks
     def test_get_latest_version_from_api(self):
         registry = Mock()
