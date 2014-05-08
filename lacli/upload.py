@@ -60,7 +60,11 @@ class UploadState(BaseUploadState):
                 assert state.size == size, msg.format('size')
                 cls.states[fname].size = size
             if capsule is not None:
-                assert state.capsule.id == capsule['id'], msg.format('capsule')
+                # might be helpful if you want to change the capsule
+                if state.capsule is None:
+                    state.capsule = capsule
+                cid = state.capsule.get('id', None)
+                assert cid == capsule['id'], msg.format('capsule')
                 cls.states[fname].capsule = capsule
             if sandbox is True:
                 assert state.sandbox == sandbox, msg.format('sandbox status')
