@@ -10,7 +10,7 @@ progressbar==2.3
 pyaml==13.12.0
 pycparser==2.10
 pycrypto==2.6.1
-pyOpenSSL==0.14
+pyOpenSSL==17.5.0
 python-dateutil==2.2
 PyYAML==3.10
 requests==2.2.1
