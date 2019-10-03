@@ -17,7 +17,7 @@ requests==2.2.1
 six==1.5.2
 thrift==0.9.1
 treq==0.2.1
-Twisted==13.2.0
+Twisted==19.7.0
 zope.interface==4.1.0
 -e git+git@github.com:kouk/longaccess-core.git@be4fd1514aa884751863a2719b654968b994472e#egg=lacore-develop
 blessed==1.8.3
