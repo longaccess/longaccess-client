@@ -13,7 +13,7 @@ pycrypto==2.6.1
 pyOpenSSL==0.14
 python-dateutil==2.2
 PyYAML==3.10
-requests==2.2.1
+requests==2.20.0
 six==1.5.2
 thrift==0.9.1
 treq==0.2.1
