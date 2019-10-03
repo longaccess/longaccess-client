@@ -12,7 +12,7 @@ pycparser==2.10
 pycrypto==2.6.1
 pyOpenSSL==0.14
 python-dateutil==2.2
-PyYAML==3.10
+PyYAML==5.1
 requests==2.2.1
 six==1.5.2
 thrift==0.9.1
