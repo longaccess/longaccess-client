@@ -84,7 +84,7 @@ setup(version=pep386adapt(__version__),
           'thrift>=0.9, <1',
           'blessed>=1.8.3, <2',
           'lacore>=0.1.3.1, <2',
-          'psutil>=2.1, <3'
+          'psutil>=2.1, <6'
       ],
       tests_require=['testtools'],
       test_suite="lacli.t",
